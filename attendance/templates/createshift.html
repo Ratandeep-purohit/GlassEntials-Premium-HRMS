@@ -1,0 +1,412 @@
+{% load static%}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shifts | HRMS GlassEntials</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Manrope:wght@600;700;800&display=swap">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link rel="stylesheet" href="{% static 'css/landing.css' %}?v=1.2">
+    <link rel="stylesheet" href="{% static 'css/home.css' %}?v=1.2">
+    <link rel="stylesheet" href="{% static 'css/dashboard.css' %}?v=1.2">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <style>
+        /* Shift Table Specific Styles */
+        .shift-name-cell {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .shift-name-text {
+            font-weight: 700;
+            color: var(--text-main);
+            display: block;
+        }
+
+        .shift-id-text {
+            font-size: 11px;
+            color: var(--text-secondary);
+            margin-top: 2px;
+        }
+
+        .shift-name-col {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .shift-desc-empty {
+            color: var(--text-secondary);
+            font-style: italic;
+            font-size: 13px;
+        }
+
+        .shift-icon {
+            width: 38px;
+            height: 38px;
+            border-radius: 10px;
+            background: var(--accent-muted);
+            color: var(--accent);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+        }
+
+        .time-range-box {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: #f8fafc;
+            padding: 8px 14px;
+            border-radius: 12px;
+            width: fit-content;
+            border: 1px solid var(--border-light);
+        }
+
+        .time-item {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .time-label {
+            font-size: 9px;
+            font-weight: 800;
+            text-transform: uppercase;
+            color: var(--text-secondary);
+            letter-spacing: 0.5px;
+        }
+
+        .time-value {
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--text-main);
+        }
+
+        .time-arrow {
+            color: var(--text-secondary);
+            opacity: 0.4;
+            font-size: 12px;
+        }
+
+        .shift-badge {
+            display: inline-block;
+            padding: 6px 12px;
+            background: rgba(37, 99, 235, 0.05);
+            color: var(--accent);
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: 600;
+            max-width: 200px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .empty-state {
+            padding: 60px 0;
+            text-align: center;
+        }
+
+        .empty-icon {
+            font-size: 48px;
+            color: var(--text-secondary);
+            opacity: 0.2;
+            margin-bottom: 16px;
+        }
+    </style>
+</head>
+
+<body>
+    <!--Flash Messages Toast-->
+    {% include 'includes/_messages.html' %}
+    <!--Subtle Background Elements-->
+    <div class="orb orb-1" style="opacity: 0.03;top:-100px;left:-100px;"></div>
+    <div class="orb orb-2" style="opacity: 0.03;bottom:-100px;right:-100px;"></div>
+    <!--Header Navigation-->
+    <header class="platform-header">
+        <a href="{% url 'home' %}" class="brand-section">
+            <img src="{% static 'img/logo.png' %}" alt="GlassEntials Logo" class="brand-logo-img">
+        </a>
+
+        <nav class="nav-center">
+            <a href="{% url 'home' %}" class="nav-pill"><i class="fas fa-grid-2"></i> Dashboard</a>
+
+            <div class="nav-item-dropdown">
+                <a href="#" class="nav-pill">
+                    <i class="fas fa-users-rectangle"></i> Employees
+                    <i class="fas fa-chevron-down"></i>
+                </a>
+                <div class="dropdown-content">
+                    <a href="{% url 'employee' %}" class="dropdown-item">
+                        <i class="fas fa-list-ul"></i> Employee Dashboard
+                    </a>
+                    <a href="{% url 'department' %}" class="dropdown-item">
+                        <i class="fas fa-sitemap"></i> Departments
+                    </a>
+                    <a href="{% url 'designation' %}" class="dropdown-item">
+                        <i class="fas fa-id-card"></i> Designations
+                    </a>
+                </div>
+            </div>
+            <div class="nav-item-dropdown">
+                <a href="#" class="nav-pill active">
+                    <i class="fas fa-fingerprint"></i> Attendance
+                    <i class="fas fa-chevron-down"></i>
+                </a>
+                <div class="dropdown-content">
+                    <a href="#" class="dropdown-item">
+                        <i class="fas fa-list-ul"></i> Attendance Dashboard
+                    </a>
+                    <a href="{% url 'create_shift' %}" class="dropdown-item">
+                        <i class="fas fa-sitemap"></i> Create Shift
+                    </a>
+                    <a href="{% url 'assign_shift' %}" class="dropdown-item">
+                        <i class="fas fa-id-card"></i> Assign Shift
+                    </a>
+                </div>
+            </div>
+            <div class="nav-item-dropdown">
+                <a href="#" class="nav-pill">
+                    <i class="fas fa-calendar-alt"></i> Leaves
+                    <i class="fas fa-chevron-down"></i>
+                </a>
+                <div class="dropdown-content">
+                    <a href="#" class="dropdown-item">
+                        <i class="fas fa-list-ul"></i> Leave Dashboard
+                    </a>
+                    <a href="#" class="dropdown-item">
+                        <i class="fas fa-sitemap"></i> Leave Balance
+                    </a>
+                    <a href="#" class="dropdown-item">
+                        <i class="fas fa-id-card"></i> Leave Policy
+                    </a>
+                </div>
+            </div>
+            <div class="nav-item-dropdown">
+                <a href="#" class="nav-pill">
+                    <i class="fas fa-receipt"></i> Payroll
+                    <i class="fas fa-chevron-down"></i>
+                </a>
+                <div class="dropdown-content">
+                    <a href="{% url 'payroll' %}" class="dropdown-item">
+                        <i class="fas fa-list-ul"></i> Payroll Dashboard
+                    </a>
+                    <a href="#" class="dropdown-item">
+                        <i class="fas fa-sitemap"></i> Generate Payroll
+                    </a>
+                    <a href="#" class="dropdown-item">
+                        <i class="fas fa-id-card"></i> Payroll History
+                    </a>
+                </div>
+            </div>
+            <a href="#" class="nav-pill"><i class="fas fa-briefcase"></i> More</a>
+        </nav>
+
+        <div class="header-right">
+            <div class="action-icon">
+                <i class="fas fa-search"></i>
+            </div>
+            <div class="action-icon">
+                <i class="fas fa-bell"></i>
+                <div
+                    style="position: absolute; top: 10px; right: 10px; width: 8px; height: 8px; background: #ef4444; border-radius: 50%; border: 2px solid #fff;">
+                </div>
+            </div>
+
+            <div class="profile-trigger">
+                <div class="avatar-box">
+                    {{ request.user.username|slice:":1"|upper }}
+                </div>
+                <span class="user-name">{{ request.user.username }}</span>
+                <i class="fas fa-chevron-down" style="font-size: 10px; color: var(--text-secondary);"></i>
+            </div>
+        </div>
+    </header>
+
+    <main class="workspace">
+        <div class="page-header">
+            <h1>Shifts</h1>
+            <p>Create and manage shifts for your employees</p>
+        </div>
+
+        <div class="split-grid">
+            <!-- Left Side: Form -->
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">
+                        <i class="fas {% if edit_shift %}fa-edit{% else %}fa-plus-circle{% endif %}"></i>
+                        {% if edit_shift %}Edit{% else %}New{% endif %} Shift
+                    </h2>
+                </div>
+                <form method="POST">
+                    {% csrf_token %}
+                    <div class="form-group">
+                        <label class="form-label">Shift Name</label>
+                        <input type="text" name="name" class="form-input" placeholder="e.g. Morning Shift"
+                            value="{{ edit_shift.name|default:'' }}" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Start Time</label>
+                        <input type="time" name="start_time" class="form-input"
+                            value="{{ edit_shift.start_time|time:'H:i'|default:'' }}" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">End Time</label>
+                        <input type="time" name="end_time" class="form-input"
+                            value="{{ edit_shift.end_time|time:'H:i'|default:'' }}" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Grace Minutes</label>
+                        <input type="number" name="grace_minutes" class="form-input" min="0" max="60"
+                            value="{{ edit_shift.grace_minutes|default:'0' }}">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Minimum Half Day Hours</label>
+                        <input type="number" name="minimum_half_day_hours" class="form-input" min="0" max="8"
+                            value="{{ edit_shift.minimum_half_day_hours|default:'4' }}">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Minimum Full Day Hours</label>
+                        <input type="number" name="minimum_full_day_hours" class="form-input" min="0" max="24"
+                            value="{{ edit_shift.minimum_full_day_hours|default:'8' }}">
+                    </div>
+                    <div class="form-group" style="display: flex; align-items: center; gap: 12px; margin-top: 32px; margin-bottom: 32px; background: #f8fafc; padding: 16px 20px; border-radius: 14px; border: 1px solid var(--border-light); cursor: pointer;" onclick="document.getElementById('is_night_shift').click();">
+                        <input type="checkbox" name="is_night_shift" id="is_night_shift" style="width: 22px; height: 22px; accent-color: var(--accent); cursor: pointer;" onclick="event.stopPropagation();"
+                            {% if edit_shift.is_night_shift %}checked{% endif %}>
+                        <label class="form-label" for="is_night_shift" style="margin-bottom: 0; cursor: pointer; font-size: 15px; color: var(--text-main);">Mark as Night Shift</label>
+                    </div>
+
+                    {% if edit_shift %}
+                    <div style="display: flex; gap: 12px;">
+                        <button type="submit" class="btn-primary" style="flex: 2;">
+                            <i class="fas fa-save"></i> Update Shift
+                        </button>
+                        <a href="{% url 'create_shift' %}" class="action-btn"
+                            style="flex: 1; height: 50px; border-radius: 14px;">
+                            <i class="fas fa-times"></i>
+                        </a>
+                    </div>
+                    {% else %}
+                    <button type="submit" class="btn-primary">
+                        <i class="fas fa-check"></i> Create Shift
+                    </button>
+                    {% endif %}
+                </form>
+            </div>
+
+            <!-- Right Side: Table -->
+            <div class="card table-card" style="background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(10px);">
+                <div class="table-responsive">
+                    <table class="premium-table">
+                        <thead>
+                            <tr>
+                                <th>Shift Details</th>
+                                <th>Working Hours</th>
+                                <th>Shift Info</th>
+                                <th style="text-align: right;">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for shift in shifts %}
+                            <tr>
+                                <td>
+                                    <div class="shift-name-cell">
+                                        <div class="shift-icon">
+                                            <i class="fas fa-business-time"></i>
+                                        </div>
+                                        <div class="shift-name-col">
+                                            <span class="shift-name-text">{{ shift.name }}</span>
+                                            <span class="shift-id-text">ID: #SH-00{{ shift.id }}</span>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="time-range-box">
+                                        <div class="time-item">
+                                            <span class="time-label">Start</span>
+                                            <span class="time-value">{{ shift.start_time|time:"g:i A" }}</span>
+                                        </div>
+                                        <div class="time-arrow">
+                                            <i class="fas fa-arrow-right"></i>
+                                        </div>
+                                        <div class="time-item">
+                                            <span class="time-label">End</span>
+                                            <span class="time-value">{{ shift.end_time|time:"g:i A" }}</span>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                                        {% if shift.is_night_shift %}
+                                        <span class="shift-badge" style="background: rgba(124, 58, 237, 0.1); color: #7c3aed;">
+                                            <i class="fas fa-moon"></i> Night
+                                        </span>
+                                        {% else %}
+                                        <span class="shift-badge" style="background: rgba(34, 197, 94, 0.1); color: #16a34a;">
+                                            <i class="fas fa-sun"></i> Day
+                                        </span>
+                                        {% endif %}
+                                        {% if shift.grace_minutes %}
+                                        <span class="shift-badge" style="background: rgba(245, 158, 11, 0.1); color: #d97706;">
+                                            <i class="fas fa-stopwatch"></i> Grace: {{ shift.grace_minutes }}m
+                                        </span>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="action-group" style="justify-content: flex-end;">
+                                        <a href="?edit={{ shift.id }}" class="action-btn" title="Edit">
+                                            <i class="fas fa-pen-to-square"></i>
+                                        </a>
+                                        <form method="POST" action="?delete={{ shift.id }}" style="display:inline;"
+                                            onsubmit="return confirm('Are you sure you want to delete this shift?');">
+                                            {% csrf_token %}
+                                            <button type="submit" class="action-btn delete" title="Delete">
+                                                <i class="fas fa-trash-can"></i>
+                                            </button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="4">
+                                    <div class="empty-state">
+                                        <div class="empty-icon">
+                                            <i class="fas fa-clock-rotate-left"></i>
+                                        </div>
+                                        <h3 style="margin: 0; color: var(--text-main);">No Shifts Found</h3>
+                                        <p style="margin: 8px 0 0; color: var(--text-secondary); font-size: 14px;">
+                                            Create your first shift to get started.</p>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            flatpickr("input[type='time']", {
+                enableTime: true,
+                noCalendar: true,
+                dateFormat: "H:i", // Backend needs 24hr format
+                altInput: true,
+                altFormat: "h:i K", // User sees 12hr AM/PM format
+                time_24hr: false
+            });
+        });
+    </script>
+</body>
+</html>

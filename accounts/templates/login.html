@@ -1,0 +1,77 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login | HRMS GlassEntials</title>
+    <link rel="stylesheet" href="{% static 'css/auth.css' %}?v=1.1">
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+</head>
+<body class="auth-body">
+
+    <!-- Ambient animated background blobs -->
+    <div class="bg-shape shape-1"></div>
+    <div class="bg-shape shape-2"></div>
+
+    <!-- Flash Messages -->
+    {% include 'includes/_messages.html' %}
+
+    <div class="auth-container">
+        <div class="auth-header">
+            <img src="{% static 'img/logo.png' %}" alt="GlassEntials Logo" class="logo">
+            <h2>Welcome Back</h2>
+            <p>Login to manage your HR operations</p>
+        </div>
+
+
+        <form method="post">
+            {% csrf_token %}
+            
+            <div class="input-group">
+                <label for="username">Username</label>
+                <div class="input-wrapper">
+                    <input type="text" id="username" name="username" class="auth-input" placeholder="Enter your username" required>
+                    <i class="fas fa-user"></i>
+                </div>
+            </div>
+
+            <div class="input-group">
+                <label for="password">Password</label>
+                <div class="input-wrapper">
+                    <input type="password" id="password" name="password" class="auth-input" placeholder="Enter your password" required>
+                    <i class="fas fa-lock"></i>
+                    <i class="fas fa-eye password-toggle" onclick="togglePassword('password', this)" title="Show Password"></i>
+                </div>
+            </div>
+
+            <div class="auth-extras">
+                <label class="remember-me">
+                    <input type="checkbox" name="remember"> Remember me
+                </label>
+                <a href="#" class="forgot-pwd">Forgot password?</a>
+            </div>
+
+            <button type="submit" class="auth-btn">Sign In</button>
+        </form>
+
+        <div class="auth-footer">
+            Don't have an account? <a href="/register/">Create account</a>
+        </div>
+    </div>
+    <script>
+        function togglePassword(inputId, iconElement) {
+            const input = document.getElementById(inputId);
+            if (input.type === 'password') {
+                input.type = 'text';
+                iconElement.classList.replace('fa-eye', 'fa-eye-slash');
+            } else {
+                input.type = 'password';
+                iconElement.classList.replace('fa-eye-slash', 'fa-eye');
+            }
+        }
+    </script>
+    <script src="{% static 'js/landing.js' %}?v=1.0"></script>
+</body>
+</html>

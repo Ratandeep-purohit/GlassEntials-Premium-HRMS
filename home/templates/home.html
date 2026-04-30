@@ -1,0 +1,281 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Home | HRMS GlassEntials</title>
+    <link rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Manrope:wght@600;700;800&display=swap">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link rel="stylesheet" href="{% static 'css/landing.css' %}?v=1.2">
+    <link rel="stylesheet" href="{% static 'css/home.css' %}?v=1.2">
+
+</head>
+
+<body>
+
+    <!-- Subtle Background Elements -->
+    <div class="orb orb-1" style="opacity: 0.03; top: -100px; left: -100px;"></div>
+    <div class="orb orb-2" style="opacity: 0.03; bottom: -100px; right: -100px;"></div>
+
+    <!-- Flash Messages -->
+    {% include 'includes/_messages.html' %}
+
+    <!-- Header Navigation -->
+    <header class="platform-header">
+        <a href="{% url 'home' %}" class="brand-section">
+            <img src="{% static 'img/logo.png' %}" alt="GlassEntials Logo" class="brand-logo-img">
+        </a>
+
+        <nav class="nav-center">
+            <a href="{% url 'home' %}" class="nav-pill active"><i class="fas fa-grid-2"></i> Dashboard</a>
+
+            <div class="nav-item-dropdown">
+                <a href="#" class="nav-pill">
+                    <i class="fas fa-users-rectangle"></i> Employees
+                    <i class="fas fa-chevron-down"></i>
+                </a>
+                <div class="dropdown-content">
+                    <a href="{% url 'employee' %}" class="dropdown-item">
+                        <i class="fas fa-list-ul"></i> Employee Dashboard
+                    </a>
+                    <a href="{% url 'department' %}" class="dropdown-item">
+                        <i class="fas fa-sitemap"></i> Departments
+                    </a>
+                    <a href="{% url 'designation' %}" class="dropdown-item">
+                        <i class="fas fa-id-card"></i> Designations
+                    </a>
+                </div>
+            </div>
+            <div class="nav-item-dropdown">
+                <a href="#" class="nav-pill">
+                    <i class="fas fa-fingerprint"></i> Attendance
+                    <i class="fas fa-chevron-down"></i>
+                </a>
+                <div class="dropdown-content">
+                    <a href="#" class="dropdown-item">
+                        <i class="fas fa-list-ul"></i> Attendance Dashboard
+                    </a>
+                    <a href="{% url 'create_shift' %}" class="dropdown-item">
+                        <i class="fas fa-sitemap"></i> Create Shift
+                    </a>
+                    <a href="{% url 'assign_shift' %}" class="dropdown-item">
+                        <i class="fas fa-id-card"></i> Assign Shift
+                    </a>
+                </div>
+            </div>
+            <div class="nav-item-dropdown">
+                <a href="#" class="nav-pill">
+                    <i class="fas fa-calendar-alt"></i> Leaves
+                    <i class="fas fa-chevron-down"></i>
+                </a>
+                <div class="dropdown-content">
+                    <a href="#" class="dropdown-item">
+                        <i class="fas fa-list-ul"></i> Leave Dashboard
+                    </a>
+                    <a href="#" class="dropdown-item">
+                        <i class="fas fa-sitemap"></i> Leave Balance
+                    </a>
+                    <a href="#" class="dropdown-item">
+                        <i class="fas fa-id-card"></i> Leave Policy
+                    </a>
+                </div>
+            </div>
+            <div class="nav-item-dropdown">
+                <a href="#" class="nav-pill">
+                    <i class="fas fa-receipt"></i> Payroll
+                    <i class="fas fa-chevron-down"></i>
+                </a>
+                <div class="dropdown-content">
+                    <a href="{% url 'payroll' %}" class="dropdown-item">
+                        <i class="fas fa-list-ul"></i> Payroll Dashboard
+                    </a>
+                    <a href="#" class="dropdown-item">
+                        <i class="fas fa-sitemap"></i> Generate Payroll
+                    </a>
+                    <a href="#" class="dropdown-item">
+                        <i class="fas fa-id-card"></i> Payroll History
+                    </a>
+                </div>
+            </div>
+            <a href="#" class="nav-pill"><i class="fas fa-briefcase"></i> More</a>
+        </nav>
+
+        <div class="header-right">
+            <div class="action-icon">
+                <i class="fas fa-search"></i>
+            </div>
+            <div class="action-icon">
+                <i class="fas fa-bell"></i>
+                <div
+                    style="position: absolute; top: 10px; right: 10px; width: 8px; height: 8px; background: #ef4444; border-radius: 50%; border: 2px solid #fff;">
+                </div>
+            </div>
+
+            <div class="profile-trigger">
+                <div class="avatar-box">
+                    {{ request.user.username|slice:":1"|upper }}
+                </div>
+                <span class="user-name">{{ request.user.username }}</span>
+                <i class="fas fa-chevron-down" style="font-size: 10px; color: var(--text-secondary);"></i>
+            </div>
+        </div>
+    </header>
+
+    <!-- App Content -->
+    <main class="workspace">
+
+        <!-- Welcome Hero -->
+        <section class="hero-banner">
+            <div class="hero-text">
+                <h1>Welcome back, {{ request.user.username }}!</h1>
+                <!--Real date and day-->
+                <p> {{ today_date }} — Your Origination Code is <span
+                        style="font-weight:800">{{origination_code}}</span>
+                </p>
+            </div>
+
+            <div class="clock-in-card">
+                <div class="timer-info">
+                    <span class="timer-val">09:12 AM</span>
+                    <span class="timer-label">Punch In Time</span>
+                </div>
+                <button class="punch-btn">Clock Out</button>
+            </div>
+        </section>
+
+        <!-- KPI Stat Grid -->
+        <section class="stat-grid">
+            <div class="stat-card">
+                <div class="stat-header">
+                    <div class="stat-icon" style="background: rgba(37, 99, 235, 0.08); color: #2563eb;">
+                        <i class="fas fa-users"></i>
+                    </div>
+                </div>
+                <div class="val-primary">{{ user_count }}</div>
+                <div class="label-primary">Total Workforce</div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-header">
+                    <div class="stat-icon" style="background: rgba(34, 197, 94, 0.08); color: #16a34a;">
+                        <i class="fas fa-user-check"></i>
+                    </div>
+                </div>
+                <div class="val-primary">{{ present_today }}</div>
+                <div class="label-primary">Present Today</div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-header">
+                    <div class="stat-icon" style="background: rgba(245, 158, 11, 0.08); color: #d97706;">
+                        <i class="fas fa-plane-departure"></i>
+                    </div>
+                </div>
+                <div class="val-primary">{{ pending_leaves }}</div>
+                <div class="label-primary">Pending Leaves</div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-header">
+                    <div class="stat-icon" style="background: rgba(124, 58, 237, 0.08); color: #7c3aed;">
+                        <i class="fas fa-receipt"></i>
+                    </div>
+                </div>
+                <div class="val-primary">$0</div>
+                <div class="label-primary">Next Payout</div>
+            </div>
+        </section>
+
+
+        <!-- Dynamic Content Bento -->
+        <div class="bento-grid">
+
+            <!-- Announcements -->
+            <div class="bento-card">
+                <div class="bento-header">
+                    <h2 class="bento-title">Announcements</h2>
+                    <a href="#" class="action-link">View all &rarr;</a>
+                </div>
+
+                <div class="announce-item">
+                    <span class="item-tag">Company News</span>
+                    <h3 class="item-h">New Office Health & Safety Guidelines for 2026</h3>
+                    <div class="item-meta">Posted 2 days ago · HR Department</div>
+                </div>
+
+                <div class="announce-item">
+                    <span class="item-tag" style="background: rgba(124, 58, 237, 0.1); color: #7c3aed;">Policy</span>
+                    <h3 class="item-h">Updated Work-from-Home Policy for May</h3>
+                    <div class="item-meta">Posted yesterday · Operations</div>
+                </div>
+
+                <div class="announce-item">
+                    <span class="item-tag" style="background: rgba(245, 158, 11, 0.1); color: #d97706;">Event</span>
+                    <h3 class="item-h">Annual Team Offsite: Save the Date!</h3>
+                    <div class="item-meta">Posted 4 hours ago · Culture Team</div>
+                </div>
+            </div>
+
+            <!-- Side Bento Column -->
+            <div style="display: flex; flex-direction: column; gap: 32px;">
+
+                <!-- Quick Directory -->
+                <div class="bento-card" style="padding: 24px;">
+                    <div class="bento-header">
+                        <h2 class="bento-title">Active Now</h2>
+                    </div>
+                    <div class="compact-list">
+                        {% for emp in recent_employees %}
+                        <a href="{% url 'view_employee' emp.pk %}" class="compact-item"
+                            style="text-decoration: none; color: inherit; transition: transform 0.2s ease;"
+                            onmouseover="this.style.transform='translateX(4px)'"
+                            onmouseout="this.style.transform='translateX(0)'">
+                            <div class="user-mini">
+                                {% if emp.profile_img %}
+                                <img src="{{ emp.profile_img.url }}"
+                                    style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">
+                                {% else %}
+                                {{ emp.first_name|slice:":1"|upper }}
+                                {% endif %}
+                            </div>
+                            <div class="user-d">
+                                <span class="user-n">{{ emp.first_name }} {{ emp.last_name }}</span>
+                                <span class="user-s">{{ emp.designation.name|default:"--" }}</span>
+                            </div>
+                            <span class="status-pill">Active</span>
+                        </a>
+                        {% empty %}
+                        <div style="text-align: center; padding: 20px; color: var(--text-secondary); font-size: 13px;">
+                            No active employees found
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <!-- Personal Focus -->
+                <div class="bento-card" style="background: var(--accent); color: #fff; padding: 24px;">
+                    <h2 class="bento-title" style="color: #fff; margin-bottom: 12px;">Your Payslip</h2>
+                    <p style="font-size: 13px; opacity: 0.8; margin-bottom: 20px;">Your latest payslip for March 2026 is
+                        now available for download.</p>
+                    <a href="#"
+                        style="background: #fff; color: var(--accent); text-decoration: none; padding: 10px 18px; border-radius: 10px; font-weight: 700; font-size: 13px; display: inline-block;">Download
+                        PDF</a>
+                </div>
+            </div>
+
+        </div>
+
+    </main>
+
+    <footer
+        style="margin-top: 60px; padding: 32px 0; border-top: 1px solid var(--border-light); text-align: center; color: var(--text-secondary); font-size: 13px;">
+        &copy; 2026 GlassEntials Premium HRMS · Platform Version 4.0.2
+    </footer>
+
+    <script src="{% static 'js/landing.js' %}?v=1.0"></script>
+</body>
+
+</html>

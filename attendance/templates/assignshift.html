@@ -1,0 +1,351 @@
+{% load static%}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Assign Shift | HRMS GlassEntials</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Manrope:wght@600;700;800&display=swap">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link rel="stylesheet" href="{% static 'css/landing.css' %}?v=1.2">
+    <link rel="stylesheet" href="{% static 'css/home.css' %}?v=1.2">
+    <link rel="stylesheet" href="{% static 'css/dashboard.css' %}?v=1.2">
+    <style>
+        .assignment-name-cell {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .assignment-name-text {
+            font-weight: 700;
+            color: var(--text-main);
+            display: block;
+        }
+
+        .assignment-id-text {
+            font-size: 11px;
+            color: var(--text-secondary);
+            margin-top: 2px;
+        }
+
+        .assignment-name-col {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .assignment-icon {
+            width: 38px;
+            height: 38px;
+            border-radius: 10px;
+            background: var(--accent-muted);
+            color: var(--accent);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+        }
+
+        .shift-badge {
+            display: inline-block;
+            padding: 6px 12px;
+            background: rgba(37, 99, 235, 0.05);
+            color: var(--accent);
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: 600;
+            max-width: 200px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .empty-state {
+            padding: 60px 0;
+            text-align: center;
+        }
+
+        .empty-icon {
+            font-size: 48px;
+            color: var(--text-secondary);
+            opacity: 0.2;
+            margin-bottom: 16px;
+        }
+    </style>
+</head>
+
+<body>
+    <!--Flash Messages Toast-->
+    {% include 'includes/_messages.html' %}
+    <!--Subtle Background Elements-->
+    <div class="orb orb-1" style="opacity: 0.03;top:-100px;left:-100px;"></div>
+    <div class="orb orb-2" style="opacity: 0.03;bottom:-100px;right:-100px;"></div>
+    
+    <!--Header Navigation-->
+    <header class="platform-header">
+        <a href="{% url 'home' %}" class="brand-section">
+            <img src="{% static 'img/logo.png' %}" alt="GlassEntials Logo" class="brand-logo-img">
+        </a>
+
+        <nav class="nav-center">
+            <a href="{% url 'home' %}" class="nav-pill"><i class="fas fa-grid-2"></i> Dashboard</a>
+
+            <div class="nav-item-dropdown">
+                <a href="#" class="nav-pill">
+                    <i class="fas fa-users-rectangle"></i> Employees
+                    <i class="fas fa-chevron-down"></i>
+                </a>
+                <div class="dropdown-content">
+                    <a href="{% url 'employee' %}" class="dropdown-item">
+                        <i class="fas fa-list-ul"></i> Employee Dashboard
+                    </a>
+                    <a href="{% url 'department' %}" class="dropdown-item">
+                        <i class="fas fa-sitemap"></i> Departments
+                    </a>
+                    <a href="{% url 'designation' %}" class="dropdown-item">
+                        <i class="fas fa-id-card"></i> Designations
+                    </a>
+                </div>
+            </div>
+            <div class="nav-item-dropdown">
+                <a href="#" class="nav-pill active">
+                    <i class="fas fa-fingerprint"></i> Attendance
+                    <i class="fas fa-chevron-down"></i>
+                </a>
+                <div class="dropdown-content">
+                    <a href="#" class="dropdown-item">
+                        <i class="fas fa-list-ul"></i> Attendance Dashboard
+                    </a>
+                    <a href="{% url 'create_shift' %}" class="dropdown-item">
+                        <i class="fas fa-sitemap"></i> Create Shift
+                    </a>
+                    <a href="{% url 'assign_shift' %}" class="dropdown-item">
+                        <i class="fas fa-id-card"></i> Assign Shift
+                    </a>
+                </div>
+            </div>
+            <div class="nav-item-dropdown">
+                <a href="#" class="nav-pill">
+                    <i class="fas fa-calendar-alt"></i> Leaves
+                    <i class="fas fa-chevron-down"></i>
+                </a>
+                <div class="dropdown-content">
+                    <a href="#" class="dropdown-item">
+                        <i class="fas fa-list-ul"></i> Leave Dashboard
+                    </a>
+                    <a href="#" class="dropdown-item">
+                        <i class="fas fa-sitemap"></i> Leave Balance
+                    </a>
+                    <a href="#" class="dropdown-item">
+                        <i class="fas fa-id-card"></i> Leave Policy
+                    </a>
+                </div>
+            </div>
+            <div class="nav-item-dropdown">
+                <a href="#" class="nav-pill">
+                    <i class="fas fa-receipt"></i> Payroll
+                    <i class="fas fa-chevron-down"></i>
+                </a>
+                <div class="dropdown-content">
+                    <a href="{% url 'payroll' %}" class="dropdown-item">
+                        <i class="fas fa-list-ul"></i> Payroll Dashboard
+                    </a>
+                    <a href="#" class="dropdown-item">
+                        <i class="fas fa-sitemap"></i> Generate Payroll
+                    </a>
+                    <a href="#" class="dropdown-item">
+                        <i class="fas fa-id-card"></i> Payroll History
+                    </a>
+                </div>
+            </div>
+            <a href="#" class="nav-pill"><i class="fas fa-briefcase"></i> More</a>
+        </nav>
+
+        <div class="header-right">
+            <div class="action-icon">
+                <i class="fas fa-search"></i>
+            </div>
+            <div class="action-icon">
+                <i class="fas fa-bell"></i>
+                <div
+                    style="position: absolute; top: 10px; right: 10px; width: 8px; height: 8px; background: #ef4444; border-radius: 50%; border: 2px solid #fff;">
+                </div>
+            </div>
+
+            <div class="profile-trigger">
+                <div class="avatar-box">
+                    {{ request.user.username|slice:":1"|upper }}
+                </div>
+                <span class="user-name">{{ request.user.username }}</span>
+                <i class="fas fa-chevron-down" style="font-size: 10px; color: var(--text-secondary);"></i>
+            </div>
+        </div>
+    </header>
+
+    <main class="workspace">
+        <div class="page-header" style="margin-bottom: 32px;">
+            <div>
+                <h1 class="page-title">Assign Shifts</h1>
+                <p class="page-subtitle">Map employees to their respective working shifts</p>
+            </div>
+        </div>
+
+        <div class="bento-grid" style="display: flex; gap: 24px;">
+            <!-- Left Side: Assign Shift Form -->
+            <div class="bento-card" style="flex: 1; max-width: 400px; height: fit-content;">
+                <div class="card-header">
+                    <h2 class="card-title">
+                        <i class="fas {% if edit_assignment %}fa-edit{% else %}fa-user-clock{% endif %}"></i>
+                        {% if edit_assignment %}Edit{% else %}Assign{% endif %} Shift
+                    </h2>
+                </div>
+                <form method="POST">
+                    {% csrf_token %}
+                    <div class="form-group">
+                        <label class="form-label">Employee</label>
+                        <select name="employee_id" class="form-input" required>
+                            <option value="">Select Employee...</option>
+                            {% for emp in employees %}
+                            <option value="{{ emp.id }}" {% if edit_assignment.employee.id == emp.id %}selected{% endif %}>
+                                {{ emp.first_name }} {{ emp.last_name }} ({{ emp.employee_id|default:emp.id }})
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Shift</label>
+                        <select name="shift_id" class="form-input" required>
+                            <option value="">Select Shift...</option>
+                            {% for shift in shifts %}
+                            <option value="{{ shift.id }}" {% if edit_assignment.shift.id == shift.id %}selected{% endif %}>
+                                {{ shift.name }} ({{ shift.start_time|time:'g:i A' }} - {{ shift.end_time|time:'g:i A' }})
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Effective From</label>
+                        <input type="date" name="effective_from" class="form-input"
+                            value="{{ edit_assignment.effective_from|date:'Y-m-d' }}" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Effective To</label>
+                        <input type="date" name="effective_to" class="form-input"
+                            value="{{ edit_assignment.effective_to|date:'Y-m-d'|default:'' }}">
+                        <p style="font-size: 11px; color: var(--text-secondary); margin-top: 6px;">Leave blank if the shift assignment is ongoing.</p>
+                    </div>
+
+                    {% if edit_assignment %}
+                    <div style="display: flex; gap: 12px; margin-top: 24px;">
+                        <button type="submit" class="btn-primary" style="flex: 2;">
+                            <i class="fas fa-save"></i> Update
+                        </button>
+                        <a href="{% url 'assign_shift' %}" class="action-btn"
+                            style="flex: 1; height: 50px; border-radius: 14px;">
+                            <i class="fas fa-times"></i>
+                        </a>
+                    </div>
+                    {% else %}
+                    <button type="submit" class="btn-primary" style="margin-top: 24px;">
+                        <i class="fas fa-check"></i> Assign Shift
+                    </button>
+                    {% endif %}
+                </form>
+            </div>
+
+            <!-- Right Side: Shift Assignments Table -->
+            <div class="card table-card" style="flex: 2; background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(10px);">
+                <div class="card-header">
+                    <h2 class="card-title" style="margin: 20px;">Active Assignments</h2>
+                </div>
+                <div class="table-responsive">
+                    <table class="premium-table">
+                        <thead>
+                            <tr>
+                                <th style="text-align: left;">Employee</th>
+                                <th style="text-align: left;">Assigned Shift</th>
+                                <th style="text-align: left;">Effective Period</th>
+                                <th style="text-align: right;">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for assignment in assignments %}
+                            <tr>
+                                <td>
+                                    <div class="assignment-name-cell">
+                                        <div class="assignment-icon">
+                                            {% if assignment.employee.profile_img %}
+                                            <img src="{{ assignment.employee.profile_img.url }}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 10px;">
+                                            {% else %}
+                                            {{ assignment.employee.first_name|slice:":1"|upper }}
+                                            {% endif %}
+                                        </div>
+                                        <div class="assignment-name-col">
+                                            <span class="assignment-name-text">{{ assignment.employee.first_name }} {{ assignment.employee.last_name }}</span>
+                                            <span class="assignment-id-text">EMP-{{ assignment.employee.id }}</span>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="shift-badge">
+                                        <i class="fas fa-business-time"></i> {{ assignment.shift.name }}
+                                    </span>
+                                    <div style="font-size: 11px; color: var(--text-secondary); margin-top: 4px; margin-left: 4px;">
+                                        {{ assignment.shift.start_time|time:"g:i A" }} - {{ assignment.shift.end_time|time:"g:i A" }}
+                                    </div>
+                                </td>
+                                <td>
+                                    <div style="font-size: 13px; font-weight: 600; color: var(--text-main);">
+                                        {{ assignment.effective_from|date:"M d, Y" }}
+                                    </div>
+                                    <div style="font-size: 11px; color: var(--text-secondary); margin-top: 2px;">
+                                        {% if assignment.effective_to %}
+                                        to {{ assignment.effective_to|date:"M d, Y" }}
+                                        {% else %}
+                                        Ongoing
+                                        {% endif %}
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="action-group" style="justify-content: flex-end;">
+                                        <a href="?edit={{ assignment.id }}" class="action-btn" title="Edit">
+                                            <i class="fas fa-pen-to-square"></i>
+                                        </a>
+                                        <form method="POST" action="?delete={{ assignment.id }}" style="display:inline;"
+                                            onsubmit="return confirm('Are you sure you want to remove this shift assignment?');">
+                                            {% csrf_token %}
+                                            <button type="submit" class="action-btn delete" title="Delete">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="4">
+                                    <div class="empty-state">
+                                        <div class="empty-icon">
+                                            <i class="fas fa-calendar-times"></i>
+                                        </div>
+                                        <h3 style="margin: 0; color: var(--text-main);">No Assignments Found</h3>
+                                        <p style="margin: 8px 0 0; color: var(--text-secondary); font-size: 14px;">
+                                            Assign shifts to employees to see them here.</p>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </main>
+</body>
+</html>

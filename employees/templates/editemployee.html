@@ -1,0 +1,484 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Edit Employee | {{ employee.first_name }} {{ employee.last_name }}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Manrope:wght@600;700;800&display=swap">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link rel="stylesheet" href="{% static 'css/landing.css' %}?v=1.3">
+    <link rel="stylesheet" href="{% static 'css/home.css' %}?v=1.3">
+    <link rel="stylesheet" href="{% static 'css/dashboard.css' %}?v=1.3">
+    
+    <style>
+        .btn-sm {
+            padding: 6px 14px !important;
+            font-size: 13px !important;
+            border-radius: 10px !important;
+            height: auto !important;
+            width: auto !important;
+            gap: 6px !important;
+            min-height: 36px !important;
+            text-decoration: none !important;
+        }
+    </style>
+</head>
+
+<body>
+    <!--Subtle Background Elements-->
+    <div class="orb orb-1" style="opacity: 0.03;top:-100px;left:-100px;"></div>
+    <div class="orb orb-2" style="opacity: 0.03;bottom:-100px;right:-100px;"></div>
+    
+    <!-- Flash Messages Toast -->
+    {% include 'includes/_messages.html' %}
+
+    <!--Header Navigation-->
+    <header class="platform-header">
+        <a href="{% url 'home' %}" class="brand-section">
+            <img src="{% static 'img/logo.png' %}" alt="GlassEntials Logo" class="brand-logo-img">
+        </a>
+
+        <nav class="nav-center">
+            <a href="{% url 'home' %}" class="nav-pill"><i class="fas fa-grid-2"></i> Dashboard</a>
+
+            <div class="nav-item-dropdown">
+                <a href="#" class="nav-pill active">
+                    <i class="fas fa-users-rectangle"></i> Employees
+                    <i class="fas fa-chevron-down"></i>
+                </a>
+                <div class="dropdown-content">
+                    <a href="{% url 'employee' %}" class="dropdown-item">
+                        <i class="fas fa-list-ul"></i> Employee Dashboard
+                    </a>
+                    <a href="{% url 'department' %}" class="dropdown-item">
+                        <i class="fas fa-sitemap"></i> Departments
+                    </a>
+                    <a href="{% url 'designation' %}" class="dropdown-item">
+                        <i class="fas fa-id-card"></i> Designations
+                    </a>
+                </div>
+            </div>
+            <div class="nav-item-dropdown">
+                <a href="#" class="nav-pill">
+                    <i class="fas fa-fingerprint"></i> Attendance
+                    <i class="fas fa-chevron-down"></i>
+                </a>
+                <div class="dropdown-content">
+                    <a href="#" class="dropdown-item">
+                        <i class="fas fa-list-ul"></i> Attendance Dashboard
+                    </a>
+                    <a href="{% url 'create_shift' %}" class="dropdown-item">
+                        <i class="fas fa-sitemap"></i> Create Shift
+                    </a>
+                    <a href="{% url 'assign_shift' %}" class="dropdown-item">
+                        <i class="fas fa-id-card"></i> Assign Shift
+                    </a>
+                </div>
+            </div>
+            <div class="nav-item-dropdown">
+                <a href="#" class="nav-pill">
+                    <i class="fas fa-calendar-alt"></i> Leaves
+                    <i class="fas fa-chevron-down"></i>
+                </a>
+                <div class="dropdown-content">
+                    <a href="#" class="dropdown-item">
+                        <i class="fas fa-list-ul"></i> Leave Dashboard
+                    </a>
+                    <a href="#" class="dropdown-item">
+                        <i class="fas fa-sitemap"></i> Leave Balance
+                    </a>
+                    <a href="#" class="dropdown-item">
+                        <i class="fas fa-id-card"></i> Leave Policy
+                    </a>
+                </div>
+            </div>
+            <div class="nav-item-dropdown">
+                <a href="#" class="nav-pill">
+                    <i class="fas fa-receipt"></i> Payroll
+                    <i class="fas fa-chevron-down"></i>
+                </a>
+                <div class="dropdown-content">
+                    <a href="{% url 'payroll' %}" class="dropdown-item">
+                        <i class="fas fa-list-ul"></i> Payroll Dashboard
+                    </a>
+                    <a href="#" class="dropdown-item">
+                        <i class="fas fa-sitemap"></i> Generate Payroll
+                    </a>
+                    <a href="#" class="dropdown-item">
+                        <i class="fas fa-id-card"></i> Payroll History
+                    </a>
+                </div>
+            </div>
+            <a href="#" class="nav-pill"><i class="fas fa-briefcase"></i> More</a>
+        </nav>
+
+        <div class="header-right">
+            <div class="action-icon">
+                <i class="fas fa-search"></i>
+            </div>
+            <div class="action-icon">
+                <i class="fas fa-bell"></i>
+                <div
+                    style="position: absolute; top: 10px; right: 10px; width: 8px; height: 8px; background: #ef4444; border-radius: 50%; border: 2px solid #fff;">
+                </div>
+            </div>
+
+            <div class="profile-trigger">
+                <div class="avatar-box">
+                    {{ request.user.username|slice:":1"|upper }}
+                </div>
+                <span class="user-name">{{ request.user.username }}</span>
+                <i class="fas fa-chevron-down" style="font-size: 10px; color: var(--text-secondary);"></i>
+            </div>
+        </div>
+    </header>
+
+    <main class="workspace">
+        <div class="page-header flex-header">
+            <div class="header-main-content">
+                <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 8px;">
+                    <a href="{% url 'view_employee' employee.pk %}" class="action-btn"
+                        style="width: 32px; height: 32px; border-radius: 8px;">
+                        <i class="fas fa-arrow-left" style="font-size: 12px;"></i>
+                    </a>
+                    <span style="color: var(--text-secondary); font-weight: 600; font-size: 14px;">Back to Profile</span>
+                </div>
+                <h1>Edit Employee Profile</h1>
+                <p>Update the information for {{ employee.first_name }} {{ employee.last_name }}</p>
+            </div>
+        </div>
+
+        <form method="POST" enctype="multipart/form-data">
+            {% csrf_token %}
+
+            <!-- Section 1: Basic Information -->
+            <div class="card" style="margin-bottom: 32px;">
+                <h3 class="section-title"><i class="fas fa-user"></i> Basic Information</h3>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label class="form-label">First Name</label>
+                        <input type="text" name="first_name" class="form-input" value="{{ employee.first_name }}" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Last Name</label>
+                        <input type="text" name="last_name" class="form-input" value="{{ employee.last_name }}" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Employee ID</label>
+                        <input type="text" name="employee_id" class="form-input" value="{{ employee.employee_id }}" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Email Address</label>
+                        <input type="email" name="email" class="form-input" value="{{ employee.email }}" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Phone Number</label>
+                        <input type="text" name="phone_number" class="form-input" value="{{ employee.phone_number }}" required>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Section 2: Personal Details -->
+            <div class="card" style="margin-bottom: 32px;">
+                <h3 class="section-title"><i class="fas fa-info-circle"></i> Personal Details</h3>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label class="form-label">Date of Birth</label>
+                        <input type="date" name="date_of_birth" class="form-input" value="{{ employee.date_of_birth|date:'Y-m-d' }}">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Gender</label>
+                        <select name="gender" class="form-input">
+                            <option value="">Select Gender</option>
+                            <option value="Male" {% if employee.gender == 'Male' %}selected{% endif %}>Male</option>
+                            <option value="Female" {% if employee.gender == 'Female' %}selected{% endif %}>Female</option>
+                            <option value="Other" {% if employee.gender == 'Other' %}selected{% endif %}>Other</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Marital Status</label>
+                        <select name="marital_status" class="form-input">
+                            <option value="">Select Status</option>
+                            <option value="Single" {% if employee.marital_status == 'Single' %}selected{% endif %}>Single</option>
+                            <option value="Married" {% if employee.marital_status == 'Married' %}selected{% endif %}>Married</option>
+                            <option value="Divorced" {% if employee.marital_status == 'Divorced' %}selected{% endif %}>Divorced</option>
+                            <option value="Widowed" {% if employee.marital_status == 'Widowed' %}selected{% endif %}>Widowed</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Blood Group</label>
+                        <select name="blood_group" class="form-input">
+                            <option value="">Select Blood Group</option>
+                            <option value="A+" {% if employee.blood_group == 'A+' %}selected{% endif %}>A+</option>
+                            <option value="A-" {% if employee.blood_group == 'A-' %}selected{% endif %}>A-</option>
+                            <option value="B+" {% if employee.blood_group == 'B+' %}selected{% endif %}>B+</option>
+                            <option value="B-" {% if employee.blood_group == 'B-' %}selected{% endif %}>B-</option>
+                            <option value="AB+" {% if employee.blood_group == 'AB+' %}selected{% endif %}>AB+</option>
+                            <option value="AB-" {% if employee.blood_group == 'AB-' %}selected{% endif %}>AB-</option>
+                            <option value="O+" {% if employee.blood_group == 'O+' %}selected{% endif %}>O+</option>
+                            <option value="O-" {% if employee.blood_group == 'O-' %}selected{% endif %}>O-</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Nationality</label>
+                        <input type="text" name="nationality" class="form-input" value="{{ employee.nationality|default:'Indian' }}">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Section 3: Current Address -->
+            <div class="card" style="margin-bottom: 32px;">
+                <h3 class="section-title"><i class="fas fa-map-marker-alt"></i> Current Address</h3>
+                <div class="form-group">
+                    <label class="form-label">Address Lane</label>
+                    <textarea name="current_address" class="form-input" rows="2"
+                        placeholder="Street, Apartment, Suite...">{{ employee.current_address }}</textarea>
+                </div>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label class="form-label">City</label>
+                        <input type="text" name="current_city" class="form-input" value="{{ employee.current_city|default:'' }}">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">State</label>
+                        <input type="text" name="current_state" class="form-input" value="{{ employee.current_state|default:'' }}">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Country</label>
+                        <input type="text" name="current_country" class="form-input" value="{{ employee.current_country|default:'India' }}">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Pincode</label>
+                        <input type="text" name="current_pincode" class="form-input" value="{{ employee.current_pincode|default:'' }}">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Section 4: Permanent Address -->
+            <div class="card" style="margin-bottom: 32px;">
+                <div
+                    style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-light); margin-bottom: 24px; padding-bottom: 12px;">
+                    <h3 class="section-title" style="border: none; margin: 0; padding: 0;"><i class="fas fa-home"></i>
+                        Permanent Address</h3>
+                    <label
+                        style="display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 700; color: var(--text-secondary); cursor: pointer;">
+                        <input type="checkbox" id="same_as_current"
+                            style="width: 16px; height: 16px; accent-color: var(--accent);">
+                        Same as Current Address
+                    </label>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Address Lane</label>
+                    <textarea name="permanent_address" class="form-input" rows="2"
+                        placeholder="Street, Apartment, Suite...">{{ employee.permanent_address }}</textarea>
+                </div>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label class="form-label">City</label>
+                        <input type="text" name="permanent_city" class="form-input" value="{{ employee.permanent_city|default:'' }}">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">State</label>
+                        <input type="text" name="permanent_state" class="form-input" value="{{ employee.permanent_state|default:'' }}">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Country</label>
+                        <input type="text" name="permanent_country" class="form-input" value="{{ employee.permanent_country|default:'India' }}">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Pincode</label>
+                        <input type="text" name="permanent_pincode" class="form-input" value="{{ employee.permanent_pincode|default:'' }}">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Section 5: Work & Employment -->
+            <div class="card" style="margin-bottom: 32px;">
+                <h3 class="section-title"><i class="fas fa-briefcase"></i> Work & Employment</h3>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label class="form-label">Joining Date</label>
+                        <input type="date" name="joining_date" class="form-input" value="{{ employee.joining_date|date:'Y-m-d' }}">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Employment Type</label>
+                        <select name="employment_type" class="form-input">
+                            <option value="">Select Type</option>
+                            <option value="Full Time" {% if employee.employment_type == 'Full Time' %}selected{% endif %}>Full Time</option>
+                            <option value="Part Time" {% if employee.employment_type == 'Part Time' %}selected{% endif %}>Part Time</option>
+                            <option value="Contract" {% if employee.employment_type == 'Contract' %}selected{% endif %}>Contract</option>
+                            <option value="Temporary" {% if employee.employment_type == 'Temporary' %}selected{% endif %}>Temporary</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Department</label>
+                        <select name="department" class="form-input">
+                            <option value="">Select Department</option>
+                            {% for dept in departments %}
+                            <option value="{{ dept.pk }}" {% if employee.department_id == dept.pk %}selected{% endif %}>{{ dept.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Designation</label>
+                        <select name="designation" class="form-input">
+                            <option value="">Select Designation</option>
+                            {% for desig in designations %}
+                            <option value="{{ desig.pk }}" {% if employee.designation_id == desig.pk %}selected{% endif %}>{{ desig.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Reporting Manager</label>
+                        <select name="manager" class="form-input">
+                            <option value="">Select Manager</option>
+                            {% for manager in managers %}
+                            <option value="{{ manager.pk }}" {% if employee.manager_id == manager.pk %}selected{% endif %}>{{ manager.first_name }} {{ manager.last_name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Work Location</label>
+                        <input type="text" name="work_location" class="form-input" value="{{ employee.work_location|default:'' }}">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Section 6: Financial Information -->
+            <div class="card" style="margin-bottom: 32px;">
+                <h3 class="section-title"><i class="fas fa-wallet"></i> Financial Information</h3>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label class="form-label">PAN Number</label>
+                        <input type="text" name="pan_number" class="form-input" maxlength="10" value="{{ employee.pan_number|default:'' }}">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Aadhaar Number</label>
+                        <input type="text" name="aadhaar_number" class="form-input" maxlength="12" value="{{ employee.aadhaar_number|default:'' }}">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Bank Name</label>
+                        <input type="text" name="bank_name" class="form-input" value="{{ employee.bank_name|default:'' }}">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Account Number</label>
+                        <input type="text" name="bank_account_number" class="form-input" value="{{ employee.bank_account_number|default:'' }}">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">IFSC Code</label>
+                        <input type="text" name="ifsc_code" class="form-input" value="{{ employee.ifsc_code|default:'' }}">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Section 7: Emergency Contact -->
+            <div class="card" style="margin-bottom: 32px;">
+                <h3 class="section-title"><i class="fas fa-phone-alt"></i> Emergency Contact</h3>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label class="form-label">Contact Name</label>
+                        <input type="text" name="emergency_contact_name" class="form-input" value="{{ employee.emergency_contact_name|default:'' }}">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Relationship</label>
+                        <input type="text" name="emergency_contact_relationship" class="form-input" value="{{ employee.emergency_contact_relationship|default:'' }}">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Contact Number</label>
+                        <input type="text" name="emergency_contact_number" class="form-input" value="{{ employee.emergency_contact_number|default:'' }}">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Section 8: Documents & Profile -->
+            <div class="card" style="margin-bottom: 32px;">
+                <h3 class="section-title"><i class="fas fa-file-alt"></i> Documents & Profile Photo</h3>
+                <p style="font-size: 13px; color: var(--text-secondary); margin-bottom: 16px;">Note: Leave file inputs empty if you do not wish to update existing files.</p>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label class="form-label">Profile Image</label>
+                        {% if employee.profile_img %}
+                        <div style="font-size: 12px; margin-bottom: 4px; color: #2563eb;"><a href="{{ employee.profile_img.url }}" target="_blank">Current Image</a></div>
+                        {% endif %}
+                        <input type="file" name="profile_img" class="form-input" accept="image/*">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Resume / CV</label>
+                        {% if employee.resume %}
+                        <div style="font-size: 12px; margin-bottom: 4px; color: #2563eb;"><a href="{{ employee.resume.url }}" target="_blank">Current Resume</a></div>
+                        {% endif %}
+                        <input type="file" name="resume" class="form-input">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Offer Letter</label>
+                        {% if employee.offer_letter %}
+                        <div style="font-size: 12px; margin-bottom: 4px; color: #2563eb;"><a href="{{ employee.offer_letter.url }}" target="_blank">Current Letter</a></div>
+                        {% endif %}
+                        <input type="file" name="offer_letter" class="form-input">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Aadhaar Card (PDF)</label>
+                        {% if employee.aadhaar_card %}
+                        <div style="font-size: 12px; margin-bottom: 4px; color: #2563eb;"><a href="{{ employee.aadhaar_card.url }}" target="_blank">Current Card</a></div>
+                        {% endif %}
+                        <input type="file" name="aadhaar_card" class="form-input">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">PAN Card (PDF)</label>
+                        {% if employee.pan_card %}
+                        <div style="font-size: 12px; margin-bottom: 4px; color: #2563eb;"><a href="{{ employee.pan_card.url }}" target="_blank">Current Card</a></div>
+                        {% endif %}
+                        <input type="file" name="pan_card" class="form-input">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Appointment Letter</label>
+                        {% if employee.appointment_letter %}
+                        <div style="font-size: 12px; margin-bottom: 4px; color: #2563eb;"><a href="{{ employee.appointment_letter.url }}" target="_blank">Current Letter</a></div>
+                        {% endif %}
+                        <input type="file" name="appointment_letter" class="form-input">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Form Actions -->
+            <div style="display: flex; gap: 16px; margin-bottom: 60px;">
+                <button type="submit" class="btn-primary" style="flex: 2; height: 54px;">
+                    <i class="fas fa-check-circle"></i> Update Employee
+                </button>
+                <a href="{% url 'view_employee' employee.pk %}" class="btn-secondary" style="flex: 1; height: 54px; text-align: center; display: flex; align-items: center; justify-content: center;">
+                    <i class="fas fa-times"></i> Cancel
+                </a>
+            </div>
+        </form>
+    </main>
+
+    <footer
+        style="padding: 32px 0; border-top: 1px solid var(--border-light); text-align: center; color: var(--text-secondary); font-size: 13px;">
+        &copy; 2026 GlassEntials Premium HRMS · Platform Version 4.0.2
+    </footer>
+    <script>
+        document.getElementById('same_as_current').addEventListener('change', function () {
+            if (this.checked) {
+                document.getElementsByName('permanent_address')[0].value = document.getElementsByName('current_address')[0].value;
+                document.getElementsByName('permanent_city')[0].value = document.getElementsByName('current_city')[0].value;
+                document.getElementsByName('permanent_state')[0].value = document.getElementsByName('current_state')[0].value;
+                document.getElementsByName('permanent_country')[0].value = document.getElementsByName('current_country')[0].value;
+                document.getElementsByName('permanent_pincode')[0].value = document.getElementsByName('current_pincode')[0].value;
+            } else {
+                document.getElementsByName('permanent_address')[0].value = '';
+                document.getElementsByName('permanent_city')[0].value = '';
+                document.getElementsByName('permanent_state')[0].value = '';
+                document.getElementsByName('permanent_country')[0].value = 'India';
+                document.getElementsByName('permanent_pincode')[0].value = '';
+            }
+        });
+    </script>
+    <script src="{% static 'js/landing.js' %}?v=1.0"></script>
+</body>
+
+</html>
+

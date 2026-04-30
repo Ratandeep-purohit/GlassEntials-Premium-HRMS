@@ -1,0 +1,142 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create Account | HRMS GlassEntials</title>
+    <link rel="stylesheet" href="{% static 'css/auth.css' %}?v=1.1">
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+</head>
+<body class="auth-body">
+
+    <div class="bg-shape shape-1"></div>
+    <div class="bg-shape shape-2"></div>
+
+    <!-- Flash Messages -->
+    {% include 'includes/_messages.html' %}
+
+    <div class="auth-container wide">
+        <div class="auth-header">
+            <img src="{% static 'img/logo.png' %}" alt="GlassEntials Logo" class="logo">
+            <h2>Create Account</h2>
+            <p>Join us to start managing your workforce</p>
+        </div>
+
+
+        <form method="post">
+            {% csrf_token %}
+            
+            <div class="auth-grid">
+                <div class="input-group">
+                    <label for="username">Username</label>
+                    <div class="input-wrapper">
+                        <input type="text" id="username" name="username" class="auth-input" placeholder="Choose a username" required>
+                        <i class="fas fa-user"></i>
+                    </div>
+                </div>
+
+                <div class="input-group">
+                    <label for="email">Email Address</label>
+                    <div class="input-wrapper">
+                        <input type="email" id="email" name="email" class="auth-input" placeholder="name@company.com" required>
+                        <i class="fas fa-envelope"></i>
+                    </div>
+                </div>
+
+                <div class="input-group">
+                    <label for="phone">Phone Number</label>
+                    <div class="input-wrapper">
+                        <input type="text" id="phone" name="phone" class="auth-input" placeholder="+1 (555) 000-0" required>
+                        <i class="fas fa-phone"></i>
+                    </div>
+                </div>
+
+                <div class="input-group">
+                    <label for="organization">Organization Type</label>
+                    <div class="input-wrapper">
+                        <select id="organization" name="organization" class="auth-select" required>
+                            <option value="" disabled selected hidden>Choose Setup</option>
+                            <option value="org1">Create New Organization</option>
+                            <option value="org2">Join Existing Organization</option>
+                        </select>
+                        <i class="fas fa-building"></i>
+                    </div>
+                </div>
+
+                <!-- Dynamic Fields -->
+                <div class="input-group full-width" id="org-name-group" style="display: none;">
+                    <label for="org_name">Organization Name</label>
+                    <div class="input-wrapper">
+                        <input type="text" id="org_name" name="org_name" class="auth-input" placeholder="e.g. Acme Corp">
+                        <i class="fas fa-briefcase"></i>
+                    </div>
+                </div>
+
+                <div class="input-group full-width" id="org-code-group" style="display: none;">
+                    <label for="org_code">Organization Unique Code</label>
+                    <div class="input-wrapper">
+                        <input type="text" id="org_code" name="org_code" class="auth-input" placeholder="e.g. XJ9-321">
+                        <i class="fas fa-key"></i>
+                    </div>
+                </div>
+
+                <div class="input-group full-width">
+                    <label for="password">Password</label>
+                    <div class="input-wrapper">
+                        <input type="password" id="password" name="password" class="auth-input" placeholder="Create a strong password" required>
+                        <i class="fas fa-lock"></i>
+                        <i class="fas fa-eye password-toggle" onclick="togglePassword('password', this)" title="Show Password"></i>
+                    </div>
+                </div>
+
+                <button type="submit" class="auth-btn">Create Account</button>
+            </div>
+        </form>
+
+        <div class="auth-footer">
+            Already have an account? <a href="/login/">Log in here</a>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('organization').addEventListener('change', function() {
+            var orgVal = this.value;
+            var nameGroup = document.getElementById('org-name-group');
+            var codeGroup = document.getElementById('org-code-group');
+            var orgNameInput = document.getElementById('org_name');
+            var orgCodeInput = document.getElementById('org_code');
+            
+            // Hide both initially
+            nameGroup.style.display = 'none';
+            codeGroup.style.display = 'none';
+            
+            // Remove required properties to avoid block on generic submit
+            orgNameInput.required = false;
+            orgCodeInput.required = false;
+
+            if (orgVal === 'org1') {
+                nameGroup.style.display = 'block';
+                orgNameInput.required = true;
+            } else if (orgVal === 'org2') {
+                codeGroup.style.display = 'block';
+                orgCodeInput.required = true;
+            }
+        });
+
+        // Password visibility toggler
+        function togglePassword(inputId, iconElement) {
+            const input = document.getElementById(inputId);
+            if (input.type === 'password') {
+                input.type = 'text';
+                iconElement.classList.replace('fa-eye', 'fa-eye-slash');
+            } else {
+                input.type = 'password';
+                iconElement.classList.replace('fa-eye-slash', 'fa-eye');
+            }
+        }
+    </script>
+    <script src="{% static 'js/landing.js' %}?v=1.0"></script>
+</body>
+</html>

@@ -1,0 +1,582 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description"
+        content="HRMS GlassEntials – The intelligent, all-in-one HR platform for modern businesses. Manage payroll, attendance, leaves, and employees effortlessly.">
+    <title>HRMS GlassEntials | Modern Workforce Management</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Manrope:wght@600;700;800&display=swap">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link rel="stylesheet" href="{% static 'css/landing.css' %}?v=2.0">
+    
+</head>
+
+<body>
+
+    <!-- Canvas for subtle animated particles -->
+    <canvas id="particleCanvas"></canvas>
+
+    <!-- Background orbs -->
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+    <div class="orb orb-3"></div>
+
+    <!-- Django Messages -->
+    {% include 'includes/_messages.html' %}
+
+    <!-- ═══════════════ NAVBAR ═══════════════ -->
+    <header class="navbar" id="navbar">
+        <div class="nav-logo">
+            <img src="{% static 'img/logo.png' %}" alt="Logo" class="logo-img">
+            <span class="logo-badge">HRMS</span>
+        </div>
+
+        <nav class="nav-center" id="navLinks">
+            <a href="#features" class="nav-link">Features</a>
+            <a href="#workflow" class="nav-link">How it works</a>
+            <a href="#about" class="nav-link">About</a>
+            <a href="#testimonials" class="nav-link">Reviews</a>
+            <a href="#faq" class="nav-link">FAQ</a>
+        </nav>
+
+        <div class="nav-right">
+            <a href="/login/" class="btn-ghost">Sign in</a>
+            <a href="/register/" class="btn-pill">Get started <i class="fas fa-arrow-right"></i></a>
+        </div>
+
+        <button class="menu-toggle" id="menuToggle" aria-label="Menu">
+            <span></span><span></span><span></span>
+        </button>
+    </header>
+
+    <!-- ═══════════════ HERO ═══════════════ -->
+    <section class="hero" id="home">
+        <div class="hero-content">
+            <div class="hero-badge reveal">
+                <span class="badge-dot"></span>
+                Next-Generation HR Technology
+            </div>
+
+            <h1 class="hero-h1 reveal" style="transition-delay:.1s">
+                The smarter way to<br>
+                <span class="gradient-text">manage your people</span>
+            </h1>
+
+            <p class="hero-sub reveal" style="transition-delay:.2s">
+                HRMS GlassEntials unifies payroll, attendance, leaves, and employee records into one beautiful,
+                intelligent platform — saving you hours every week.
+            </p>
+
+            <div class="hero-cta reveal" style="transition-delay:.3s">
+                <a href="/register/" class="btn-pill btn-lg">
+                    Start free today <i class="fas fa-arrow-right"></i>
+                </a>
+                <a href="/login/" class="btn-ghost btn-lg">
+                    Sign in
+                </a>
+            </div>
+
+            <div class="hero-trust reveal" style="transition-delay:.4s">
+                <div class="trust-avatars">
+                    <div class="ta ta-1">A</div>
+                    <div class="ta ta-2">B</div>
+                    <div class="ta ta-3">C</div>
+                    <div class="ta ta-4">D</div>
+                    <div class="ta ta-5">+</div>
+                </div>
+                <span>Trusted by <strong>500+ teams</strong> across industries</span>
+            </div>
+        </div>
+
+        <div class="hero-visual reveal" style="transition-delay:.2s">
+            <div class="dashboard-card floating">
+                <div class="db-topbar">
+                    <div class="db-dot red"></div>
+                    <div class="db-dot yellow"></div>
+                    <div class="db-dot green"></div>
+                    <span class="db-title">HRMS Dashboard</span>
+                </div>
+                <img src="{% static 'img/hero-image.jpeg' %}" alt="HRMS Dashboard">
+
+                <!-- Floating chips -->
+                <div class="chip chip-top floating-slow">
+                    <i class="fas fa-arrow-trend-up" style="color:#22c55e;"></i>
+                    <div>
+                        <strong>+40%</strong>
+                        <span>Productivity</span>
+                    </div>
+                </div>
+                <div class="chip chip-bottom floating-fast">
+                    <i class="fas fa-shield-halved" style="color:#3b82f6;"></i>
+                    <div>
+                        <strong>Secured</strong>
+                        <span>AES-256</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ═══════════════ MARQUEE ═══════════════ -->
+    <section class="marquee-section">
+        <p class="marquee-label">POWERING TEAMS AT WORLD-CLASS COMPANIES</p>
+        <div class="marquee-track">
+            <div class="marquee-inner">
+                <!-- SET 1 -->
+                <div class="marquee-item">
+                    <img src="{% static 'img/logos/Google.jpg' %}" alt="Google" onerror="this.style.display='none'">
+                    <span>Google</span>
+                </div>
+                <div class="marquee-item">
+                    <img src="{% static 'img/logos/Microsoft.jpg' %}" alt="Microsoft"
+                        onerror="this.style.display='none'">
+                    <span>Microsoft</span>
+                </div>
+                <div class="marquee-item">
+                    <img src="{% static 'img/logos/Amazon.jpg' %}" alt="Amazon" onerror="this.style.display='none'">
+                    <span>Amazon</span>
+                </div>
+                <div class="marquee-item">
+                    <img src="{% static 'img/logos/Netflix.jpg' %}" alt="Netflix" onerror="this.style.display='none'">
+                    <span>Netflix</span>
+                </div>
+                <div class="marquee-item">
+                    <img src="{% static 'img/logos/Salesforce.jpg' %}" alt="Salesforce"
+                        onerror="this.style.display='none'">
+                    <span>Salesforce</span>
+                </div>
+                <div class="marquee-item">
+                    <img src="{% static 'img/logos/slack.jpg' %}" alt="Slack" onerror="this.style.display='none'">
+                    <span>Slack</span>
+                </div>
+                <div class="marquee-item">
+                    <img src="{% static 'img/logos/Spotify.jpg' %}" alt="Spotify" onerror="this.style.display='none'">
+                    <span>Spotify</span>
+                </div>
+                <div class="marquee-item">
+                    <img src="{% static 'img/logos/Figma.jpg' %}" alt="Figma" onerror="this.style.display='none'">
+                    <span>Figma</span>
+                </div>
+                <div class="marquee-item">
+                    <img src="{% static 'img/logos/Infosys.jpg' %}" alt="Infosys" onerror="this.style.display='none'">
+                    <span>Infosys</span>
+                </div>
+                <div class="marquee-item">
+                    <img src="{% static 'img/logos/Wipro.jpg' %}" alt="Wipro" onerror="this.style.display='none'">
+                    <span>Wipro</span>
+                </div>
+
+                <!-- SET 2 (duplicate for seamless loop) -->
+                <div class="marquee-item">
+                    <img src="{% static 'img/logos/Google.jpg' %}" alt="Google" onerror="this.style.display='none'">
+                    <span>Google</span>
+                </div>
+                <div class="marquee-item">
+                    <img src="{% static 'img/logos/Microsoft.jpg' %}" alt="Microsoft"
+                        onerror="this.style.display='none'">
+                    <span>Microsoft</span>
+                </div>
+                <div class="marquee-item">
+                    <img src="{% static 'img/logos/Amazon.jpg' %}" alt="Amazon" onerror="this.style.display='none'">
+                    <span>Amazon</span>
+                </div>
+                <div class="marquee-item">
+                    <img src="{% static 'img/logos/Netflix.jpg' %}" alt="Netflix" onerror="this.style.display='none'">
+                    <span>Netflix</span>
+                </div>
+                <div class="marquee-item">
+                    <img src="{% static 'img/logos/Salesforce.jpg' %}" alt="Salesforce"
+                        onerror="this.style.display='none'">
+                    <span>Salesforce</span>
+                </div>
+                <div class="marquee-item">
+                    <img src="{% static 'img/logos/slack.jpg' %}" alt="Slack" onerror="this.style.display='none'">
+                    <span>Slack</span>
+                </div>
+                <div class="marquee-item">
+                    <img src="{% static 'img/logos/Spotify.jpg' %}" alt="Spotify" onerror="this.style.display='none'">
+                    <span>Spotify</span>
+                </div>
+                <div class="marquee-item">
+                    <img src="{% static 'img/logos/Figma.jpg' %}" alt="Figma" onerror="this.style.display='none'">
+                    <span>Figma</span>
+                </div>
+                <div class="marquee-item">
+                    <img src="{% static 'img/logos/Infosys.jpg' %}" alt="Infosys" onerror="this.style.display='none'">
+                    <span>Infosys</span>
+                </div>
+                <div class="marquee-item">
+                    <img src="{% static 'img/logos/Wipro.jpg' %}" alt="Wipro" onerror="this.style.display='none'">
+                    <span>Wipro</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ═══════════════ FEATURES ═══════════════ -->
+
+    <section class="section features-section" id="features">
+        <div class="section-label reveal">Core Modules</div>
+        <h2 class="section-h2 reveal" style="transition-delay:.05s">
+            Every HR tool you'll ever need,<br><span class="gradient-text">beautifully unified</span>
+        </h2>
+        <p class="section-sub reveal" style="transition-delay:.1s">
+            Powerful, interconnected modules built to handle every step of your employee lifecycle with speed, clarity,
+            and confidence.
+        </p>
+
+        <div class="features-grid">
+            <div class="feat-card feat-card-lg reveal">
+                <div class="feat-icon-lg"><i class="fas fa-users-gear"></i></div>
+                <div class="feat-body">
+                    <h3>Employee Management</h3>
+                    <p>Maintain a rich, centralized record for every employee — profiles, departments, roles, documents,
+                        history, and more — all in one secure place.</p>
+                    <a href="/register/" class="feat-link">Get started <i class="fas fa-arrow-right"></i></a>
+                </div>
+                <div class="feat-decoration">
+                    <div class="feat-pill"><i class="fas fa-user-check"></i> Active Profiles</div>
+                    <div class="feat-pill ml"><i class="fas fa-building"></i> Departments</div>
+                </div>
+            </div>
+
+            <div class="feat-card reveal" style="transition-delay:.1s">
+                <div class="feat-icon"><i class="fas fa-clock"></i></div>
+                <h3>Attendance Tracking</h3>
+                <p>Automated clock-in, shift management, and anomaly detection. Know exactly who's present, late, or
+                    absent in real time.</p>
+            </div>
+
+            <div class="feat-card reveal" style="transition-delay:.15s">
+                <div class="feat-icon"><i class="fas fa-plane-departure"></i></div>
+                <h3>Leave Management</h3>
+                <p>Customizable leave policies, one-tap approvals, and a real-time leave balance dashboard for your
+                    entire team.</p>
+            </div>
+
+            <div class="feat-card reveal" style="transition-delay:.2s">
+                <div class="feat-icon"><i class="fas fa-money-bill-trend-up"></i></div>
+                <h3>Payroll Processing</h3>
+                <p>End-to-end payroll in minutes. Handle salaries, bonuses, deductions, and digital payslips without a
+                    single spreadsheet.</p>
+            </div>
+
+            <div class="feat-card reveal" style="transition-delay:.25s">
+                <div class="feat-icon"><i class="fas fa-folder-open"></i></div>
+                <h3>Document Vault</h3>
+                <p>Store and access offer letters, contracts, IDs, and more in an encrypted, role-gated document vault.
+                </p>
+            </div>
+
+            <div class="feat-card feat-card-accent reveal" style="transition-delay:.3s">
+                <div class="feat-icon-accent"><i class="fas fa-chart-line"></i></div>
+                <h3>Reports & Analytics</h3>
+                <p>From headcount trends to payroll summaries — transform HR data into actionable executive dashboards.
+                </p>
+                <div class="feat-bars">
+                    <div class="bar-row"><span>Attendance</span>
+                        <div class="bar">
+                            <div class="bar-fill" style="width:88%"></div>
+                        </div>
+                    </div>
+                    <div class="bar-row"><span>Payroll</span>
+                        <div class="bar">
+                            <div class="bar-fill" style="width:75%"></div>
+                        </div>
+                    </div>
+                    <div class="bar-row"><span>Leaves</span>
+                        <div class="bar">
+                            <div class="bar-fill" style="width:62%"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ═══════════════ STATS ═══════════════ -->
+    <section class="stats-section" id="stats">
+        <div class="stats-inner reveal">
+            <div class="stat-item">
+                <h3 class="counter" data-target="1500" data-suffix="+">0</h3>
+                <p>Profiles managed</p>
+            </div>
+            <div class="stat-divider"></div>
+            <div class="stat-item">
+                <h3 class="counter" data-target="98" data-suffix="%">0</h3>
+                <p>Process accuracy</p>
+            </div>
+            <div class="stat-divider"></div>
+            <div class="stat-item">
+                <h3 class="counter" data-target="120" data-suffix="+">0</h3>
+                <p>Departments served</p>
+            </div>
+            <div class="stat-divider"></div>
+            <div class="stat-item">
+                <h3 class="counter" data-target="24" data-suffix="/7">0</h3>
+                <p>Accessible always</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- ═══════════════ HOW IT WORKS ═══════════════ -->
+    <section class="section workflow-section" id="workflow">
+        <div class="section-label reveal">How It Works</div>
+        <h2 class="section-h2 reveal" style="transition-delay:.05s">
+            Up and running in <span class="gradient-text">three steps</span>
+        </h2>
+        <p class="section-sub reveal" style="transition-delay:.1s">
+            Zero lengthy onboarding. Zero IT setup. Just sign up and start managing your people smarter.
+        </p>
+
+        <div class="workflow-grid">
+            <div class="workflow-card reveal">
+                <div class="wf-step">01</div>
+                <div class="wf-icon"><i class="fas fa-user-plus"></i></div>
+                <h3>Invite your team</h3>
+                <p>Send invitations in seconds. Employees complete their own profiles and upload documents directly into
+                    their secure vault.</p>
+            </div>
+            <div class="workflow-arrow reveal" style="transition-delay:.1s"><i class="fas fa-arrow-right"></i></div>
+            <div class="workflow-card reveal" style="transition-delay:.15s">
+                <div class="wf-step">02</div>
+                <div class="wf-icon"><i class="fas fa-robot"></i></div>
+                <h3>Automate operations</h3>
+                <p>Attendance is tracked automatically, leave approvals are routed to managers, and daily logs are
+                    generated without manual input.</p>
+            </div>
+            <div class="workflow-arrow reveal" style="transition-delay:.25s"><i class="fas fa-arrow-right"></i></div>
+            <div class="workflow-card reveal" style="transition-delay:.3s">
+                <div class="wf-step">03</div>
+                <div class="wf-icon"><i class="fas fa-bolt"></i></div>
+                <h3>Run one-click payroll</h3>
+                <p>At month-end, one click computes everything — salaries, deductions, bonuses — and sends digital
+                    payslips to every inbox.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- ═══════════════ ABOUT ═══════════════ -->
+    <section class="section about-section" id="about">
+        <div class="about-visual reveal">
+            <div class="about-img-wrap">
+                <img src="{% static 'img/about-image.jpg' %}" alt="Team">
+                <div class="about-chip chip-a floating-slow">
+                    <i class="fas fa-shield-halved"></i> Bank-grade Security
+                </div>
+                <div class="about-chip chip-b floating-fast">
+                    <i class="fas fa-cloud"></i> 100% Cloud
+                </div>
+            </div>
+        </div>
+
+        <div class="about-content reveal" style="transition-delay:.15s">
+            <div class="section-label" style="text-align:left;">Why GlassEntials</div>
+            <h2 class="section-h2" style="text-align:left;">
+                Built for efficiency.<br><span class="gradient-text">Designed for scale.</span>
+            </h2>
+            <p class="section-sub" style="text-align:left; margin: 0 0 32px;">
+                Modern HR teams deserve modern software. GlassEntials reduces manual work, eliminates data silos, and
+                gives every stakeholder exactly what they need.
+            </p>
+
+            <div class="about-checklist">
+                <div class="check-item"><i class="fas fa-check"></i> Centralized employee database</div>
+                <div class="check-item"><i class="fas fa-check"></i> Faster approvals & operations</div>
+                <div class="check-item"><i class="fas fa-check"></i> Real-time tracking & transparency</div>
+                <div class="check-item"><i class="fas fa-check"></i> Role-based access controls</div>
+                <div class="check-item"><i class="fas fa-check"></i> GDPR-compliant data security</div>
+                <div class="check-item"><i class="fas fa-check"></i> 99.9% uptime guarantee</div>
+            </div>
+
+            <a href="/register/" class="btn-pill">Start for free <i class="fas fa-arrow-right"></i></a>
+        </div>
+    </section>
+
+    <!-- ═══════════════ TESTIMONIALS ═══════════════ -->
+    <section class="section testimonials-section" id="testimonials">
+        <div class="section-label reveal">Testimonials</div>
+        <h2 class="section-h2 reveal" style="transition-delay:.05s">
+            Trusted by <span class="gradient-text">HR leaders</span> everywhere
+        </h2>
+        <p class="section-sub reveal" style="transition-delay:.1s">Don't take our word for it — hear from teams who made
+            the switch.</p>
+
+        <div class="testi-grid">
+            <div class="testi-card testi-featured reveal">
+                <div class="stars">★★★★★</div>
+                <p class="testi-quote">"GlassEntials completely transformed our HR operations. What used to take our
+                    team two full days now happens in under an hour. The payroll module alone is worth it."</p>
+                <div class="testi-author">
+                    <div class="testi-avatar" style="background: linear-gradient(135deg,#3b82f6,#8b5cf6);">S</div>
+                    <div>
+                        <strong>Sarah Jenkins</strong>
+                        <span>HR Director, TechCorp India</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="testi-card reveal" style="transition-delay:.1s">
+                <div class="stars">★★★★★</div>
+                <p class="testi-quote">"The UI is absolutely gorgeous. Our employees love using the leave dashboard —
+                    adoption was instant. Best HRMS decision we've made."</p>
+                <div class="testi-author">
+                    <div class="testi-avatar" style="background: linear-gradient(135deg,#06b6d4,#3b82f6);">M</div>
+                    <div>
+                        <strong>Michael Chen</strong>
+                        <span>Operations Manager, StartupX</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="testi-card reveal" style="transition-delay:.2s">
+                <div class="stars">★★★★★</div>
+                <p class="testi-quote">"The analytics dashboards gave us insights we never had before. We reduced
+                    attrition by 18% in our first quarter with GlassEntials."</p>
+                <div class="testi-author">
+                    <div class="testi-avatar" style="background: linear-gradient(135deg,#f59e0b,#ef4444);">E</div>
+                    <div>
+                        <strong>Elena Rodriguez</strong>
+                        <span>CEO, ExpandBiz</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ═══════════════ FAQ ═══════════════ -->
+    <section class="section faq-section" id="faq">
+        <div class="faq-inner">
+            <div class="faq-left">
+                <div class="section-label reveal">FAQ</div>
+                <h2 class="section-h2 reveal" style="text-align:left; transition-delay:.05s">
+                    Questions?<br><span class="gradient-text">We have answers.</span>
+                </h2>
+                <p class="section-sub reveal" style="text-align:left; margin:0; transition-delay:.1s">
+                    Can't find what you're looking for? <a href="/login/"
+                        style="color:var(--primary); font-weight:700;">Reach us directly.</a>
+                </p>
+            </div>
+
+            <div class="faq-right reveal" style="transition-delay:.15s">
+                <div class="faq-item">
+                    <div class="faq-q">
+                        <span>How is our data secured?</span>
+                        <i class="fas fa-plus faq-icon"></i>
+                    </div>
+                    <div class="faq-a">
+                        <p>We use military-grade AES-256 encryption for all data at rest and in transit. Employee
+                            records are fully isolated, with hourly backups and 99.9% uptime SLA.</p>
+                    </div>
+                </div>
+                <div class="faq-item">
+                    <div class="faq-q">
+                        <span>Can I migrate from another HR system?</span>
+                        <i class="fas fa-plus faq-icon"></i>
+                    </div>
+                    <div class="faq-a">
+                        <p>Absolutely. Our team provides white-glove migration support. Import all employee data,
+                            payroll history, and documents via CSV, Excel, or direct API integration.</p>
+                    </div>
+                </div>
+                <div class="faq-item">
+                    <div class="faq-q">
+                        <span>Does payroll support multiple tax regimes?</span>
+                        <i class="fas fa-plus faq-icon"></i>
+                    </div>
+                    <div class="faq-a">
+                        <p>Yes. The payroll engine is fully configurable — set custom tax brackets, PF, ESI, gratuity,
+                            and per-employee custom deductions or allowances.</p>
+                    </div>
+                </div>
+                <div class="faq-item">
+                    <div class="faq-q">
+                        <span>Is there a free trial?</span>
+                        <i class="fas fa-plus faq-icon"></i>
+                    </div>
+                    <div class="faq-a">
+                        <p>Yes — create an account and enjoy full access with no credit card required. Upgrade anytime
+                            as your team grows.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ═══════════════ CTA ═══════════════ -->
+    <section class="cta-section reveal">
+        <div class="cta-glow"></div>
+        <div class="cta-content">
+            <h2>Your best HR decision<br>starts <span class="gradient-text2">right now.</span></h2>
+            <p>Join hundreds of teams who replaced spreadsheet chaos with GlassEntials. Setup takes under 5 minutes.</p>
+            <div class="cta-buttons">
+                <a href="/register/" class="btn-pill btn-lg btn-white">
+                    Create free account <i class="fas fa-arrow-right"></i>
+                </a>
+                <a href="/login/" class="btn-ghost btn-lg btn-ghost-light">Sign in</a>
+            </div>
+            <p class="cta-note"><i class="fas fa-lock"></i> No credit card required &nbsp;·&nbsp; <i
+                    class="fas fa-clock"></i> 5-min setup &nbsp;·&nbsp; <i class="fas fa-times-circle"></i> Cancel
+                anytime</p>
+        </div>
+    </section>
+
+    <!-- ═══════════════ FOOTER ═══════════════ -->
+    <footer class="footer" id="contact">
+        <div class="footer-inner">
+            <div class="footer-brand">
+                <div class="nav-logo" style="margin-bottom:16px;">
+                    <img src="{% static 'img/logo.png' %}" alt="Logo" class="logo-img">
+                    <div class="logo-text">
+                        <span class="logo-name">GlassEntials</span>
+                        <span class="logo-sub">HRMS Platform</span>
+                    </div>
+                </div>
+                <p>Empowering modern organisations with intelligent HR technology that's a joy to use.</p>
+                <div class="footer-socials">
+                    <a href="#" aria-label="LinkedIn"><i class="fab fa-linkedin-in"></i></a>
+                    <a href="#" aria-label="Twitter"><i class="fab fa-twitter"></i></a>
+                    <a href="#" aria-label="Instagram"><i class="fab fa-instagram"></i></a>
+                </div>
+            </div>
+
+            <div class="footer-cols">
+                <div class="footer-col">
+                    <h4>Product</h4>
+                    <a href="#features">Features</a>
+                    <a href="#workflow">How it works</a>
+                    <a href="#stats">Stats</a>
+                </div>
+                <div class="footer-col">
+                    <h4>Company</h4>
+                    <a href="#about">About us</a>
+                    <a href="#testimonials">Reviews</a>
+                    <a href="#faq">FAQ</a>
+                </div>
+                <div class="footer-col">
+                    <h4>Access</h4>
+                    <a href="/login/">Login</a>
+                    <a href="/register/">Register</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="footer-bottom">
+            <p>© 2026 HRMS GlassEntials · All Rights Reserved</p>
+            <div class="footer-bottom-links">
+                <a href="#">Privacy</a>
+                <a href="#">Terms</a>
+            </div>
+        </div>
+    </footer>
+
+    
+    <script src="{% static 'js/landing.js' %}?v=2.0"></script>
+</body>
+
+</html>
