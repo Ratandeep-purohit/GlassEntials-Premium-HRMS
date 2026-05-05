@@ -1,0 +1,398 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Attendance Calendar | GlassEntials HRMS</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Manrope:wght@600;700;800&display=swap">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link rel="stylesheet" href="{% static 'css/landing.css' %}?v=3.0">
+    <link rel="stylesheet" href="{% static 'css/home.css' %}?v=3.0">
+    <link rel="stylesheet" href="{% static 'css/dashboard.css' %}?v=3.0">
+    <style>
+        .calendar-container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        .calendar-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 24px;
+        }
+
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 12px;
+        }
+
+        .weekday-label {
+            text-align: center;
+            font-weight: 800;
+            font-size: 12px;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            padding-bottom: 8px;
+        }
+
+        .calendar-day {
+            min-height: 120px;
+            background: rgba(255, 255, 255, 0.6);
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--border-light);
+            border-radius: 16px;
+            padding: 12px;
+            display: flex;
+            flex-direction: column;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .calendar-day:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 24px rgba(0, 0, 0, 0.05);
+            border-color: var(--primary);
+        }
+
+        .calendar-day.empty {
+            background: transparent;
+            border: none;
+            pointer-events: none;
+        }
+
+        .day-number {
+            font-size: 18px;
+            font-weight: 800;
+            color: var(--text-primary);
+            margin-bottom: 8px;
+        }
+
+        .day-status-indicator {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            position: absolute;
+            top: 15px;
+            right: 15px;
+        }
+
+        /* Status Colors */
+        .status-present { background: #22c55e; border-left: 4px solid #22c55e; }
+        .status-late { background: #f59e0b; border-left: 4px solid #f59e0b; }
+        .status-absent { background: #ef4444; border-left: 4px solid #ef4444; }
+        .status-holiday { background: #3b82f6; border-left: 4px solid #3b82f6; }
+        .status-weekend { opacity: 0.6; background: rgba(0,0,0,0.02); }
+
+        .day-info {
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            margin-top: auto;
+        }
+
+        .holiday-name {
+            font-size: 10px;
+            font-weight: 700;
+            color: #3b82f6;
+            background: rgba(59, 130, 246, 0.1);
+            padding: 4px 8px;
+            border-radius: 6px;
+            margin-top: 4px;
+        }
+
+        .calendar-legend {
+            display: flex;
+            gap: 20px;
+            margin-top: 32px;
+            justify-content: center;
+            background: white;
+            padding: 16px;
+            border-radius: 12px;
+            border: 1px solid var(--border-light);
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--text-secondary);
+        }
+
+        .legend-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+        }
+
+        .nav-btn {
+            background: white;
+            border: 1px solid var(--border-light);
+            padding: 8px 16px;
+            border-radius: 10px;
+            color: var(--text-primary);
+            font-weight: 700;
+            font-size: 14px;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s;
+        }
+
+        .nav-btn:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+
+        .current-month-display {
+            font-size: 24px;
+            font-weight: 800;
+            color: var(--text-primary);
+        }
+    </style>
+</head>
+
+<body>
+    <header class="platform-header">
+        <a href="{% url 'home' %}" class="brand-section">
+            <img src="{% static 'img/logo.png' %}" alt="GlassEntials Logo" class="brand-logo-img">
+        </a>
+
+        <nav class="nav-center">
+            <a href="{% url 'home' %}" class="nav-pill"><i class="fas fa-grid-2"></i> Dashboard</a>
+
+            {% if request.user.is_staff %}
+            <div class="nav-item-dropdown">
+                <a href="#" class="nav-pill">
+                    <i class="fas fa-users-rectangle"></i> Employees
+                    <i class="fas fa-chevron-down"></i>
+                </a>
+                <div class="dropdown-content">
+                    <a href="{% url 'employee' %}" class="dropdown-item">
+                        <i class="fas fa-list-ul"></i> Employee Dashboard
+                    </a>
+                    <a href="{% url 'department' %}" class="dropdown-item">
+                        <i class="fas fa-sitemap"></i> Departments
+                    </a>
+                    <a href="{% url 'designation' %}" class="dropdown-item">
+                        <i class="fas fa-id-card"></i> Designations
+                    </a>
+                </div>
+            </div>
+            <div class="nav-item-dropdown">
+                <a href="#" class="nav-pill active">
+                    <i class="fas fa-fingerprint"></i> Attendance
+                    <i class="fas fa-chevron-down"></i>
+                </a>
+                <div class="dropdown-content">
+                    <a href="{% url 'attendance' %}" class="dropdown-item">
+                        <i class="fas fa-list-ul"></i> Attendance Dashboard
+                    </a>
+                    <a href="{% url 'create_shift' %}" class="dropdown-item">
+                        <i class="fas fa-sitemap"></i> Create Shift
+                    </a>
+                    <a href="{% url 'assign_shift' %}" class="dropdown-item">
+                        <i class="fas fa-id-card"></i> Assign Shift
+                    </a>
+                    <a href="{% url 'attendance_calendar' %}" class="dropdown-item">
+                        <i class="fas fa-calendar"></i> My Calendar
+                    </a>
+                </div>
+            </div>
+            <div class="nav-item-dropdown">
+                <a href="#" class="nav-pill">
+                    <i class="fas fa-calendar-alt"></i> Leaves
+                    <i class="fas fa-chevron-down"></i>
+                </a>
+                <div class="dropdown-content">
+                    <a href="#" class="dropdown-item">
+                        <i class="fas fa-list-ul"></i> Leave Dashboard
+                    </a>
+                    <a href="#" class="dropdown-item">
+                        <i class="fas fa-sitemap"></i> Leave Balance
+                    </a>
+                    <a href="#" class="dropdown-item">
+                        <i class="fas fa-id-card"></i> Leave Policy
+                    </a>
+                </div>
+            </div>
+            <div class="nav-item-dropdown">
+                <a href="#" class="nav-pill">
+                    <i class="fas fa-receipt"></i> Payroll
+                    <i class="fas fa-chevron-down"></i>
+                </a>
+                <div class="dropdown-content">
+                    <a href="{% url 'payroll' %}" class="dropdown-item">
+                        <i class="fas fa-list-ul"></i> Payroll Dashboard
+                    </a>
+                    <a href="#" class="dropdown-item">
+                        <i class="fas fa-sitemap"></i> Generate Payroll
+                    </a>
+                    <a href="#" class="dropdown-item">
+                        <i class="fas fa-id-card"></i> Payroll History
+                    </a>
+                </div>
+            </div>
+            {% else %}
+            <a href="{% url 'attendance' %}" class="nav-pill"><i class="fas fa-fingerprint"></i> My Attendance</a>
+            <a href="{% url 'attendance_calendar' %}" class="nav-pill"><i class="fas fa-calendar"></i> My Calendar</a>
+            {% endif %}
+            <a href="#" class="nav-pill"><i class="fas fa-briefcase"></i> More</a>
+        </nav>
+
+        <div class="header-right">
+            <div class="nav-item-dropdown">
+                <div class="profile-trigger">
+                    <div class="avatar-box">
+                        {% if current_employee and current_employee.profile_img %}
+                            <img src="{{ current_employee.profile_img.url }}" alt="Profile">
+                        {% else %}
+                            {{ request.user.username|slice:":1"|upper }}
+                        {% endif %}
+                    </div>
+                    <i class="fas fa-chevron-down" style="font-size: 10px; color: var(--text-secondary);"></i>
+                </div>
+                <div class="dropdown-content" style="right: 0; left: auto; min-width: 180px;">
+                    <a href="{% url 'edit_profile' %}" class="dropdown-item">
+                        <i class="fas fa-user-circle"></i> Manage Profile
+                    </a>
+                    <a href="{% url 'logout' %}" class="dropdown-item" style="color: #ef4444;">
+                        <i class="fas fa-sign-out-alt"></i> Logout
+                    </a>
+                </div>
+            </div>
+
+            <div class="nav-item-dropdown" style="display: flex; align-items: center;">
+                <div class="action-icon-circle">
+                    <i class="fas fa-bell"></i>
+                    {% if pending_approvals and pending_approvals|length > 0 %}
+                    <div class="notification-badge"></div>
+                    {% endif %}
+                </div>
+                <div class="dropdown-content" style="right: 0; left: auto; width: 320px; padding: 0; top: 100%; margin-top: 10px;">
+                    <div style="padding: 15px; font-weight: 700; border-bottom: 1px solid var(--border-light); font-size: 14px;">Notifications</div>
+                    <div style="max-height: 300px; overflow-y: auto;">
+                        {% for pending in pending_approvals %}
+                            <a href="#pending-approvals-section" class="dropdown-item" style="display: flex; flex-direction: column; align-items: flex-start; padding: 12px 15px; border-bottom: 1px solid var(--border-light);">
+                                <div style="display: flex; justify-content: space-between; width: 100%;">
+                                    <span style="font-weight: 600; font-size: 13px;">{{ pending.username }}</span>
+                                    <span style="font-size: 11px; color: #ef4444; font-weight: 700;">Action Required</span>
+                                </div>
+                                <span style="font-size: 12px; color: var(--text-secondary); margin-top: 4px;">Requested to join as an employee.</span>
+                            </a>
+                        {% empty %}
+                            <div style="padding: 20px; text-align: center; color: var(--text-secondary); font-size: 13px;">
+                                No new notifications
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="workspace">
+        <div class="calendar-container">
+            <div style="margin-bottom: 32px; text-align: center;">
+                <h1 style="font-size: 28px; font-weight: 800; color: var(--text-primary); margin-bottom: 8px;">
+                    Attendance Calendar
+                </h1>
+                <p style="color: var(--text-secondary); font-weight: 600;">
+                    Viewing records for: <span style="color: var(--primary);">{{ employee.first_name }} {{ employee.last_name }} ({{ employee.employee_id }})</span>
+                </p>
+                
+                {% if request.user.is_staff %}
+                <div style="margin-top: 20px; display: flex; justify-content: center;">
+                    <form method="GET" id="employeeSelector" style="display: flex; align-items: center; gap: 12px; background: white; padding: 8px 16px; border-radius: 12px; border: 1px solid var(--border-light); box-shadow: 0 4px 12px rgba(0,0,0,0.03);">
+                        <input type="hidden" name="year" value="{{ year }}">
+                        <input type="hidden" name="month" value="{{ month }}">
+                        <label style="font-size: 13px; font-weight: 700; color: var(--text-secondary);">Select Employee:</label>
+                        <select name="employee_id" class="form-input" style="padding: 6px 12px; font-size: 13px; font-weight: 600; min-width: 200px;" onchange="this.form.submit()">
+                            {% for e in employees %}
+                            <option value="{{ e.id }}" {% if e.id == employee.id %}selected{% endif %}>{{ e.first_name }} {{ e.last_name }}</option>
+                            {% endfor %}
+                        </select>
+                    </form>
+                </div>
+                {% endif %}
+            </div>
+
+            <div class="calendar-header">
+                <a href="?year={{ prev_year }}&month={{ prev_month }}{% if request.user.is_staff %}&employee_id={{ employee.id }}{% endif %}" class="nav-btn">
+                    <i class="fas fa-chevron-left"></i> Previous
+                </a>
+                <div class="current-month-display">{{ month_name }} {{ year }}</div>
+                <a href="?year={{ next_year }}&month={{ next_month }}{% if request.user.is_staff %}&employee_id={{ employee.id }}{% endif %}" class="nav-btn">
+                    Next <i class="fas fa-chevron-right"></i>
+                </a>
+            </div>
+
+            <div class="calendar-grid">
+                <!-- Day Labels -->
+                <div class="weekday-label">Sun</div>
+                <div class="weekday-label">Mon</div>
+                <div class="weekday-label">Tue</div>
+                <div class="weekday-label">Wed</div>
+                <div class="weekday-label">Thu</div>
+                <div class="weekday-label">Fri</div>
+                <div class="weekday-label">Sat</div>
+
+                {% for week in calendar %}
+                    {% for day in week %}
+                        {% if day.day == 0 %}
+                            <div class="calendar-day empty"></div>
+                        {% else %}
+                            <div class="calendar-day status-{{ day.status }}">
+                                <div class="day-number">{{ day.day }}</div>
+                                
+                                {% if day.status == 'holiday' %}
+                                    <div class="holiday-name">{{ day.label }}</div>
+                                {% elif day.attendance %}
+                                    <div class="day-info">
+                                        <div style="color: var(--text-primary); margin-bottom: 2px;">
+                                            <i class="fas fa-sign-in-alt" style="font-size: 9px; opacity: 0.6;"></i> 
+                                            {{ day.attendance.clock_in|time:"h:i A" }}
+                                        </div>
+                                        {% if day.attendance.clock_out %}
+                                        <div style="color: var(--text-primary);">
+                                            <i class="fas fa-sign-out-alt" style="font-size: 9px; opacity: 0.6;"></i> 
+                                            {{ day.attendance.clock_out|time:"h:i A" }}
+                                        </div>
+                                        {% endif %}
+                                    </div>
+                                {% endif %}
+
+                                {% if day.status != 'empty' and day.status != 'none' and day.status != 'weekend' %}
+                                    <div class="day-status-indicator status-{{ day.status }}"></div>
+                                {% endif %}
+                            </div>
+                        {% endif %}
+                    {% endfor %}
+                {% endfor %}
+            </div>
+
+            <div class="calendar-legend">
+                <div class="legend-item"><div class="legend-dot" style="background: #22c55e;"></div> Present</div>
+                <div class="legend-item"><div class="legend-dot" style="background: #f59e0b;"></div> Late</div>
+                <div class="legend-item"><div class="legend-dot" style="background: #ef4444;"></div> Absent</div>
+                <div class="legend-item"><div class="legend-dot" style="background: #3b82f6;"></div> Holiday</div>
+            </div>
+        </div>
+    </main>
+
+    <footer style="padding: 32px 0; border-top: 1px solid var(--border-light); text-align: center; color: var(--text-secondary); font-size: 13px;">
+        &copy; 2026 GlassEntials Premium HRMS
+    </footer>
+</body>
+
+</html>

@@ -711,3 +711,150 @@ def bulk_import(request):
             return redirect('bulk_import')
 
     return render(request, 'bulk_import.html')
+
+@login_required
+def approve_employee(request, pk):
+    from accounts.models import CustomUser
+    from attendance.models import Shift, ShiftAssignment
+    
+    if not request.user.is_staff:
+        return redirect('home')
+        
+    try:
+        pending_user = CustomUser.objects.get(pk=pk, is_approved=False)
+    except CustomUser.DoesNotExist:
+        messages.error(request, 'Pending user request not found.')
+        return redirect('home')
+        
+    if request.method == 'POST':
+        dept_id = request.POST.get('department')
+        desig_id = request.POST.get('designation')
+        shift_id = request.POST.get('shift')
+        
+        if not dept_id or not desig_id or not shift_id:
+            messages.error(request, 'Department, Designation, and Shift are required.')
+            return redirect('approve_employee', pk=pk)
+            
+        # Create Employee
+        import uuid
+        emp = Employee.objects.create(
+            employee_id=f"EMP-{str(uuid.uuid4())[:4].upper()}",
+            first_name=pending_user.username,
+            email=pending_user.email,
+            phone_number=pending_user.phone or "",
+            department_id=dept_id,
+            designation_id=desig_id,
+            organization=pending_user.organization,
+            created_by=request.user
+        )
+        
+        # Assign Shift
+        from datetime import datetime
+        shift = Shift.objects.get(pk=shift_id)
+        ShiftAssignment.objects.create(
+            employee=emp,
+            shift=shift,
+            effective_from=datetime.now().date(),
+            created_by=request.user
+        )
+        
+        # Approve User
+        pending_user.is_approved = True
+        pending_user.save()
+        
+        messages.success(request, f'Employee {pending_user.username} approved successfully!')
+        return redirect('home')
+        
+    # GET request
+    departments = Department.objects.filter(is_deleted=False)
+    designations = Designation.objects.filter(is_deleted=False)
+    shifts = Shift.objects.filter(is_deleted=False)
+    
+    return render(request, 'approve_employee.html', {
+        'pending_user': pending_user,
+        'departments': departments,
+        'designations': designations,
+        'shifts': shifts
+    })
+
+@login_required
+def reject_employee(request, pk):
+    from accounts.models import CustomUser
+    if not request.user.is_staff:
+        return redirect('home')
+        
+    try:
+        pending_user = CustomUser.objects.get(pk=pk, is_approved=False)
+        pending_user.is_active = False
+        pending_user.save()
+        messages.success(request, 'Employee request rejected and deactivated.')
+    except CustomUser.DoesNotExist:
+        messages.error(request, 'Pending user request not found.')
+        
+    return redirect('home')
+@login_required
+def edit_profile(request):
+    organization = request.user.organization
+    employee = Employee.objects.filter(email=request.user.email, organization=organization, is_active=True, is_deleted=False).first()
+    
+    if not employee:
+        messages.error(request, "Employee record not found for your account.")
+        return redirect('home')
+
+    if request.method == 'POST':
+        try:
+            # Basic Info
+            employee.first_name = request.POST.get('first_name')
+            employee.last_name = request.POST.get('last_name')
+            employee.phone_number = request.POST.get('phone_number')
+            employee.date_of_birth = request.POST.get('date_of_birth') or None
+            employee.gender = request.POST.get('gender')
+            employee.marital_status = request.POST.get('marital_status')
+            employee.blood_group = request.POST.get('blood_group')
+            employee.nationality = request.POST.get('nationality')
+            
+            # Address
+            employee.current_address = request.POST.get('current_address')
+            employee.current_city = request.POST.get('current_city')
+            employee.current_state = request.POST.get('current_state')
+            employee.current_pincode = request.POST.get('current_pincode')
+            employee.permanent_address = request.POST.get('permanent_address')
+            employee.permanent_city = request.POST.get('permanent_city')
+            employee.permanent_state = request.POST.get('permanent_state')
+            employee.permanent_pincode = request.POST.get('permanent_pincode')
+            
+            # Financial
+            employee.pan_number = request.POST.get('pan_number')
+            employee.aadhaar_number = request.POST.get('aadhaar_number')
+            employee.bank_name = request.POST.get('bank_name')
+            employee.bank_account_number = request.POST.get('bank_account_number')
+            employee.ifsc_code = request.POST.get('ifsc_code')
+            
+            # Emergency
+            employee.emergency_contact_name = request.POST.get('emergency_contact_name')
+            employee.emergency_contact_number = request.POST.get('emergency_contact_number')
+            employee.emergency_contact_relationship = request.POST.get('emergency_contact_relationship')
+
+            # Files
+            if request.POST.get('remove_profile_img') == '1':
+                employee.profile_img = None
+            elif request.FILES.get('profile_img'):
+                employee.profile_img = request.FILES.get('profile_img')
+                
+            if request.FILES.get('resume'):
+                employee.resume = request.FILES.get('resume')
+            if request.FILES.get('aadhaar_card'):
+                employee.aadhaar_card = request.FILES.get('aadhaar_card')
+            if request.FILES.get('pan_card'):
+                employee.pan_card = request.FILES.get('pan_card')
+
+            employee.updated_by = request.user
+            employee.save()
+            messages.success(request, "Your profile has been updated successfully!")
+            return redirect('home')
+        except Exception as e:
+            messages.error(request, f"Failed to update profile: {str(e)}")
+
+    return render(request, 'edit_profile.html', {
+        'employee': employee
+    })

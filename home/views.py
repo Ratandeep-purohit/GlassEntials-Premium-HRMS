@@ -3,38 +3,63 @@ from django.contrib.auth.decorators import login_required
 from accounts.models import CustomUser , Organization
 from datetime import datetime 
 from employees.models import Employee
+from attendance.models import Attendance
 
 @login_required
 def home_view(request):
+    # Get the organization the current user belongs to
+    organization = request.user.organization
+    today = datetime.now().date()
+    
     try:
-        # Get the organization the current user belongs to
-        organization = request.user.organization
         # SaaS Metrics
         active_employees = Employee.objects.filter(organization=organization, is_active=True)[:5]
-        user_count = Employee.all_objects.all().count()
+        user_count = Employee.objects.filter(organization=organization).count()
         today_date = datetime.now().strftime("%A, %B %d, %Y")
         origination_code = organization.unique_code if organization else "GLOBAL"
 
         # Attendance Summary (Today)
-        from attendance.models import Attendance
-        today = datetime.now().date()
-        present_today = Attendance.objects.filter(organization=organization, date=today, status__is_attendance_counted=True).count()
+        present_today = Attendance.objects.filter(organization=organization, date=today, clock_in__isnull=False).count()
         
         # Leave Summary
         from leaves.models import LeaveRequest
         pending_leaves = LeaveRequest.objects.filter(organization=organization, status='PENDING').count()
-        
     except Exception as e:
-        # Fallback for users without an organization or other errors
-        active_employees = Employee.objects.filter(is_active=True)[:5]
-        user_count = Employee.objects.all().count()
+        print(f"Error in dashboard metrics: {e}")
+        active_employees = []
+        user_count = 0
         today_date = datetime.now().strftime("%A, %B %d, %Y")
-        origination_code = "INTERNAL"
+        origination_code = organization.unique_code if organization else "INTERNAL"
         present_today = 0
         pending_leaves = 0
     
     # Also fetch recent employees
-    recent_employees = Employee.objects.filter(is_deleted=False).order_by('-created_at')[:5]
+    recent_employees = Employee.objects.filter(organization=organization, is_deleted=False).order_by('-created_at')[:5]
+    
+    # Fetch pending approvals
+    pending_approvals = CustomUser.objects.filter(organization=organization, is_approved=False, is_active=True).order_by('-date_joined')
+
+    # Find the employee record for the current user
+    current_employee = Employee.objects.filter(email=request.user.email, organization=organization, is_active=True, is_deleted=False).first()
+    
+    # Get today's attendance for this employee
+    today_attendance = None
+    if current_employee:
+        today_attendance = Attendance.objects.filter(employee=current_employee, date=today).first()
+
+    # Check if currently on break
+    on_break = False
+    if today_attendance:
+        from attendance.models import BreakLog
+        on_break = BreakLog.objects.filter(attendance=today_attendance, end_time__isnull=True).exists()
+
+    current_hour = datetime.now().hour
+    if current_hour < 12:
+        greeting = "Good morning"
+    elif 12 <= current_hour < 17:
+        greeting = "Good afternoon"
+    else:
+        greeting = "Good evening"
 
     context = {
         'user_count': user_count,
@@ -44,6 +69,12 @@ def home_view(request):
         'recent_employees': recent_employees,
         'present_today': present_today,
         'pending_leaves': pending_leaves,
+        'pending_approvals': pending_approvals,
+        'today_attendance': today_attendance,
+        'on_break': on_break,
+        'organization': organization,
+        'current_employee': current_employee,
+        'greeting': greeting,
     }
     return render(request, 'home.html', context)
 

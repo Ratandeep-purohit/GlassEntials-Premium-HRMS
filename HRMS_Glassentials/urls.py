@@ -16,6 +16,8 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import include, path
+from django.conf import settings
+from django.conf.urls.static import static
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -25,6 +27,9 @@ urlpatterns = [
     path('payroll/', include('payroll.urls')),
     path('attendance/', include('attendance.urls')),
 ]
+
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
 handler404 = 'accounts.views.error_404'
 handler500 = 'accounts.views.error_500'

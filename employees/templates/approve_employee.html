@@ -5,7 +5,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Designations | HRMS GlassEntials</title>
+    <title>Approve Employee | GlassEntials HRMS</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="stylesheet"
         href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Manrope:wght@600;700;800&display=swap">
@@ -13,16 +13,15 @@
     <link rel="stylesheet" href="{% static 'css/landing.css' %}?v=3.0">
     <link rel="stylesheet" href="{% static 'css/home.css' %}?v=3.0">
     <link rel="stylesheet" href="{% static 'css/dashboard.css' %}?v=3.0">
-    
 </head>
 
 <body>
-    <!-- Flash Messages Toast -->
-    {% include 'includes/_messages.html' %}
-
     <!--Subtle Background Elements-->
     <div class="orb orb-1" style="opacity: 0.03;top:-100px;left:-100px;"></div>
     <div class="orb orb-2" style="opacity: 0.03;bottom:-100px;right:-100px;"></div>
+    
+    <!-- Flash Messages Toast -->
+    {% include 'includes/_messages.html' %}
 
     <!--Header Navigation-->
     <header class="platform-header">
@@ -163,140 +162,70 @@
         </div>
     </header>
 
-    <main class="workspace">
-        <div class="page-header">
-            <h1>Designations</h1>
-            <p>Define and manage job roles across your organization</p>
+    <main class="workspace" style="display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 80vh;">
+        <div class="page-header" style="text-align: center; margin-bottom: 30px;">
+            <h1 style="font-size: 28px; font-weight: 800;">Approve Employee Request</h1>
+            <p style="color: var(--text-secondary); margin-top: 8px;">Assign a department, designation, and shift for <strong style="color: var(--text-primary);">{{ pending_user.username }}</strong> to complete their registration.</p>
         </div>
 
-        <div class="split-grid">
-            <!-- Left Side: Form -->
-            <div class="card">
-                <div class="card-header">
-                    <h2 class="card-title">
-                        <i class="fas {% if edit_desig %}fa-edit{% else %}fa-plus-circle{% endif %}"></i>
-                        {% if edit_desig %}Edit{% else %}New{% endif %} Designation
-                    </h2>
+        <div class="card" style="width: 100%; max-width: 600px; padding: 40px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); border-radius: 16px;">
+            <form method="POST">
+                {% csrf_token %}
+                
+                <div class="form-group" style="margin-bottom: 24px;">
+                    <label class="form-label" style="font-weight: 700;">Employee Name</label>
+                    <input type="text" class="form-input" value="{{ pending_user.username }}" disabled style="background: #f8fafc; color: var(--text-secondary); cursor: not-allowed;">
                 </div>
-                <form method="POST">
-                    {% csrf_token %}
-                    <div class="form-group">
-                        <label class="form-label">Designation Name</label>
-                        <input type="text" name="name" class="form-input" placeholder="e.g. Senior Software Engineer" 
-                            value="{{ edit_desig.name|default:'' }}" required>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Department</label>
-                        <select name="department" class="form-input" required>
-                            <option value="">Select Department</option>
-                            {% for dept in departments %}
-                            <option value="{{ dept.pk }}" {% if edit_desig.department.pk == dept.pk %}selected{% endif %}>
-                                {{ dept.name }}
-                            </option>
-                            {% endfor %}
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Description</label>
-                        <textarea name="description" class="form-input" rows="4"
-                            placeholder="Briefly describe the responsibilities...">{{ edit_desig.description|default:'' }}</textarea>
-                    </div>
-                    
-                    {% if edit_desig %}
-                    <div style="display: flex; gap: 12px;">
-                        <button type="submit" class="btn-primary" style="flex: 2;">
-                            <i class="fas fa-save"></i> Update Designation
-                        </button>
-                        <a href="{% url 'designation' %}" class="action-btn" style="flex: 1; height: 50px; border-radius: 14px; display: flex; align-items: center; justify-content: center; background: var(--bg-light); color: var(--text-main);">
-                            <i class="fas fa-times"></i>
-                        </a>
-                    </div>
-                    {% else %}
-                    <button type="submit" class="btn-primary">
-                        <i class="fas fa-check"></i> Create Designation
-                    </button>
-                    {% endif %}
-                </form>
-            </div>
+                
+                <div class="form-group" style="margin-bottom: 24px;">
+                    <label class="form-label" style="font-weight: 700;">Email Address</label>
+                    <input type="text" class="form-input" value="{{ pending_user.email }}" disabled style="background: #f8fafc; color: var(--text-secondary); cursor: not-allowed;">
+                </div>
 
-            <!-- Right Side: Table -->
-            <div class="card table-card">
-                <div class="table-responsive">
-                    <table class="premium-table">
-                        <thead>
-                            <tr>
-                                <th>Designation</th>
-                                <th>Department</th>
-                                <th>Description</th>
-                                <th>Status</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for desig in designations %}
-                            <tr>
-                                <td>
-                                    <div class="entity-info">
-                                        <div class="entity-icon-circle"
-                                            style="background: rgba(37, 99, 235, 0.08); color: #2563eb;">
-                                            <i class="fas fa-id-badge"></i>
-                                        </div>
-                                        <div>
-                                            <span class="entity-name-main">{{ desig.name }}</span>
-                                            <span class="entity-subtitle">Added: {{ desig.created_at|date:"M d, Y" }}</span>
-                                        </div>
-                                    </div>
-                                </td>
-                                <td>
-                                    {% if desig.department %}
-                                    <span class="dept-badge">{{ desig.department.name }}</span>
-                                    {% else %}
-                                    <span style="color: var(--text-secondary); opacity: 0.5;">Unassigned</span>
-                                    {% endif %}
-                                </td>
-                                <td>{{ desig.description|default:"No description provided"|truncatewords:15 }}</td>
-                                <td>
-                                    <a href="{% url 'toggle_designation_status' desig.pk %}" 
-                                       class="status-pill {% if desig.is_active %}active{% else %}inactive{% endif %}"
-                                       title="Click to {% if desig.is_active %}Deactivate{% else %}Activate{% endif %}">
-                                        <i class="fas fa-circle" style="font-size: 6px;"></i> 
-                                        {% if desig.is_active %}Active{% else %}Inactive{% endif %}
-                                    </a>
-                                </td>
-                                <td>
-                                    <div class="action-group">
-                                        <a href="{% url 'edit_designation' desig.pk %}" class="action-btn" title="Edit">
-                                            <i class="fas fa-pen"></i>
-                                        </a>
-                                        <a href="{% url 'delete_designation' desig.pk %}" class="action-btn delete" 
-                                           onclick="return confirm('Are you sure you want to delete this designation?')" title="Delete">
-                                            <i class="fas fa-trash"></i>
-                                        </a>
-                                    </div>
-                                </td>
-                            </tr>
-                            {% empty %}
-                            <tr>
-                                <td colspan="5" style="text-align: center; padding: 48px 24px;">
-                                    <div style="color: var(--text-secondary); opacity: 0.6; margin-bottom: 12px;">
-                                        <i class="fas fa-folder-open" style="font-size: 32px;"></i>
-                                    </div>
-                                    <span style="color: var(--text-secondary); font-weight: 500;">No designations found yet.</span>
-                                </td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
+                <div class="form-group" style="margin-bottom: 24px;">
+                    <label class="form-label" style="font-weight: 700;">Department <span style="color: #ef4444;">*</span></label>
+                    <select name="department" required class="form-input">
+                        <option value="">Select Department</option>
+                        {% for dept in departments %}
+                            <option value="{{ dept.pk }}">{{ dept.name }}</option>
+                        {% endfor %}
+                    </select>
                 </div>
-            </div>
+
+                <div class="form-group" style="margin-bottom: 24px;">
+                    <label class="form-label" style="font-weight: 700;">Designation <span style="color: #ef4444;">*</span></label>
+                    <select name="designation" required class="form-input">
+                        <option value="">Select Designation</option>
+                        {% for desig in designations %}
+                            <option value="{{ desig.pk }}">{{ desig.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="form-group" style="margin-bottom: 40px;">
+                    <label class="form-label" style="font-weight: 700;">Assign Shift <span style="color: #ef4444;">*</span></label>
+                    <select name="shift" required class="form-input">
+                        <option value="">Select Shift</option>
+                        {% for shift in shifts %}
+                            <option value="{{ shift.pk }}">{{ shift.name }} ({{ shift.start_time|time:"h:i A" }} - {{ shift.end_time|time:"h:i A" }})</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div style="display: flex; gap: 16px; justify-content: flex-end;">
+                    <a href="{% url 'home' %}" class="btn-secondary" style="flex: 1; text-align: center; text-decoration: none;">Cancel</a>
+                    <button type="submit" class="btn-primary" style="flex: 2; border: none; font-weight: 700; font-size: 14px; cursor: pointer;">
+                        <i class="fas fa-check-circle" style="margin-right: 8px;"></i> Approve & Create Employee
+                    </button>
+                </div>
+            </form>
         </div>
     </main>
 
-    <footer
-        style="margin-top: 60px; padding: 32px 0; border-top: 1px solid var(--border-light); text-align: center; color: var(--text-secondary); font-size: 13px;">
+    <footer style="padding: 32px 0; border-top: 1px solid var(--border-light); text-align: center; color: var(--text-secondary); font-size: 13px;">
         &copy; 2026 GlassEntials Premium HRMS · Platform Version 4.0.2
     </footer>
+    
     <script src="{% static 'js/landing.js' %}?v=1.0"></script>
 </body>
-
 </html>

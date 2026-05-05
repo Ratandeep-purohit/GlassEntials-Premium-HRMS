@@ -1,13 +1,81 @@
-from django.shortcuts import render , redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.http import HttpResponse
-from .models import Shift, ShiftAssignment
+from .models import Shift, ShiftAssignment, AttendanceCorrection
 from django.core.exceptions import ValidationError
 from employees.models import Employee
 
-# Create your views here.
+from django.db.models import Q
+from django.contrib.auth.decorators import login_required
+from datetime import datetime, date, timedelta
+import calendar
+from django.utils import timezone
+from .models import Attendance
+
+@login_required
 def attendance_view(request):
-    return HttpResponse("welcome to attendance")
+    current_employee = Employee.objects.filter(email=request.user.email, organization=request.user.organization, is_active=True, is_deleted=False).first()
+    
+    if not request.user.is_staff and not current_employee:
+        messages.error(request, "You do not have permission to view the Attendance Dashboard.")
+        return redirect('home')
+        
+    organization = request.user.organization
+    today = datetime.now().date()
+    
+    # Date filter
+    filter_date_str = request.GET.get('date', '')
+    if filter_date_str:
+        try:
+            display_date = datetime.strptime(filter_date_str, '%Y-%m-%d').date()
+        except ValueError:
+            display_date = today
+    else:
+        display_date = today
+        
+    # Base query for the selected date's attendance
+    # Using fallback for org filtering to support legacy data if needed
+    if hasattr(Attendance, 'organization'):
+        attendances = Attendance.objects.filter(employee__organization=organization, date=display_date).select_related('employee', 'employee__department', 'shift').prefetch_related('corrections')
+    else:
+        attendances = Attendance.objects.filter(employee__organization=organization, date=display_date).select_related('employee', 'employee__department', 'shift').prefetch_related('corrections')
+    
+    # Search filter
+    search_query = request.GET.get('search', '')
+    if search_query and request.user.is_staff:
+        attendances = attendances.filter(
+            Q(employee__first_name__icontains=search_query) |
+            Q(employee__last_name__icontains=search_query) |
+            Q(employee__employee_id__icontains=search_query)
+        )
+        
+    if not request.user.is_staff:
+        attendances = attendances.filter(employee=current_employee)
+
+    # Stats
+    total_employees = Employee.objects.filter(organization=organization, is_active=True, is_deleted=False).count()
+    present_count = attendances.filter(clock_in__isnull=False).count()
+    late_count = attendances.filter(late_minutes__gt=0).count()
+    absent_count = total_employees - present_count
+    
+    pending_corrections_count = 0
+    if request.user.is_staff:
+        from .models import AttendanceCorrection
+        pending_corrections_count = AttendanceCorrection.objects.filter(employee__organization=organization, status='PENDING').count()
+    
+    context = {
+        'attendances': attendances.order_by('-clock_in'),
+        'total_employees': total_employees,
+        'present_count': present_count,
+        'absent_count': absent_count,
+        'late_count': late_count,
+        'display_date': display_date,
+        'today': today,
+        'search_query': search_query,
+        'pending_corrections_count': pending_corrections_count,
+    }
+    return render(request, 'attendance_dashboard.html', context)
+
 def create_shift_view(request,pk=None):
     edit_shift = None
     
@@ -183,3 +251,496 @@ def assign_shift_view(request, pk=None):
         'assignments': ShiftAssignment.objects.filter(is_deleted=False).select_related('employee', 'shift').order_by('-created_at'),
     }
     return render(request, 'assignshift.html', context)
+
+from django.contrib.auth.decorators import login_required
+from datetime import datetime
+from .models import Attendance
+
+@login_required
+def clock_in_out_view(request):
+    if request.method == 'POST':
+        action = request.POST.get('action')
+        # Find employee
+        employee = Employee.objects.filter(email=request.user.email, organization=request.user.organization, is_active=True, is_deleted=False).first()
+        
+        if not employee:
+            messages.error(request, "Your account is not linked to an active employee profile in this organization.")
+            return redirect('home')
+
+        today = datetime.now().date()
+        current_time = datetime.now().time()
+        
+        # Get current shift assignment
+        from attendance.models import ShiftAssignment
+        from django.db.models import Q
+        shift_assignment = ShiftAssignment.objects.filter(
+            employee=employee,
+            effective_from__lte=today
+        ).filter(
+            Q(effective_to__isnull=True) | Q(effective_to__gte=today)
+        ).first()
+        
+        shift = shift_assignment.shift if shift_assignment else None
+        
+        attendance, created = Attendance.objects.get_or_create(
+            employee=employee,
+            date=today,
+            defaults={
+                'organization': employee.organization,
+                'shift': shift
+            }
+        )
+        
+        # If record already existed but shift was missing, update it
+        if not attendance.shift and shift:
+            attendance.shift = shift
+            attendance.save()
+        
+        if action == 'clock_in':
+            if attendance.clock_in:
+                messages.warning(request, "You have already clocked in today.")
+            else:
+                attendance.clock_in = current_time
+                
+                # Calculate Late Minutes
+                if shift:
+                    # Combine today with times to calculate delta
+                    shift_start = datetime.combine(today, shift.start_time)
+                    actual_in = datetime.combine(today, current_time)
+                    
+                    if actual_in > shift_start:
+                        diff = actual_in - shift_start
+                        late_mins = int(diff.total_seconds() / 60)
+                        if late_mins > shift.grace_minutes:
+                            attendance.late_minutes = late_mins
+                
+                attendance.save()
+                messages.success(request, f"Successfully clocked in at {current_time.strftime('%I:%M %p')}.")
+        elif action == 'clock_out':
+            if not attendance.clock_in:
+                messages.warning(request, "You need to clock in first.")
+            elif attendance.clock_out:
+                messages.warning(request, "You have already clocked out today.")
+            else:
+                attendance.clock_out = current_time
+                
+                # Calculate Early Out Minutes
+                if shift:
+                    shift_end = datetime.combine(today, shift.end_time)
+                    actual_out = datetime.combine(today, current_time)
+                    
+                    if actual_out < shift_end:
+                        diff = shift_end - actual_out
+                        attendance.early_out_minutes = int(diff.total_seconds() / 60)
+                
+                # Calculate Total Work Hours
+                t1 = datetime.combine(today, attendance.clock_in)
+                t2 = datetime.combine(today, current_time)
+                delta = t2 - t1
+                attendance.total_work_hours = delta.total_seconds() / 3600.0
+                
+                attendance.save()
+                messages.success(request, f"Successfully clocked out at {current_time.strftime('%I:%M %p')}.")
+                
+    return redirect('home')
+
+@login_required
+def request_correction_view(request, attendance_id):
+    attendance = get_object_or_404(Attendance, id=attendance_id, employee__email=request.user.email)
+    
+    if request.method == 'POST':
+        requested_in = request.POST.get('requested_in')
+        requested_out = request.POST.get('requested_out')
+        reason = request.POST.get('reason')
+        
+        if not reason:
+            messages.error(request, "Reason is required.")
+            return redirect('attendance')
+            
+        time_in = None
+        time_out = None
+        try:
+            if requested_in:
+                time_in = datetime.strptime(requested_in, '%H:%M').time()
+            if requested_out:
+                time_out = datetime.strptime(requested_out, '%H:%M').time()
+        except ValueError:
+            messages.error(request, "Invalid time format.")
+            return redirect('attendance')
+            
+        AttendanceCorrection.objects.create(
+            attendance=attendance,
+            employee=attendance.employee,
+            requested_clock_in=time_in,
+            requested_clock_out=time_out,
+            reason=reason
+        )
+        messages.success(request, "Correction request submitted successfully.")
+    
+    return redirect('attendance')
+
+@login_required
+def manage_corrections_view(request):
+    if not request.user.is_staff:
+        messages.error(request, "Access denied.")
+        return redirect('home')
+        
+    corrections = AttendanceCorrection.objects.filter(employee__organization=request.user.organization, status='PENDING').order_by('-created_at')
+    
+    context = {
+        'corrections': corrections
+    }
+    return render(request, 'manage_corrections.html', context)
+
+@login_required
+def resolve_correction_view(request, correction_id):
+    if not request.user.is_staff:
+        messages.error(request, "Access denied.")
+        return redirect('home')
+        
+    correction = get_object_or_404(AttendanceCorrection, id=correction_id, employee__organization=request.user.organization)
+    
+    if request.method == 'POST':
+        from django.utils import timezone
+        action = request.POST.get('action')
+        now = timezone.now()
+        
+        if action == 'APPROVE':
+            correction.status = 'APPROVED'
+            correction.resolved_by = request.user
+            correction.resolved_at = now
+            correction.save()
+            
+            att = correction.attendance
+            if correction.requested_clock_in:
+                att.clock_in = correction.requested_clock_in
+            if correction.requested_clock_out:
+                att.clock_out = correction.requested_clock_out
+                
+            if att.shift and att.clock_in:
+                shift_start = datetime.combine(att.date, att.shift.start_time)
+                actual_in = datetime.combine(att.date, att.clock_in)
+                if actual_in > shift_start:
+                    diff = actual_in - shift_start
+                    late_mins = int(diff.total_seconds() / 60)
+                    if late_mins > att.shift.grace_minutes:
+                        att.late_minutes = late_mins
+                    else:
+                        att.late_minutes = 0
+                else:
+                    att.late_minutes = 0
+                    
+            if att.shift and att.clock_out:
+                shift_end = datetime.combine(att.date, att.shift.end_time)
+                actual_out = datetime.combine(att.date, att.clock_out)
+                if actual_out < shift_end:
+                    diff = shift_end - actual_out
+                    att.early_out_minutes = int(diff.total_seconds() / 60)
+                else:
+                    att.early_out_minutes = 0
+                    
+            if att.clock_in and att.clock_out:
+                t1 = datetime.combine(att.date, att.clock_in)
+                t2 = datetime.combine(att.date, att.clock_out)
+                delta = t2 - t1
+                att.total_work_hours = delta.total_seconds() / 3600.0
+                
+            att.save()
+            messages.success(request, "Correction approved and attendance updated.")
+            
+        elif action == 'REJECT':
+            correction.status = 'REJECTED'
+            correction.resolved_by = request.user
+            correction.resolved_at = now
+            correction.save()
+            messages.success(request, "Correction request rejected.")
+            
+    return redirect('manage_corrections')
+
+@login_required
+def break_toggle_view(request):
+    from django.utils import timezone
+    today = timezone.now().date()
+    employee = Employee.objects.filter(email=request.user.email, is_active=True, is_deleted=False).first()
+    if not employee:
+        messages.error(request, "Employee record not found.")
+        return redirect('home')
+        
+    attendance = Attendance.objects.filter(employee=employee, date=today).first()
+    if not attendance or not attendance.clock_in:
+        messages.error(request, "You must be clocked in to take a break.")
+        return redirect('home')
+        
+    if attendance.clock_out:
+        messages.error(request, "You have already clocked out for today.")
+        return redirect('home')
+        
+    from .models import BreakLog
+    active_break = BreakLog.objects.filter(attendance=attendance, end_time__isnull=True).first()
+    
+    if active_break:
+        now = timezone.now()
+        active_break.end_time = now
+        delta = now - active_break.start_time
+        active_break.duration_minutes = int(delta.total_seconds() / 60)
+        active_break.save()
+        
+        all_breaks = BreakLog.objects.filter(attendance=attendance, end_time__isnull=False)
+        total_mins = sum(b.duration_minutes for b in all_breaks)
+        attendance.total_break_minutes = total_mins
+        
+        if attendance.clock_in:
+            t1 = timezone.make_aware(datetime.combine(attendance.date, attendance.clock_in))
+            t2 = now
+            gross_seconds = (t2 - t1).total_seconds()
+            net_seconds = gross_seconds - (total_mins * 60)
+            attendance.net_work_hours = max(0, net_seconds / 3600.0)
+            
+        attendance.save()
+        messages.success(request, f"Break ended. Duration: {active_break.duration_minutes} mins.")
+    else:
+        BreakLog.objects.create(attendance=attendance)
+        messages.success(request, "Break started. Stay refreshed!")
+        
+    return redirect('home')
+
+@login_required
+def attendance_calendar_view(request):
+    organization = request.user.organization
+    
+    # Staff can view any employee's calendar, others only their own
+    employee_id = request.GET.get('employee_id')
+    if request.user.is_staff and employee_id:
+        employee = get_object_or_404(Employee, id=employee_id, organization=organization)
+    else:
+        employee = Employee.objects.filter(email=request.user.email, organization=organization, is_active=True, is_deleted=False).first()
+    
+    if not employee:
+        messages.error(request, "Employee profile not found.")
+        return redirect('home')
+
+    # Get month and year from GET parameters or use current
+    today = timezone.now().date()
+    year = int(request.GET.get('year', today.year))
+    month = int(request.GET.get('month', today.month))
+    
+    # Calculate prev/next month
+    first_day = date(year, month, 1)
+    prev_month_date = first_day - timedelta(days=1)
+    next_month_date = (first_day + timedelta(days=32)).replace(day=1)
+    
+    # Get all attendance for this employee in this month
+    attendances = Attendance.objects.filter(
+        employee=employee,
+        date__year=year,
+        date__month=month
+    )
+    attendance_map = {att.date: att for att in attendances}
+    
+    # Get holidays
+    from leaves.models import Holiday
+    holidays = Holiday.objects.filter(
+        organization=organization,
+        date__year=year,
+        date__month=month
+    )
+    holiday_map = {h.date: h for h in holidays}
+    
+    # Build calendar
+    cal = calendar.Calendar(firstweekday=6) # Sunday start
+    month_days = cal.monthdays2calendar(year, month)
+    
+    # Process days for template
+    processed_calendar = []
+    for week in month_days:
+        week_days = []
+        for day_num, weekday in week:
+            if day_num == 0:
+                week_days.append({'day': 0, 'status': 'empty'})
+            else:
+                curr_date = date(year, month, day_num)
+                att = attendance_map.get(curr_date)
+                hol = holiday_map.get(curr_date)
+                
+                status = 'none'
+                label = ''
+                
+                if hol:
+                    status = 'holiday'
+                    label = hol.name
+                elif att:
+                    if att.late_minutes > 0:
+                        status = 'late'
+                    elif att.clock_in:
+                        status = 'present'
+                    else:
+                        status = 'absent'
+                elif curr_date < today:
+                    # If past date and no attendance/holiday, mark as absent if it's a weekday
+                    if curr_date.weekday() < 5: # Mon-Fri
+                         status = 'absent'
+                    else:
+                         status = 'weekend'
+                
+                week_days.append({
+                    'day': day_num,
+                    'date': curr_date,
+                    'status': status,
+                    'label': label,
+                    'attendance': att
+                })
+        processed_calendar.append(week_days)
+    
+    # For staff, get list of employees for selector
+    employees = None
+    if request.user.is_staff:
+        employees = Employee.objects.filter(organization=organization, is_deleted=False).order_by('first_name')
+        
+    context = {
+        'calendar': processed_calendar,
+        'year': year,
+        'month': month,
+        'month_name': calendar.month_name[month],
+        'prev_year': prev_month_date.year,
+        'prev_month': prev_month_date.month,
+        'next_year': next_month_date.year,
+        'next_month': next_month_date.month,
+        'today': today,
+        'employee': employee,
+        'employees': employees,
+    }
+    
+    return render(request, 'attendance_calendar.html', context)
+
+@login_required
+def export_attendance_view(request):
+    if not request.user.is_staff:
+        messages.error(request, "Access denied.")
+        return redirect('home')
+        
+    organization = request.user.organization
+    export_range = request.GET.get('range', 'today')
+    export_format = request.GET.get('format', 'excel')
+    
+    today = timezone.now().date()
+    start_date = today
+    end_date = today
+    
+    if export_range == 'today':
+        start_date = today
+        end_date = today
+    elif export_range == 'week':
+        start_date = today - timedelta(days=today.weekday())
+        end_date = today
+    elif export_range == 'month':
+        start_date = today.replace(day=1)
+        end_date = today
+    elif export_range == 'custom':
+        s_str = request.GET.get('start_date')
+        e_str = request.GET.get('end_date')
+        try:
+            start_date = datetime.strptime(s_str, '%Y-%m-%d').date()
+            end_date = datetime.strptime(e_str, '%Y-%m-%d').date()
+        except (ValueError, TypeError):
+            messages.error(request, "Invalid date range.")
+            return redirect('attendance')
+            
+    attendances = Attendance.objects.filter(
+        employee__organization=organization, 
+        date__range=[start_date, end_date]
+    ).select_related('employee', 'employee__department').order_by('-date', 'employee__first_name')
+    
+    import io
+    from django.http import HttpResponse
+
+    if export_format == 'excel':
+        import xlsxwriter
+        output = io.BytesIO()
+        workbook = xlsxwriter.Workbook(output)
+        worksheet = workbook.add_worksheet("Attendance Report")
+        
+        header_fmt = workbook.add_format({'bold': True, 'bg_color': '#4F46E5', 'font_color': 'white', 'border': 1})
+        border_fmt = workbook.add_format({'border': 1})
+        
+        headers = ['Date', 'Employee ID', 'Name', 'Department', 'Clock In', 'Clock Out', 'Gross Hours', 'Break (M)', 'Net Hours', 'Status']
+        for col, text in enumerate(headers):
+            worksheet.write(0, col, text, header_fmt)
+            
+        for row, log in enumerate(attendances, start=1):
+            worksheet.write(row, 0, log.date.strftime('%Y-%m-%d'), border_fmt)
+            worksheet.write(row, 1, log.employee.employee_id, border_fmt)
+            worksheet.write(row, 2, f"{log.employee.first_name} {log.employee.last_name}", border_fmt)
+            worksheet.write(row, 3, log.employee.department.name if log.employee.department else "--", border_fmt)
+            worksheet.write(row, 4, log.clock_in.strftime('%I:%M %p') if log.clock_in else "--", border_fmt)
+            worksheet.write(row, 5, log.clock_out.strftime('%I:%M %p') if log.clock_out else "--", border_fmt)
+            worksheet.write(row, 6, log.current_work_time, border_fmt)
+            worksheet.write(row, 7, log.total_break_minutes or 0, border_fmt)
+            worksheet.write(row, 8, f"{log.net_work_hours:.2f}h" if log.net_work_hours else log.current_work_time, border_fmt)
+            
+            status = "Absent"
+            if log.clock_in and log.clock_out: status = "Completed"
+            elif log.clock_in: status = "Working"
+            worksheet.write(row, 9, status, border_fmt)
+            
+        worksheet.set_column(0, 9, 15)
+        workbook.close()
+        output.seek(0)
+        
+        response = HttpResponse(output.read(), content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+        response['Content-Disposition'] = f'attachment; filename="Attendance_{start_date}_to_{end_date}.xlsx"'
+        return response
+
+    elif export_format == 'pdf':
+        from reportlab.lib import colors
+        from reportlab.lib.pagesizes import landscape, A4
+        from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
+        from reportlab.lib.styles import getSampleStyleSheet
+
+        output = io.BytesIO()
+        doc = SimpleDocTemplate(output, pagesize=landscape(A4))
+        elements = []
+        styles = getSampleStyleSheet()
+        
+        elements.append(Paragraph(f"Attendance Report: {start_date} to {end_date}", styles['Title']))
+        elements.append(Spacer(1, 12))
+        
+        data = [['Date', 'Emp ID', 'Name', 'Dept', 'In', 'Out', 'Gross', 'Break', 'Net', 'Status']]
+        for log in attendances:
+            status = "Absent"
+            if log.clock_in and log.clock_out: status = "Completed"
+            elif log.clock_in: status = "Working"
+            
+            data.append([
+                log.date.strftime('%d/%m'),
+                log.employee.employee_id,
+                f"{log.employee.first_name} {log.employee.last_name}"[:20],
+                log.employee.department.name[:10] if log.employee.department else "--",
+                log.clock_in.strftime('%I:%M%p') if log.clock_in else "--",
+                log.clock_out.strftime('%I:%M%p') if log.clock_out else "--",
+                log.current_work_time,
+                str(log.total_break_minutes or 0),
+                f"{log.net_work_hours:.2f}h" if log.net_work_hours else log.current_work_time,
+                status
+            ])
+            
+        t = Table(data, repeatRows=1)
+        t.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#4F46E5')),
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+            ('FONTSIZE', (0, 0), (-1, -1), 8),
+            ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+            ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
+            ('GRID', (0, 0), (-1, -1), 1, colors.black)
+        ]))
+        elements.append(t)
+        doc.build(elements)
+        
+        output.seek(0)
+        response = HttpResponse(output.read(), content_type='application/pdf')
+        response['Content-Disposition'] = f'attachment; filename="Attendance_{start_date}_to_{end_date}.pdf"'
+        return response
+
+    return redirect('attendance')
+

@@ -20,5 +20,8 @@ urlpatterns = [
     path('employee/import/', view.bulk_import, name='bulk_import'),
     path('employee/import/sample/', view.download_sample_excel, name='download_sample_excel'),
     path('employee/toggle-status/<int:pk>/', view.toggle_employee_status, name='toggle_employee_status'),
-    path('employee/delete/<int:pk>/', view.delete_employee, name='delete_employee')
+    path('employee/delete/<int:pk>/', view.delete_employee, name='delete_employee'),
+    path('employee/approve/<int:pk>/', view.approve_employee, name='approve_employee'),
+    path('employee/reject/<int:pk>/', view.reject_employee, name='reject_employee'),
+    path('profile/edit/', view.edit_profile, name='edit_profile'),
 ]   

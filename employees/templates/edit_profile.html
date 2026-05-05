@@ -1,0 +1,349 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Edit Profile | {{ employee.first_name }} {{ employee.last_name }}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Manrope:wght@600;700;800&display=swap">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link rel="stylesheet" href="{% static 'css/landing.css' %}?v=3.0">
+    <link rel="stylesheet" href="{% static 'css/home.css' %}?v=3.0">
+    <link rel="stylesheet" href="{% static 'css/dashboard.css' %}?v=3.0">
+</head>
+
+<body>
+    <!--Subtle Background Elements-->
+    <div class="orb orb-1" style="opacity: 0.03;top:-100px;left:-100px;"></div>
+    <div class="orb orb-2" style="opacity: 0.03;bottom:-100px;right:-100px;"></div>
+    
+    <!-- Flash Messages Toast -->
+    {% include 'includes/_messages.html' %}
+
+    <!--Header Navigation-->
+    <header class="platform-header">
+        <a href="{% url 'home' %}" class="brand-section">
+            <img src="{% static 'img/logo.png' %}" alt="GlassEntials Logo" class="brand-logo-img">
+        </a>
+
+        <nav class="nav-center">
+            <a href="{% url 'home' %}" class="nav-pill active"><i class="fas fa-grid-2"></i> Dashboard</a>
+            <a href="{% url 'attendance' %}" class="nav-pill"><i class="fas fa-fingerprint"></i> My Attendance</a>
+            <a href="{% url 'attendance_calendar' %}" class="nav-pill"><i class="fas fa-calendar"></i> My Calendar</a>
+            <a href="#" class="nav-pill"><i class="fas fa-briefcase"></i> More</a>
+        </nav>
+
+        <div class="header-right">
+            <div class="nav-item-dropdown">
+                <div class="profile-trigger">
+                    <div class="avatar-box">
+                        {% if employee and employee.profile_img %}
+                            <img src="{{ employee.profile_img.url }}" alt="Profile" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                            <div style="display: none; width: 100%; height: 100%; align-items: center; justify-content: center;">{{ request.user.username|slice:":1"|upper }}</div>
+                        {% else %}
+                            {{ request.user.username|slice:":1"|upper }}
+                        {% endif %}
+                    </div>
+                    <i class="fas fa-chevron-down" style="font-size: 10px; color: var(--text-secondary);"></i>
+                </div>
+                <div class="dropdown-content" style="right: 0; left: auto; min-width: 180px;">
+                    <a href="{% url 'edit_profile' %}" class="dropdown-item">
+                        <i class="fas fa-user-circle"></i> Manage Profile
+                    </a>
+                    <a href="{% url 'logout' %}" class="dropdown-item" style="color: #ef4444;">
+                        <i class="fas fa-sign-out-alt"></i> Logout
+                    </a>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="workspace">
+        <div class="page-header flex-header">
+            <div class="header-main-content">
+                <h1>Manage My Profile</h1>
+                <p>Update your personal information, documents, and profile photo.</p>
+            </div>
+        </div>
+
+        <form method="POST" enctype="multipart/form-data">
+            {% csrf_token %}
+
+            <!-- Profile Photo Section (Big & Centered) -->
+            <div style="display: flex; flex-direction: column; align-items: center; margin-bottom: 40px; margin-top: 20px;">
+                <div style="position: relative; width: 140px; height: 140px; border-radius: 50%; padding: 4px; background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%); box-shadow: 0 10px 30px rgba(99, 102, 241, 0.2);">
+                    <div style="width: 100%; height: 100%; border-radius: 50%; background: white; overflow: hidden; display: flex; align-items: center; justify-content: center; border: 4px solid white;">
+                        {% if employee.profile_img %}
+                            <img id="preview_img" src="{{ employee.profile_img.url }}" style="width: 100%; height: 100%; object-fit: cover;" onerror="this.style.display='none'; document.getElementById('initial_placeholder').style.display='flex';">
+                            <div id="initial_placeholder" style="display: none; font-size: 54px; font-weight: 800; color: #6366f1; font-family: 'Manrope', sans-serif;">
+                                {{ request.user.username|slice:":1"|upper }}
+                            </div>
+                        {% else %}
+                            <div id="initial_placeholder" style="font-size: 54px; font-weight: 800; color: #6366f1; font-family: 'Manrope', sans-serif;">
+                                {{ request.user.username|slice:":1"|upper }}
+                            </div>
+                        {% endif %}
+                    </div>
+                    <label for="profile_img_input" style="position: absolute; bottom: 5px; right: 5px; width: 36px; height: 36px; background: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.1); border: 1px solid var(--border-light); color: #6366f1;">
+                        <i class="fas fa-camera"></i>
+                    </label>
+                </div>
+                
+                <div style="display: flex; gap: 12px; margin-top: 20px; flex-wrap: wrap; justify-content: center;">
+                    <button type="button" onclick="document.getElementById('profile_img_input').click();" class="btn-primary" style="height: 42px; padding: 0 24px; font-size: 14px; white-space: nowrap; width: auto; min-width: 180px;">
+                        <i class="fas fa-upload"></i> {% if employee.profile_img %}Update Profile Pic{% else %}Upload Profile Pic{% endif %}
+                    </button>
+                    {% if employee.profile_img %}
+                    <button type="button" onclick="removePhoto();" class="btn-secondary" style="height: 42px; padding: 0 24px; font-size: 14px; color: #ef4444; border-color: #fee2e2; background: #fff; white-space: nowrap; width: auto; min-width: 180px;">
+                        <i class="fas fa-trash-alt"></i> Remove Profile Pic
+                    </button>
+                    {% endif %}
+                </div>
+                
+                <input type="file" id="profile_img_input" name="profile_img" accept="image/*" style="display: none;" onchange="previewImage(this);">
+                <input type="hidden" name="remove_profile_img" id="remove_profile_img_flag" value="0">
+            </div>
+
+            <!-- Section 1: Basic Information -->
+            <div class="card" style="margin-bottom: 32px;">
+                <h3 class="section-title"><i class="fas fa-user"></i> Basic Information</h3>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label class="form-label">First Name</label>
+                        <input type="text" name="first_name" class="form-input" value="{{ employee.first_name }}" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Last Name</label>
+                        <input type="text" name="last_name" class="form-input" value="{{ employee.last_name }}" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Email Address (Read-only)</label>
+                        <input type="email" class="form-input" value="{{ employee.email }}" disabled style="background: #f1f5f9; cursor: not-allowed;">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Phone Number</label>
+                        <input type="text" name="phone_number" class="form-input" value="{{ employee.phone_number }}" required>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Section 2: Personal Details -->
+            <div class="card" style="margin-bottom: 32px;">
+                <h3 class="section-title"><i class="fas fa-info-circle"></i> Personal Details</h3>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label class="form-label">Date of Birth</label>
+                        <input type="date" name="date_of_birth" class="form-input" value="{{ employee.date_of_birth|date:'Y-m-d' }}">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Gender</label>
+                        <select name="gender" class="form-input">
+                            <option value="">Select Gender</option>
+                            <option value="Male" {% if employee.gender == 'Male' %}selected{% endif %}>Male</option>
+                            <option value="Female" {% if employee.gender == 'Female' %}selected{% endif %}>Female</option>
+                            <option value="Other" {% if employee.gender == 'Other' %}selected{% endif %}>Other</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Marital Status</label>
+                        <select name="marital_status" class="form-input">
+                            <option value="">Select Status</option>
+                            <option value="Single" {% if employee.marital_status == 'Single' %}selected{% endif %}>Single</option>
+                            <option value="Married" {% if employee.marital_status == 'Married' %}selected{% endif %}>Married</option>
+                            <option value="Divorced" {% if employee.marital_status == 'Divorced' %}selected{% endif %}>Divorced</option>
+                            <option value="Widowed" {% if employee.marital_status == 'Widowed' %}selected{% endif %}>Widowed</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Blood Group</label>
+                        <select name="blood_group" class="form-input">
+                            <option value="">Select Blood Group</option>
+                            <option value="A+" {% if employee.blood_group == 'A+' %}selected{% endif %}>A+</option>
+                            <option value="A-" {% if employee.blood_group == 'A-' %}selected{% endif %}>A-</option>
+                            <option value="B+" {% if employee.blood_group == 'B+' %}selected{% endif %}>B+</option>
+                            <option value="B-" {% if employee.blood_group == 'B-' %}selected{% endif %}>B-</option>
+                            <option value="AB+" {% if employee.blood_group == 'AB+' %}selected{% endif %}>AB+</option>
+                            <option value="AB-" {% if employee.blood_group == 'AB-' %}selected{% endif %}>AB-</option>
+                            <option value="O+" {% if employee.blood_group == 'O+' %}selected{% endif %}>O+</option>
+                            <option value="O-" {% if employee.blood_group == 'O-' %}selected{% endif %}>O-</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Nationality</label>
+                        <input type="text" name="nationality" class="form-input" value="{{ employee.nationality|default:'Indian' }}">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Section 3: Addresses -->
+            <div class="card" style="margin-bottom: 32px;">
+                <h3 class="section-title"><i class="fas fa-map-marker-alt"></i> Address Information</h3>
+                <div class="form-grid-2">
+                    <div class="form-group">
+                        <label class="form-label">Current Address</label>
+                        <textarea name="current_address" class="form-input" rows="3">{{ employee.current_address }}</textarea>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Permanent Address</label>
+                        <textarea name="permanent_address" class="form-input" rows="3">{{ employee.permanent_address }}</textarea>
+                    </div>
+                </div>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label class="form-label">City</label>
+                        <input type="text" name="current_city" class="form-input" value="{{ employee.current_city|default:'' }}">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">State</label>
+                        <input type="text" name="current_state" class="form-input" value="{{ employee.current_state|default:'' }}">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Pincode</label>
+                        <input type="text" name="current_pincode" class="form-input" value="{{ employee.current_pincode|default:'' }}">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Section 4: Documents -->
+            <div class="card" style="margin-bottom: 32px;">
+                <h3 class="section-title"><i class="fas fa-file-alt"></i> Documents</h3>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label class="form-label">Resume / CV</label>
+                        {% if employee.resume %}
+                        <div style="font-size: 12px; margin-bottom: 4px;"><a href="{{ employee.resume.url }}" target="_blank" style="color: var(--accent);">Current Resume</a></div>
+                        {% endif %}
+                        <input type="file" name="resume" class="form-input">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Aadhaar Card (PDF)</label>
+                        {% if employee.aadhaar_card %}
+                        <div style="font-size: 12px; margin-bottom: 4px;"><a href="{{ employee.aadhaar_card.url }}" target="_blank" style="color: var(--accent);">Current Card</a></div>
+                        {% endif %}
+                        <input type="file" name="aadhaar_card" class="form-input">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">PAN Card (PDF)</label>
+                        {% if employee.pan_card %}
+                        <div style="font-size: 12px; margin-bottom: 4px;"><a href="{{ employee.pan_card.url }}" target="_blank" style="color: var(--accent);">Current Card</a></div>
+                        {% endif %}
+                        <input type="file" name="pan_card" class="form-input">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Section 5: Financial Information -->
+            <div class="card" style="margin-bottom: 32px;">
+                <h3 class="section-title"><i class="fas fa-wallet"></i> Financial Information</h3>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label class="form-label">PAN Number</label>
+                        <input type="text" name="pan_number" class="form-input" maxlength="10" value="{{ employee.pan_number|default:'' }}">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Aadhaar Number</label>
+                        <input type="text" name="aadhaar_number" class="form-input" maxlength="12" value="{{ employee.aadhaar_number|default:'' }}">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Bank Name</label>
+                        <input type="text" name="bank_name" class="form-input" value="{{ employee.bank_name|default:'' }}">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Account Number</label>
+                        <input type="text" name="bank_account_number" class="form-input" value="{{ employee.bank_account_number|default:'' }}">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">IFSC Code</label>
+                        <input type="text" name="ifsc_code" class="form-input" value="{{ employee.ifsc_code|default:'' }}">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Section 6: Emergency Contact -->
+            <div class="card" style="margin-bottom: 32px;">
+                <h3 class="section-title"><i class="fas fa-phone-alt"></i> Emergency Contact</h3>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label class="form-label">Contact Name</label>
+                        <input type="text" name="emergency_contact_name" class="form-input" value="{{ employee.emergency_contact_name|default:'' }}">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Relationship</label>
+                        <input type="text" name="emergency_contact_relationship" class="form-input" value="{{ employee.emergency_contact_relationship|default:'' }}">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Contact Number</label>
+                        <input type="text" name="emergency_contact_number" class="form-input" value="{{ employee.emergency_contact_number|default:'' }}">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Form Actions -->
+            <div style="display: flex; gap: 16px; margin-bottom: 60px;">
+                <button type="submit" class="btn-primary" style="flex: 2; height: 54px;">
+                    <i class="fas fa-check-circle"></i> Update My Profile
+                </button>
+                <a href="{% url 'home' %}" class="btn-secondary" style="flex: 1; height: 54px; text-align: center; display: flex; align-items: center; justify-content: center;">
+                    <i class="fas fa-times"></i> Cancel
+                </a>
+            </div>
+        </form>
+    </main>
+
+    <footer style="padding: 32px 0; border-top: 1px solid var(--border-light); text-align: center; color: var(--text-secondary); font-size: 13px;">
+        &copy; 2026 GlassEntials Premium HRMS
+    </footer>
+    <script>
+        function previewImage(input) {
+            if (input.files && input.files[0]) {
+                var reader = new FileReader();
+                reader.onload = function (e) {
+                    let preview = document.getElementById('preview_img');
+                    if (preview) {
+                        preview.src = e.target.result;
+                    } else {
+                        // Replace initial placeholder with image
+                        let placeholder = document.getElementById('initial_placeholder');
+                        if (placeholder) {
+                            let img = document.createElement('img');
+                            img.id = 'preview_img';
+                            img.src = e.target.result;
+                            img.style.width = '100%';
+                            img.style.height = '100%';
+                            img.style.objectFit = 'cover';
+                            placeholder.parentNode.appendChild(img);
+                            placeholder.remove();
+                        }
+                    }
+                };
+                reader.readAsDataURL(input.files[0]);
+                document.getElementById('remove_profile_img_flag').value = "0";
+            }
+        }
+
+        function removePhoto() {
+            if (confirm('Are you sure you want to remove your profile picture?')) {
+                document.getElementById('remove_profile_img_flag').value = "1";
+                document.getElementById('profile_img_input').value = "";
+                
+                let preview = document.getElementById('preview_img');
+                if (preview) {
+                    let placeholder = document.createElement('div');
+                    placeholder.id = 'initial_placeholder';
+                    placeholder.style.fontSize = '54px';
+                    placeholder.style.fontWeight = '800';
+                    placeholder.style.color = '#6366f1';
+                    placeholder.style.fontFamily = "'Manrope', sans-serif";
+                    placeholder.innerText = "{{ request.user.username|slice:':1'|upper }}";
+                    preview.parentNode.appendChild(placeholder);
+                    preview.remove();
+                }
+            }
+        }
+    </script>
+    <script src="{% static 'js/landing.js' %}?v=1.0"></script>
+</body>
+</html>

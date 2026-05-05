@@ -16,6 +16,7 @@ class CustomUser(AbstractUser):
         null=True,
         blank=True
     )
+    is_approved = models.BooleanField(default=False)
 
     def __str__(self):
         return self.username

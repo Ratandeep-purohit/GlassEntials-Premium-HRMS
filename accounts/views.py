@@ -14,6 +14,10 @@ def login_view(request):
         password = request.POST['password']
         user_auth = authenticate(request, username=username, password=password)
         if user_auth is not None:
+            if not user_auth.is_approved:
+                messages.warning(request, "Your account is currently pending approval by HR/Admin.")
+                return redirect('login')
+            
             login(request, user_auth)
             messages.success(request, f"Welcome back, {user_auth.username}!")
             return redirect('home')
@@ -65,9 +69,18 @@ def register_view(request):
         # Create user
         new_user = user.objects.create_user(username=username, email=email, password=password, phone=phone)
         new_user.organization = org_instance
-        new_user.save()
         
-        messages.success(request, "Account created successfully! Please login.")
+        if org_choice == 'org1':
+            new_user.is_approved = True
+            new_user.is_staff = True # Org creator is an admin
+            new_user.is_superuser = True
+            messages.success(request, "Organization and Admin account created successfully! Please login.")
+        else:
+            new_user.is_approved = False
+            new_user.is_staff = False
+            messages.success(request, "Account created successfully! Please wait for HR/Admin to approve your account.")
+            
+        new_user.save()
         return redirect('login')
         
     return render(request, 'register.html')
@@ -76,4 +89,9 @@ def error_404(request, exception):
     return render(request, '404.html', status=404)
 
 def error_500(request):
-    return render(request, '500.html', status=500)
+    return render(request, '500.html', status=500)
+
+def logout_view(request):
+    logout(request)
+    messages.info(request, "You have been logged out.")
+    return redirect('login')
