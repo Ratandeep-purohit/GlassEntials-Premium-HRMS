@@ -1,0 +1,369 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/leaves.css' %}?v=3.0">
+{% endblock %}
+
+{% block content %}
+<div class="workspace">
+    <!-- Hero Section -->
+    <div class="hero-banner">
+        <div class="hero-text">
+            <h1>Leave Dashboard</h1>
+            <p>Manage your time off and track team availability.</p>
+        </div>
+        <div class="header-actions" style="display: flex; gap: 12px;">
+            <button class="punch-btn" style="background: rgba(37, 99, 235, 0.1); color: var(--accent); border: 1px solid var(--accent);" onclick="openCompOffModal()">
+                <i class="fas fa-history"></i> Request Comp-off Credit
+            </button>
+            <button class="punch-btn" onclick="openApplyModal()">
+                <i class="fas fa-plus"></i> Apply for Leave
+            </button>
+        </div>
+    </div>
+
+    <!-- Admin Stats (Visible only to HR/Managers) -->
+    {% if request.user.is_staff %}
+    <div class="stat-grid" style="margin-bottom: 32px;">
+        <div class="stat-card">
+            <div class="stat-info">
+                <div class="val-primary">{{ admin_stats.total_pending }}</div>
+                <div class="label-primary">Pending Approvals</div>
+            </div>
+            <div class="stat-icon" style="background: rgba(245, 158, 11, 0.1); color: #f59e0b;">
+                <i class="fas fa-clock"></i>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-info">
+                <div class="val-primary">{{ admin_stats.on_leave_today }}</div>
+                <div class="label-primary">On Leave Today</div>
+            </div>
+            <div class="stat-icon" style="background: rgba(16, 185, 129, 0.1); color: #10b981;">
+                <i class="fas fa-user-minus"></i>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-info">
+                <div class="val-primary">{{ leave_types|length }}</div>
+                <div class="label-primary">Leave Categories</div>
+            </div>
+            <div class="stat-icon" style="background: rgba(59, 130, 246, 0.1); color: #3b82f6;">
+                <i class="fas fa-tags"></i>
+            </div>
+        </div>
+        <div class="stat-card" onclick="location.href='{% url 'leaves:pending_approvals' %}'">
+            <div class="stat-info">
+                <div class="val-primary">View</div>
+                <div class="label-primary">Manage Approvals</div>
+            </div>
+            <div class="stat-icon" style="background: rgba(124, 58, 237, 0.1); color: #7c3aed;">
+                <i class="fas fa-tasks"></i>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Leave Balances hidden as per user request -->
+    <div style="display: none;">
+        <h2 style="font-weight: 800; margin-bottom: 20px; font-size: 20px;">Your Balances</h2>
+        <div class="balance-grid">
+            {% for bal in balances %}
+            <div class="balance-card">
+                <div class="balance-content">
+                    <div class="balance-header">
+                        <span class="type-badge">{{ bal.leave_type.code }}</span>
+                        <i class="fas fa-info-circle" style="opacity: 0.3;"></i>
+                    </div>
+                    <div class="balance-value">{{ bal.current_balance }}</div>
+                    <div class="balance-label">{{ bal.leave_type.name }} (Available)</div>
+                    <div class="progress-container">
+                        <div class="progress-bar" style="width: {% widthratio bal.current_balance 30 100 %}%"></div>
+                    </div>
+                    <div style="margin-top: 12px; font-size: 11px; color: var(--text-secondary); font-weight: 600;">
+                        Used: {{ bal.used_balance }} days
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+
+    <!-- Recent Activity & Calendar Preview -->
+    <div class="bento-grid">
+        <!-- History Table -->
+        <div class="bento-card">
+            {% if request.user.is_staff and team_requests %}
+            <div class="bento-header">
+                <h2 class="bento-title">Team Pending Requests</h2>
+                <a href="{% url 'leaves:pending_approvals' %}" class="action-link">View All &rarr;</a>
+            </div>
+            <div class="compact-list" style="margin-bottom: 32px;">
+                {% for req in team_requests %}
+                <div class="announce-item" style="display: flex; justify-content: space-between; align-items: center; border-left: 4px solid #f59e0b;">
+                    <div>
+                        <h3 class="item-h">{{ req.employee.first_name }} {{ req.employee.last_name }}</h3>
+                        <div class="item-meta">{{ req.leave_type.name }} | {{ req.start_date }} ({{ req.total_days }} days)</div>
+                    </div>
+                    <span class="status-badge status-pending">Pending</span>
+                </div>
+                {% endfor %}
+            </div>
+            <hr style="border: 0; border-top: 1px solid var(--border-light); margin: 24px 0;">
+            {% endif %}
+
+            <div class="bento-header">
+                <h2 class="bento-title">Your Recent Requests</h2>
+                <a href="{% url 'leaves:history' %}" class="action-link">Full History &rarr;</a>
+            </div>
+            <div class="compact-list">
+                {% for req in recent_requests %}
+                <div class="announce-item" style="display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <h3 class="item-h">{{ req.leave_type.name }}</h3>
+                        <div class="item-meta">{{ req.start_date }} - {{ req.end_date }} ({{ req.total_days }} days)</div>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                        <span class="status-badge status-{{ req.status|lower }}">{{ req.get_status_display }}</span>
+                        
+                        {% if req.status == 'PENDING' or req.status == 'APPROVED' or req.status == 'MANAGER_APPROVED' %}
+                        <form method="POST" action="{% url 'leaves:request_cancel' req.id %}" onsubmit="return confirm('Request cancellation for this leave?')">
+                            {% csrf_token %}
+                            <button type="submit" class="cancel-btn" title="Cancel Leave">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </form>
+                        {% endif %}
+                    </div>
+                </div>
+                {% empty %}
+                <div style="text-align: center; padding: 32px; color: var(--text-secondary);">No personal requests found.</div>
+                {% endfor %}
+            </div>
+
+            {% if recent_compoffs %}
+            <div class="bento-header" style="margin-top: 32px;">
+                <h2 class="bento-title">Recent Comp-off Credits</h2>
+            </div>
+            <div class="compact-list">
+                {% for req in recent_compoffs %}
+                <div class="announce-item" style="display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <h3 class="item-h">Comp-off for {{ req.worked_date }}</h3>
+                        <div class="item-meta">{{ req.reason|truncatechars:40 }}</div>
+                    </div>
+                    <span class="status-badge status-{{ req.status|lower }}">{{ req.get_status_display }}</span>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+        </div>
+
+
+        <!-- Quick Info / Calendar Teaser -->
+        <div class="bento-card" style="background: linear-gradient(135deg, #2563eb, #7c3aed); color: #fff; border: none; display: flex; flex-direction: column; justify-content: space-between;">
+            <div>
+                <h2 class="bento-title" style="color: #fff; margin-bottom: 12px;">Plan Your Time Off</h2>
+                <p style="font-size: 13px; opacity: 0.9; margin-bottom: 24px;">Check team availability and upcoming holidays before applying.</p>
+                
+                <a href="{% url 'leaves:calendar' %}" style="background: rgba(255,255,255,0.2); color: #fff; text-decoration: none; padding: 10px 20px; border-radius: 12px; font-weight: 700; font-size: 13px; display: inline-flex; align-items: center; gap: 8px; border: 1px solid rgba(255,255,255,0.3);">
+                    <i class="fas fa-calendar"></i> Team Calendar
+                </a>
+            </div>
+
+            {% if upcoming_leaves %}
+            <div style="margin-top: 24px; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.1);">
+                <div style="font-size: 11px; font-weight: 800; opacity: 0.7; margin-bottom: 12px; letter-spacing: 0.5px; text-transform: uppercase;">Your Upcoming Leaves</div>
+                {% for leave in upcoming_leaves %}
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                    <span style="font-size: 13px; font-weight: 600;">{{ leave.start_date|date:"M d" }}</span>
+                    <span style="font-size: 12px; opacity: 0.8;">{{ leave.leave_type.code }} ({{ leave.total_days }}d)</span>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            <div style="margin-top: 24px; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.1);">
+                <div style="font-size: 11px; font-weight: 800; opacity: 0.7; margin-bottom: 12px; letter-spacing: 0.5px; text-transform: uppercase;">Upcoming Holidays</div>
+                <div style="max-height: 120px; overflow-y: auto;">
+                    {% for holiday in upcoming_holidays %}
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                        <span style="font-size: 13px; font-weight: 600;">{{ holiday.name }}</span>
+                        <span style="font-size: 12px; opacity: 0.8;">{{ holiday.date|date:"M d" }}</span>
+                    </div>
+                    {% empty %}
+                    <div style="font-size: 12px; opacity: 0.6;">No upcoming holidays.</div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<!-- Apply Leave Modal -->
+<div id="applyModal" class="glass-modal">
+    <div class="modal-content" style="width: 500px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+            <h2 style="font-weight: 800; margin: 0;">Apply for Leave</h2>
+            <button onclick="closeApplyModal()" style="background: none; border: none; font-size: 20px; cursor: pointer; color: var(--text-secondary);">&times;</button>
+        </div>
+        
+        <form method="POST" action="{% url 'leaves:apply_leave' %}" enctype="multipart/form-data">
+            {% csrf_token %}
+            <div class="form-group">
+                <label class="form-label">Leave Type</label>
+                <select name="leave_type" id="leaveTypeSelect" class="glass-input" required onchange="handleLeaveTypeChange()">
+                    {% for lt in leave_types %}
+                        <option value="{{ lt.id }}" data-code="{{ lt.code }}">{{ lt.name }} ({{ lt.code }})</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                <div class="form-group">
+                    <label class="form-label">Start Date</label>
+                    <input type="date" name="start_date" id="startDate" class="glass-input" required onchange="handleDateChange()">
+                </div>
+                <div class="form-group" id="endDateGroup">
+                    <label class="form-label">End Date</label>
+                    <input type="date" name="end_date" id="endDate" class="glass-input" required>
+                </div>
+            </div>
+
+            <div id="shortLeaveTimeGroup" style="display: none; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px;">
+                <div class="form-group">
+                    <label class="form-label">From Time</label>
+                    <input type="time" name="start_time" class="glass-input">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">To Time</label>
+                    <input type="time" name="end_time" class="glass-input">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Duration Type</label>
+                <select name="session" id="sessionType" class="glass-input" onchange="handleSessionChange()">
+                    <option value="FULL">Full Day</option>
+                    <option value="MORNING">First Half</option>
+                    <option value="AFTERNOON">Second Half</option>
+                    <option value="SHORT">Short Leave (2 Hours)</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Reason</label>
+                <textarea name="reason" class="glass-input" rows="3" placeholder="Briefly describe the reason..." required></textarea>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Attachment (Optional)</label>
+                <input type="file" name="attachment" class="glass-input" style="padding: 8px;">
+            </div>
+
+            <button type="submit" class="punch-btn" style="width: 100%; margin-top: 12px; padding: 14px;">
+                Submit Application
+            </button>
+        </form>
+    </div>
+</div>
+
+<script>
+    function openApplyModal() {
+        document.getElementById('applyModal').style.display = 'flex';
+    }
+    function closeApplyModal() {
+        document.getElementById('applyModal').style.display = 'none';
+    }
+    function openCompOffModal() {
+        document.getElementById('compOffModal').style.display = 'flex';
+    }
+    function closeCompOffModal() {
+        document.getElementById('compOffModal').style.display = 'none';
+    }
+
+    function handleSessionChange() {
+        const sessionType = document.getElementById('sessionType').value;
+        const endDateGroup = document.getElementById('endDateGroup');
+        const shortLeaveTimeGroup = document.getElementById('shortLeaveTimeGroup');
+        const startDate = document.getElementById('startDate');
+        const endDate = document.getElementById('endDate');
+
+        if (sessionType === 'SHORT') {
+            endDate.value = startDate.value;
+            endDateGroup.style.display = 'none';
+            shortLeaveTimeGroup.style.display = 'grid';
+        } else if (sessionType !== 'FULL') {
+            endDate.value = startDate.value;
+            endDateGroup.style.display = 'block';
+            endDateGroup.style.opacity = '0.5';
+            endDate.readOnly = true;
+            shortLeaveTimeGroup.style.display = 'none';
+        } else {
+            endDateGroup.style.display = 'block';
+            endDateGroup.style.opacity = '1';
+            endDate.readOnly = false;
+            shortLeaveTimeGroup.style.display = 'none';
+        }
+    }
+
+    function handleLeaveTypeChange() {
+        const leaveTypeSelect = document.getElementById('leaveTypeSelect');
+        const selectedOption = leaveTypeSelect.options[leaveTypeSelect.selectedIndex];
+        const leaveCode = selectedOption.getAttribute('data-code');
+        const sessionType = document.getElementById('sessionType');
+
+        if (leaveCode === 'SHL') {
+            sessionType.value = 'SHORT';
+            handleSessionChange();
+        } else {
+            if (sessionType.value === 'SHORT') {
+                sessionType.value = 'FULL';
+                handleSessionChange();
+            }
+        }
+    }
+
+
+    function handleDateChange() {
+        const sessionType = document.getElementById('sessionType').value;
+        const startDate = document.getElementById('startDate');
+        const endDate = document.getElementById('endDate');
+
+        if (sessionType !== 'FULL') {
+            endDate.value = startDate.value;
+        }
+    }
+</script>
+
+<!-- Comp-off Request Modal -->
+<div id="compOffModal" class="glass-modal">
+    <div class="modal-content" style="width: 500px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+            <h2 style="font-weight: 800; margin: 0;">Request Comp-off Credit</h2>
+            <button onclick="closeCompOffModal()" style="background: none; border: none; font-size: 20px; cursor: pointer; color: var(--text-secondary);">&times;</button>
+        </div>
+        
+        <form method="POST" action="{% url 'leaves:apply_compoff' %}">
+            {% csrf_token %}
+            <div class="form-group">
+                <label class="form-label">Date Worked</label>
+                <input type="date" name="worked_date" class="glass-input" required>
+                <small style="color: var(--text-secondary); font-size: 11px;">Select the weekend or holiday you worked on.</small>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Work Description</label>
+                <textarea name="reason" class="glass-input" rows="4" placeholder="What project/task did you work on?" required></textarea>
+            </div>
+
+            <button type="submit" class="punch-btn" style="width: 100%; margin-top: 12px; padding: 14px;">
+                Submit Request
+            </button>
+        </form>
+    </div>
+</div>
+{% endblock %}

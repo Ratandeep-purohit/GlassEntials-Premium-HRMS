@@ -1,0 +1,452 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Attendance Analytics | HRMS{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Premium Dashboard Styles */
+    .analytics-header {
+        margin-bottom: 30px;
+    }
+
+    .analytics-header h1 {
+        font-size: 28px;
+        font-weight: 800;
+        color: var(--text-main, #0f172a);
+        margin: 0 0 8px;
+        letter-spacing: -0.5px;
+    }
+
+    .analytics-header p {
+        font-size: 14px;
+        color: var(--text-secondary, #64748b);
+        margin: 0;
+    }
+
+    .kpi-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        gap: 20px;
+        margin-bottom: 32px;
+    }
+
+    .kpi-card {
+        background: rgba(255, 255, 255, 0.72);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        border: 1px solid rgba(255, 255, 255, 0.4);
+        border-radius: 20px;
+        padding: 24px;
+        display: flex;
+        align-items: center;
+        gap: 20px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.04);
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .kpi-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 12px 40px rgba(37, 99, 235, 0.08);
+    }
+
+    .kpi-icon {
+        width: 56px;
+        height: 56px;
+        border-radius: 16px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 24px;
+        flex-shrink: 0;
+    }
+
+    .kpi-icon.primary { background: rgba(37, 99, 235, 0.1); color: #2563eb; }
+    .kpi-icon.success { background: rgba(16, 185, 129, 0.1); color: #10b981; }
+    .kpi-icon.warning { background: rgba(245, 158, 11, 0.1); color: #f59e0b; }
+    .kpi-icon.danger { background: rgba(239, 68, 68, 0.1); color: #ef4444; }
+
+    .kpi-details h3 {
+        font-size: 13px;
+        font-weight: 700;
+        color: var(--text-secondary, #64748b);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin: 0 0 4px;
+    }
+
+    .kpi-details .kpi-value {
+        font-size: 28px;
+        font-weight: 800;
+        color: var(--text-main, #0f172a);
+        margin: 0;
+        line-height: 1;
+    }
+
+    .charts-grid {
+        display: grid;
+        grid-template-columns: 2fr 1fr;
+        gap: 24px;
+    }
+
+    @media (max-width: 992px) {
+        .charts-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    .chart-card {
+        background: rgba(255, 255, 255, 0.72);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        border: 1px solid rgba(255, 255, 255, 0.4);
+        border-radius: 20px;
+        padding: 24px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.04);
+    }
+
+    .chart-header {
+        margin-bottom: 20px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .chart-title {
+        font-size: 16px;
+        font-weight: 800;
+        color: var(--text-main, #0f172a);
+        margin: 0;
+    }
+
+    .chart-container {
+        position: relative;
+        height: 300px;
+        width: 100%;
+    }
+
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="analytics-container" style="max-width: 1200px; margin: 0 auto; padding: 20px;">
+    
+    <div class="analytics-header">
+        <h1>Attendance Analytics</h1>
+        <p>Real-time insights into workforce punctuality and presence for the current month.</p>
+    </div>
+
+    <!-- KPI Grid -->
+    <div class="kpi-grid">
+        <div class="kpi-card">
+            <div class="kpi-icon primary">
+                <i class="fas fa-users"></i>
+            </div>
+            <div class="kpi-details">
+                <h3>Total Employees</h3>
+                <div class="kpi-value">{{ total_employees }}</div>
+            </div>
+        </div>
+
+        <div class="kpi-card">
+            <div class="kpi-icon success">
+                <i class="fas fa-user-check"></i>
+            </div>
+            <div class="kpi-details">
+                <h3>Present Today</h3>
+                <div class="kpi-value">{{ present_today }}</div>
+            </div>
+        </div>
+
+        <div class="kpi-card">
+            <div class="kpi-icon warning">
+                <i class="fas fa-clock"></i>
+            </div>
+            <div class="kpi-details">
+                <h3>Punctuality</h3>
+                <div class="kpi-value">{{ punctuality_percent }}%</div>
+            </div>
+        </div>
+
+        <div class="kpi-card">
+            <div class="kpi-icon danger">
+                <i class="fas fa-person-running"></i>
+            </div>
+            <div class="kpi-details">
+                <h3>Early Departures</h3>
+                <div class="kpi-value">{{ early_departures }}</div>
+            </div>
+        </div>
+
+        <div class="kpi-card">
+            <div class="kpi-icon primary" style="background: rgba(124, 58, 237, 0.1); color: #7c3aed;">
+                <i class="fas fa-hourglass-half"></i>
+            </div>
+            <div class="kpi-details">
+                <h3>Avg Work Hours</h3>
+                <div class="kpi-value">{{ avg_hours }}h</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts Section -->
+    <div class="charts-grid" style="margin-bottom: 24px;">
+        <!-- Main Trend Chart -->
+        <div class="chart-card">
+            <div class="chart-header">
+                <h2 class="chart-title">7-Day Attendance Trend</h2>
+            </div>
+            <div class="chart-container">
+                <canvas id="trendChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Today's Overview Doughnut -->
+        <div class="chart-card">
+            <div class="chart-header">
+                <h2 class="chart-title">Today's Overview</h2>
+            </div>
+            <div class="chart-container" style="height: 250px; display: flex; align-items: center; justify-content: center;">
+                <canvas id="todayChart"></canvas>
+            </div>
+            <div style="text-align: center; margin-top: 16px; font-size: 13px; font-weight: 600; color: var(--text-secondary);">
+                <span style="color: #10b981;">● Present ({{ present_today }})</span>
+                <span style="margin-left: 12px; color: #ef4444;">● Absent ({{ absent_today }})</span>
+            </div>
+        </div>
+    </div>
+    
+    <div class="charts-grid" style="margin-bottom: 24px;">
+        <!-- Dept Attendance Bar Chart -->
+        <div class="chart-card">
+            <div class="chart-header">
+                <h2 class="chart-title">Department Punctuality/Presence %</h2>
+            </div>
+            <div class="chart-container">
+                <canvas id="deptChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Overtime Trend -->
+        <div class="chart-card">
+            <div class="chart-header">
+                <h2 class="chart-title">7-Day Overtime Trend (Hours)</h2>
+            </div>
+            <div class="chart-container" style="height: 250px;">
+                <canvas id="otChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tables Section -->
+    <div class="charts-grid" style="grid-template-columns: 1fr;">
+        <div class="chart-card">
+            <div class="chart-header">
+                <h2 class="chart-title" style="color: #ef4444;"><i class="fas fa-exclamation-circle"></i> Top Latecomers This Month</h2>
+            </div>
+            <table style="width: 100%; border-collapse: collapse; text-align: left;">
+                <thead>
+                    <tr style="border-bottom: 1px solid var(--border-light); color: var(--text-secondary); font-size: 12px; text-transform: uppercase;">
+                        <th style="padding: 12px 8px;">Employee Name</th>
+                        <th style="padding: 12px 8px;">Total Late (Minutes)</th>
+                        <th style="padding: 12px 8px;">Times Late</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for late in late_list %}
+                    <tr style="border-bottom: 1px solid var(--border-light);">
+                        <td style="padding: 12px 8px; font-weight: 600;">{{ late.employee__first_name }} {{ late.employee__last_name }}</td>
+                        <td style="padding: 12px 8px; color: #ef4444; font-weight: 700;">{{ late.total_late }} mins</td>
+                        <td style="padding: 12px 8px; font-weight: 600;">{{ late.times_late }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="3" style="padding: 24px; text-align: center; color: var(--text-secondary);">No late arrivals recorded this month! 🎉</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<!-- Include Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        // Trend Chart (Line)
+        const trendCtx = document.getElementById('trendChart').getContext('2d');
+        
+        // Data injected from Django view
+        const labels = {{ trend_labels|safe }};
+        const presentData = {{ trend_present|safe }};
+        const lateData = {{ trend_late|safe }};
+
+        new Chart(trendCtx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [
+                    {
+                        label: 'Present',
+                        data: presentData,
+                        borderColor: '#2563eb',
+                        backgroundColor: 'rgba(37, 99, 235, 0.1)',
+                        borderWidth: 3,
+                        tension: 0.4,
+                        fill: true,
+                        pointBackgroundColor: '#fff',
+                        pointBorderColor: '#2563eb',
+                        pointBorderWidth: 2,
+                        pointRadius: 4
+                    },
+                    {
+                        label: 'Late',
+                        data: lateData,
+                        borderColor: '#f59e0b',
+                        backgroundColor: 'rgba(245, 158, 11, 0.1)',
+                        borderWidth: 2,
+                        tension: 0.4,
+                        fill: true,
+                        pointBackgroundColor: '#fff',
+                        pointBorderColor: '#f59e0b',
+                        pointBorderWidth: 2,
+                        pointRadius: 4
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'top',
+                        labels: {
+                            usePointStyle: true,
+                            padding: 20,
+                            font: {
+                                family: "'Plus Jakarta Sans', sans-serif",
+                                size: 12,
+                                weight: '600'
+                            }
+                        }
+                    },
+                    tooltip: {
+                        backgroundColor: 'rgba(15, 23, 42, 0.9)',
+                        titleFont: { family: "'Plus Jakarta Sans'", size: 13 },
+                        bodyFont: { family: "'Plus Jakarta Sans'", size: 12 },
+                        padding: 12,
+                        cornerRadius: 8
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        grid: {
+                            color: 'rgba(0, 0, 0, 0.04)',
+                            drawBorder: false
+                        },
+                        ticks: {
+                            stepSize: 1,
+                            font: { family: "'Plus Jakarta Sans'", size: 11 }
+                        }
+                    },
+                    x: {
+                        grid: { display: false, drawBorder: false },
+                        ticks: {
+                            font: { family: "'Plus Jakarta Sans'", size: 11 }
+                        }
+                    }
+                }
+            }
+        });
+
+        // Today's Overview (Doughnut)
+        const todayCtx = document.getElementById('todayChart').getContext('2d');
+        const presentCount = {{ present_today }};
+        const absentCount = {{ absent_today }};
+        
+        new Chart(todayCtx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Present', 'Absent'],
+                datasets: [{
+                    data: [presentCount, absentCount],
+                    backgroundColor: [
+                        '#10b981', // Success green
+                        '#f1f5f9'  // Light gray for absent
+                    ],
+                    borderWidth: 0,
+                    hoverOffset: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                cutout: '75%',
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        backgroundColor: 'rgba(15, 23, 42, 0.9)',
+                        bodyFont: { family: "'Plus Jakarta Sans'", size: 13 },
+                        padding: 12,
+                        callbacks: {
+                            label: function(context) {
+                                return ` ${context.label}: ${context.raw}`;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+        
+        // Department Bar Chart
+        const deptCtx = document.getElementById('deptChart').getContext('2d');
+        new Chart(deptCtx, {
+            type: 'bar',
+            data: {
+                labels: {{ dept_labels|safe }},
+                datasets: [{
+                    label: 'Presence Rate %',
+                    data: {{ dept_present_rates|safe }},
+                    backgroundColor: 'rgba(124, 58, 237, 0.8)',
+                    borderRadius: 6
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: { max: 100, beginAtZero: true }
+                }
+            }
+        });
+
+        // Overtime Trend Chart
+        const otCtx = document.getElementById('otChart').getContext('2d');
+        new Chart(otCtx, {
+            type: 'bar',
+            data: {
+                labels: {{ trend_labels|safe }},
+                datasets: [{
+                    label: 'Overtime Hours',
+                    data: {{ trend_overtime|safe }},
+                    backgroundColor: 'rgba(34, 197, 94, 0.8)',
+                    borderRadius: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: { beginAtZero: true }
+                }
+            }
+        });
+    });
+</script>
+{% endblock %}

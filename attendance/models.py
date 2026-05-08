@@ -156,4 +156,18 @@ class BreakLog(BaseModel):
     def __str__(self):
         return f"Break for {self.attendance.employee} on {self.attendance.date}"
 
-
+class OvertimeRequest(BaseModel):
+    STATUS_CHOICES = [
+        ('PENDING', 'Pending'),
+        ('APPROVED', 'Approved'),
+        ('REJECTED', 'Rejected'),
+    ]
+    employee = models.ForeignKey(Employee, on_delete=models.CASCADE, related_name='overtime_requests')
+    date = models.DateField()
+    hours_requested = models.DecimalField(max_digits=4, decimal_places=2)
+    reason = models.TextField()
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='PENDING')
+    approved_by = models.ForeignKey('accounts.CustomUser', on_delete=models.SET_NULL, null=True, blank=True, related_name='approved_overtimes')
+    
+    def __str__(self):
+        return f"Overtime {self.hours_requested}h for {self.employee} on {self.date}"

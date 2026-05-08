@@ -61,6 +61,24 @@ def home_view(request):
     else:
         greeting = "Good evening"
 
+    # Fetch Upcoming Data for Dashboard Card
+    from leaves.models import Holiday, LeaveRequest
+    upcoming_leaves = []
+    if current_employee:
+        upcoming_leaves = LeaveRequest.objects.filter(
+            employee=current_employee,
+            status='APPROVED',
+            start_date__gte=today
+        ).order_by('start_date')[:3]
+    
+    upcoming_holidays = Holiday.objects.filter(
+        organization=organization,
+        date__gte=today
+    ).order_by('date')
+    
+    filtered_holidays = [h for h in upcoming_holidays if h.date.weekday() != 6][:5] # 6 is Sunday
+
+
     context = {
         'user_count': user_count,
         'today_date': today_date,
@@ -75,7 +93,19 @@ def home_view(request):
         'organization': organization,
         'current_employee': current_employee,
         'greeting': greeting,
+        'upcoming_leaves': upcoming_leaves,
+        'upcoming_holidays': filtered_holidays,
     }
+
     return render(request, 'home.html', context)
 
-# Create your views here.
+@login_required
+def notifications_view(request):
+    from home.models import Notification
+    
+    # Mark user's notifications as read when they visit this page
+    Notification.objects.filter(user=request.user, is_read=False).update(is_read=True)
+    
+    # The 'global_notifications' list is already available in context via the processor
+    return render(request, 'notifications.html')
+

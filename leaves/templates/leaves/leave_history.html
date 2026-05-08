@@ -1,0 +1,171 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/leaves.css' %}?v=3.0">
+<style>
+    .history-container {
+        background: rgba(255, 255, 255, 0.7);
+        backdrop-filter: blur(12px);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        border-radius: 24px;
+        padding: 32px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.05);
+    }
+
+    .history-table {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0 12px;
+    }
+
+    .history-table th {
+        text-align: left;
+        padding: 0 16px 12px;
+        font-size: 12px;
+        font-weight: 800;
+        text-transform: uppercase;
+        color: var(--text-secondary);
+        letter-spacing: 1px;
+    }
+
+    .history-row {
+        background: #fff;
+        border-radius: 16px;
+        transition: transform 0.2s;
+    }
+
+    .history-row:hover {
+        transform: scale(1.005);
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
+    }
+
+    .history-row td {
+        padding: 20px 16px;
+        font-size: 14px;
+    }
+
+    .history-row td:first-child { border-top-left-radius: 16px; border-bottom-left-radius: 16px; }
+    .history-row td:last-child { border-top-right-radius: 16px; border-bottom-right-radius: 16px; }
+
+    .date-box {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+    }
+
+    .date-main { font-weight: 700; color: var(--text-main); }
+    .date-sub { font-size: 11px; color: var(--text-secondary); }
+
+    .workflow-btn {
+        background: var(--accent-muted);
+        color: var(--accent);
+        border: none;
+        padding: 6px 12px;
+        border-radius: 8px;
+        font-size: 11px;
+        font-weight: 700;
+        cursor: pointer;
+    }
+</style>
+
+
+{% endblock %}
+
+{% block content %}
+<div class="workspace">
+    <div class="hero-banner">
+        <div class="hero-text">
+            <h1>Leave History</h1>
+            <p>A comprehensive log of all your leave applications and approvals.</p>
+        </div>
+        <div class="header-actions">
+            <a href="{% url 'leaves:dashboard' %}" class="punch-btn" style="background: rgba(255,255,255,0.1); color: var(--text-main); border: 1px solid var(--border-light);">
+                <i class="fas fa-arrow-left"></i> Back to Dashboard
+            </a>
+        </div>
+    </div>
+
+    <div class="history-container">
+        <table class="history-table">
+            <thead>
+                <tr>
+                    <th>Leave Type</th>
+                    <th>Dates</th>
+                    <th>Days</th>
+                    <th>Status</th>
+                    <th>Workflow</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for req in requests %}
+                <tr class="history-row">
+                    <td>
+                        <div class="date-box">
+                            <span class="date-main">{{ req.leave_type.name }}</span>
+                            <span class="date-sub">{{ req.leave_type.code }}</span>
+                        </div>
+                    </td>
+                    <td>
+                        <div class="date-box">
+                            <span class="date-main">{{ req.start_date }} - {{ req.end_date }}</span>
+                            <span class="date-sub">{{ req.session_type }} Session</span>
+                        </div>
+                    </td>
+                    <td>
+                        <span style="font-weight: 700; color: var(--accent);">{{ req.total_days }}</span>
+                    </td>
+                    <td>
+                        <span class="status-badge status-{{ req.status|lower }}">{{ req.get_status_display }}</span>
+                    </td>
+                    <td>
+                        <div style="display: flex; gap: 10px;">
+                            <button class="workflow-btn" onclick="showWorkflow('{{ req.id }}')">
+                                <i class="fas fa-eye"></i> Track
+                            </button>
+                            
+                            {% if req.status == 'PENDING' or req.status == 'APPROVED' or req.status == 'MANAGER_APPROVED' %}
+                            <form method="POST" action="{% url 'leaves:request_cancel' req.id %}" onsubmit="return confirm('Are you sure you want to request cancellation for this leave?')">
+                                {% csrf_token %}
+                                <button type="submit" class="cancel-btn">
+                                    <i class="fas fa-times-circle"></i> Cancel
+                                </button>
+                            </form>
+                            {% endif %}
+                        </div>
+                    </td>
+
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="5" style="text-align: center; padding: 40px; color: var(--text-secondary);">
+                        No leave history found.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Workflow Modal (Simplified) -->
+<div id="workflowModal" class="glass-modal">
+    <div class="modal-content" style="width: 450px;">
+        <h2 style="font-weight: 800; margin-bottom: 24px;">Approval Audit Trail</h2>
+        <div id="workflow-steps" style="display: flex; flex-direction: column; gap: 20px; position: relative;">
+            <!-- Content will be loaded dynamically or via hidden spans -->
+            <p style="color: var(--text-secondary); font-size: 13px;">This feature requires the Audit Service to be fully synced. Coming soon.</p>
+        </div>
+        <button class="punch-btn" style="width: 100%; margin-top: 32px;" onclick="closeWorkflow()">Close</button>
+    </div>
+</div>
+
+<script>
+    function showWorkflow(reqId) {
+        document.getElementById('workflowModal').style.display = 'flex';
+    }
+    function closeWorkflow() {
+        document.getElementById('workflowModal').style.display = 'none';
+    }
+</script>
+{% endblock %}

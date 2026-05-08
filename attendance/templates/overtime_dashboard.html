@@ -1,0 +1,235 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Overtime Dashboard | HRMS{% endblock %}
+
+{% block extra_css %}
+<style>
+    .ot-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 24px;
+    }
+
+    .ot-header h1 {
+        font-size: 28px;
+        font-weight: 800;
+        color: var(--text-main, #0f172a);
+        margin: 0;
+    }
+
+    .glass-card {
+        background: rgba(255, 255, 255, 0.72);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        border: 1px solid rgba(255, 255, 255, 0.4);
+        border-radius: 20px;
+        padding: 24px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.04);
+        margin-bottom: 24px;
+    }
+
+    .glass-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .glass-table th {
+        text-transform: uppercase;
+        font-size: 12px;
+        font-weight: 700;
+        color: var(--text-secondary, #64748b);
+        padding: 16px;
+        text-align: left;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    }
+
+    .glass-table td {
+        padding: 16px;
+        font-size: 14px;
+        color: var(--text-main, #0f172a);
+        border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    }
+
+    .status-badge {
+        padding: 6px 12px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 600;
+        display: inline-block;
+    }
+    .status-pending { background: rgba(245, 158, 11, 0.1); color: #f59e0b; }
+    .status-approved { background: rgba(16, 185, 129, 0.1); color: #10b981; }
+    .status-rejected { background: rgba(239, 68, 68, 0.1); color: #ef4444; }
+
+    .btn-submit {
+        background: var(--primary-color, #2563eb);
+        color: white;
+        border: none;
+        padding: 12px 24px;
+        border-radius: 12px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+    .btn-submit:hover {
+        background: #1d4ed8;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);
+    }
+
+    .btn-action {
+        padding: 8px 16px;
+        border: none;
+        border-radius: 8px;
+        font-weight: 600;
+        font-size: 13px;
+        cursor: pointer;
+        transition: 0.2s;
+    }
+    .btn-approve { background: #10b981; color: white; }
+    .btn-approve:hover { background: #059669; }
+    .btn-reject { background: #ef4444; color: white; margin-left: 8px; }
+    .btn-reject:hover { background: #dc2626; }
+
+    .form-group {
+        margin-bottom: 16px;
+    }
+    .form-group label {
+        display: block;
+        margin-bottom: 8px;
+        font-weight: 600;
+        color: var(--text-secondary, #64748b);
+    }
+    .form-control {
+        width: 100%;
+        padding: 12px;
+        border: 1px solid rgba(0, 0, 0, 0.1);
+        border-radius: 12px;
+        background: rgba(255, 255, 255, 0.8);
+        font-family: inherit;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div style="max-width: 1200px; margin: 0 auto; padding: 20px;">
+    <div class="ot-header">
+        <h1>Overtime Dashboard</h1>
+        {% if not request.user.is_staff %}
+        <button class="btn-submit" onclick="document.getElementById('ot-modal').style.display='block'">
+            <i class="fas fa-plus"></i> Request Overtime
+        </button>
+        {% endif %}
+    </div>
+
+    <!-- Manager/HR View: Pending Approvals -->
+    {% if request.user.is_staff and pending_requests %}
+    <div class="glass-card" style="border-left: 4px solid #f59e0b;">
+        <h2 style="margin-top: 0; font-size: 18px;">Pending Overtime Approvals</h2>
+        <table class="glass-table">
+            <thead>
+                <tr>
+                    <th>Employee</th>
+                    <th>Date</th>
+                    <th>Hours</th>
+                    <th>Reason</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for req in pending_requests %}
+                <tr>
+                    <td style="font-weight: 600;">{{ req.employee.first_name }} {{ req.employee.last_name }}</td>
+                    <td>{{ req.date }}</td>
+                    <td style="font-weight: 700; color: #2563eb;">{{ req.hours_requested }}h</td>
+                    <td>{{ req.reason }}</td>
+                    <td>
+                        <form method="POST" action="{% url 'overtime_action' req.id %}" style="display: inline;">
+                            {% csrf_token %}
+                            <input type="hidden" name="action" value="APPROVE">
+                            <button type="submit" class="btn-action btn-approve"><i class="fas fa-check"></i> Approve</button>
+                        </form>
+                        <form method="POST" action="{% url 'overtime_action' req.id %}" style="display: inline;">
+                            {% csrf_token %}
+                            <input type="hidden" name="action" value="REJECT">
+                            <button type="submit" class="btn-action btn-reject"><i class="fas fa-times"></i> Reject</button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endif %}
+
+    <!-- Common View: Overtime History -->
+    <div class="glass-card">
+        <h2 style="margin-top: 0; font-size: 18px;">Overtime History</h2>
+        <table class="glass-table">
+            <thead>
+                <tr>
+                    {% if request.user.is_staff %}<th>Employee</th>{% endif %}
+                    <th>Date</th>
+                    <th>Hours Requested</th>
+                    <th>Reason</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for req in requests %}
+                <tr>
+                    {% if request.user.is_staff %}<td style="font-weight: 600;">{{ req.employee.first_name }} {{ req.employee.last_name }}</td>{% endif %}
+                    <td>{{ req.date }}</td>
+                    <td style="font-weight: 700;">{{ req.hours_requested }}h</td>
+                    <td>{{ req.reason }}</td>
+                    <td>
+                        <span class="status-badge 
+                            {% if req.status == 'PENDING' %}status-pending
+                            {% elif req.status == 'APPROVED' %}status-approved
+                            {% else %}status-rejected{% endif %}">
+                            {{ req.get_status_display }}
+                        </span>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="5" style="text-align: center; color: var(--text-secondary); padding: 32px;">No overtime requests found.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+</div>
+
+<!-- Modal for Overtime Request -->
+{% if not request.user.is_staff %}
+<div id="ot-modal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center;">
+    <div style="background: white; border-radius: 20px; padding: 32px; width: 100%; max-width: 500px; margin: 10% auto; position: relative;">
+        <button onclick="document.getElementById('ot-modal').style.display='none'" style="position: absolute; right: 24px; top: 24px; background: none; border: none; font-size: 20px; cursor: pointer; color: #64748b;">
+            <i class="fas fa-times"></i>
+        </button>
+        
+        <h2 style="margin-top: 0; margin-bottom: 24px;">Request Overtime</h2>
+        <form method="POST">
+            {% csrf_token %}
+            <div class="form-group">
+                <label>Date of Overtime</label>
+                <input type="date" name="date" class="form-control" required>
+            </div>
+            <div class="form-group">
+                <label>Total Hours (e.g., 1.5)</label>
+                <input type="number" step="0.5" min="0.5" max="12" name="hours" class="form-control" required>
+            </div>
+            <div class="form-group">
+                <label>Reason / Task Accomplished</label>
+                <textarea name="reason" rows="3" class="form-control" required></textarea>
+            </div>
+            <button type="submit" class="btn-submit" style="width: 100%;">Submit Request</button>
+        </form>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

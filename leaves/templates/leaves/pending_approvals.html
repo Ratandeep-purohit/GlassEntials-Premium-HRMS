@@ -1,0 +1,303 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/leaves.css' %}?v=3.0">
+<style>
+    .pending-container {
+        display: flex;
+        flex-direction: column;
+        gap: 24px;
+    }
+
+    .approval-card {
+        background: rgba(255, 255, 255, 0.7);
+        backdrop-filter: blur(12px);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        border-radius: 20px;
+        padding: 20px;
+        display: grid;
+        grid-template-columns: auto 1fr auto;
+        align-items: center;
+        gap: 20px;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
+    }
+
+    .approval-card:hover {
+        transform: scale(1.01);
+        border-color: var(--accent);
+        box-shadow: 0 10px 30px rgba(37, 99, 235, 0.1);
+    }
+
+    .emp-profile {
+        width: 50px;
+        height: 50px;
+        border-radius: 12px;
+        background: var(--accent-muted);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 800;
+        color: var(--accent);
+        font-size: 18px;
+    }
+
+    .leave-details h3 {
+        margin: 0;
+        font-size: 16px;
+        font-weight: 800;
+    }
+
+    .leave-details p {
+        margin: 4px 0 0;
+        font-size: 13px;
+        color: var(--text-secondary);
+    }
+
+    .badge-row {
+        display: flex;
+        gap: 8px;
+        margin-top: 8px;
+    }
+
+    .action-group {
+        display: flex;
+        gap: 12px;
+    }
+
+    .btn-action {
+        padding: 8px 16px;
+        border-radius: 10px;
+        font-size: 13px;
+        font-weight: 700;
+        cursor: pointer;
+        border: none;
+        transition: all 0.2s;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .btn-approve {
+        background: #10b981;
+        color: white;
+    }
+
+    .btn-approve:hover {
+        background: #059669;
+        box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2);
+    }
+
+    .btn-reject {
+        background: rgba(239, 68, 68, 0.1);
+        color: #ef4444;
+        border: 1px solid rgba(239, 68, 68, 0.2);
+    }
+
+    .btn-reject:hover {
+        background: #ef4444;
+        color: white;
+    }
+
+    /* Modal Styling */
+    .glass-modal {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.3);
+        backdrop-filter: blur(8px);
+        z-index: 2000;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .modal-content {
+        background: #fff;
+        border-radius: 24px;
+        padding: 32px;
+        width: 400px;
+        max-width: 90%;
+        box-shadow: 0 20px 50px rgba(0, 0, 0, 0.1);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="workspace">
+    <div class="hero-banner" style="margin-bottom: 32px;">
+        <div class="hero-text">
+            <h1>Leave Approval Queue</h1>
+            <p>You have <strong>{{ pending_leaves|length }}</strong> pending requests that require your immediate action.</p>
+        </div>
+        <div class="header-actions">
+            <a href="{% url 'leaves:calendar' %}" class="punch-btn" style="background: rgba(255,255,255,0.1); color: var(--text-main); border: 1px solid var(--border-light);">
+                <i class="fas fa-calendar-alt"></i> Team Calendar
+            </a>
+        </div>
+    </div>
+
+    {% if pending_compoffs %}
+    <h2 style="font-weight: 800; margin: 32px 0 20px; font-size: 20px;">Comp-off Credit Requests</h2>
+    <div class="pending-container" style="margin-bottom: 48px;">
+        {% for req in pending_compoffs %}
+        <div class="approval-card" style="border-left: 4px solid #3b82f6;">
+            <div class="emp-profile" style="background: rgba(59, 130, 246, 0.1); color: #3b82f6;">
+                {% if req.employee.profile_img %}
+                    <img src="{{ req.employee.profile_img.url }}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 12px;">
+                {% else %}
+                    {{ req.employee.first_name|slice:":1"|upper }}
+                {% endif %}
+            </div>
+            <div class="leave-details">
+                <h3>{{ req.employee.first_name }} {{ req.employee.last_name }}</h3>
+                <p><strong>Comp-off Credit</strong> · Worked on {{ req.worked_date }}</p>
+                <div style="margin-top: 12px; font-size: 13px; color: var(--text-main); font-style: italic; opacity: 0.8;">
+                    "{{ req.reason }}"
+                </div>
+            </div>
+            <div class="action-group">
+                <form method="POST" action="{% url 'leaves:compoff_action' req.id %}" style="margin: 0; display: flex; gap: 12px;">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="approve">
+                    <button type="submit" class="btn-action btn-approve" style="background: #3b82f6;">
+                        <i class="fas fa-check"></i> Grant Credit
+                    </button>
+                    <button type="submit" name="action" value="reject" class="btn-action btn-reject">
+                        <i class="fas fa-times"></i> Reject
+                    </button>
+                </form>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    <hr style="border: 0; border-top: 1px solid var(--border-light); margin: 40px 0;">
+    {% if cancel_requests %}
+    <h2 style="font-weight: 800; margin: 32px 0 20px; font-size: 20px; color: #ef4444;">Leave Cancellation Requests</h2>
+    <div class="pending-container" style="margin-bottom: 48px;">
+        {% for req in cancel_requests %}
+        <div class="approval-card" style="border-left: 4px solid #ef4444; background: rgba(239, 68, 68, 0.02);">
+            <div class="emp-profile" style="background: rgba(239, 68, 68, 0.1); color: #ef4444;">
+                {% if req.employee.profile_img %}
+                    <img src="{{ req.employee.profile_img.url }}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 12px;">
+                {% else %}
+                    {{ req.employee.first_name|slice:":1"|upper }}
+                {% endif %}
+            </div>
+            <div class="leave-details">
+                <h3>{{ req.employee.first_name }} {{ req.employee.last_name }}</h3>
+                <p><strong style="color: #ef4444;">Cancellation Requested</strong> · {{ req.leave_type.name }} ({{ req.start_date }})</p>
+                <div style="margin-top: 8px; font-size: 12px; color: var(--text-secondary);">
+                    Original Request: {{ req.total_days }} days · {{ req.reason|truncatechars:50 }}
+                </div>
+            </div>
+            <div class="action-group">
+                <form method="POST" action="{% url 'leaves:cancel_action' req.id %}" style="margin: 0; display: flex; gap: 12px;">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="approve">
+                    <button type="submit" class="btn-action" style="background: #ef4444; color: white;">
+                        <i class="fas fa-check-circle"></i> Approve Cancellation
+                    </button>
+                    <button type="submit" name="action" value="reject" class="btn-action" style="background: #f1f5f9; color: var(--text-main);">
+                        <i class="fas fa-times"></i> Dismiss
+                    </button>
+                </form>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    <hr style="border: 0; border-top: 1px solid var(--border-light); margin: 40px 0;">
+    {% endif %}
+
+
+    <h2 style="font-weight: 800; margin-bottom: 20px; font-size: 20px;">Leave Applications</h2>
+    <div class="pending-container">
+        {% for leave in pending_leaves %}
+
+        <div class="approval-card">
+            <div class="emp-profile">
+                {% if leave.employee.profile_img %}
+                    <img src="{{ leave.employee.profile_img.url }}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 12px;">
+                {% else %}
+                    {{ leave.employee.first_name|slice:":1"|upper }}
+                {% endif %}
+            </div>
+            <div class="leave-details">
+                <h3>{{ leave.employee.first_name }} {{ leave.employee.last_name }}</h3>
+                <p><strong>{{ leave.leave_type.name }}</strong> · {{ leave.start_date }} to {{ leave.end_date }} ({{ leave.total_days }} days)</p>
+                <div class="badge-row">
+                    <span class="status-badge status-{{ leave.status|lower }}">{{ leave.get_status_display }}</span>
+                    {% if leave.attachment %}
+                    <a href="{{ leave.attachment.url }}" target="_blank" class="status-badge" style="background: var(--accent-muted); color: var(--accent); text-decoration: none;">
+                        <i class="fas fa-paperclip"></i> View Document
+                    </a>
+                    {% endif %}
+                </div>
+                <div style="margin-top: 12px; font-size: 13px; color: var(--text-main); font-style: italic; opacity: 0.8;">
+                    "{{ leave.reason }}"
+                </div>
+            </div>
+            <div class="action-group">
+                <form method="POST" action="{% url 'leaves:leave_action' leave.id %}" style="margin: 0; display: flex; gap: 12px;">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="approve">
+                    <button type="submit" class="btn-action btn-approve">
+                        <i class="fas fa-check"></i> Approve
+                    </button>
+                </form>
+                <button class="btn-action btn-reject" onclick="openRejectModal('{{ leave.id }}')">
+                    <i class="fas fa-times"></i> Reject
+                </button>
+            </div>
+        </div>
+        {% empty %}
+        <div style="text-align: center; padding: 60px; color: var(--text-secondary);">
+            <i class="fas fa-inbox" style="font-size: 48px; opacity: 0.2; margin-bottom: 16px;"></i>
+            <p>Your approval queue is empty. All caught up!</p>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- Rejection Modal -->
+<div id="rejectModal" class="glass-modal">
+    <div class="modal-content">
+        <h2 style="font-weight: 800; margin-bottom: 8px;">Reject Application</h2>
+        <p style="color: var(--text-secondary); font-size: 14px; margin-bottom: 24px;">Please provide a reason for rejecting this leave request.</p>
+        <form id="rejectForm" method="POST" action="">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="reject">
+            <div class="form-group">
+                <textarea name="comments" class="glass-input" rows="4" placeholder="Reason for rejection..." required></textarea>
+            </div>
+            <div style="display: flex; gap: 12px; margin-top: 24px;">
+                <button type="button" class="btn-action" style="flex: 1; background: #f1f5f9; color: var(--text-main);" onclick="closeRejectModal()">Cancel</button>
+                <button type="submit" class="btn-action" style="flex: 1; background: #ef4444; color: white;">Confirm Rejection</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    function openRejectModal(leaveId) {
+        const modal = document.getElementById('rejectModal');
+        const form = document.getElementById('rejectForm');
+        form.action = `/leaves/action/${leaveId}/`;
+        modal.style.display = 'flex';
+    }
+
+    function closeRejectModal() {
+        document.getElementById('rejectModal').style.display = 'none';
+    }
+
+    window.onclick = function(event) {
+        const modal = document.getElementById('rejectModal');
+        if (event.target == modal) {
+            closeRejectModal();
+        }
+    }
+</script>
+{% endblock %}

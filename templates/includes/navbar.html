@@ -1,0 +1,186 @@
+{% load static %}
+<header class="platform-header">
+    <a href="{% url 'home' %}" class="brand-section">
+        <img src="{% static 'img/logo.png' %}" alt="GlassEntials Logo" class="brand-logo-img">
+    </a>
+
+    <nav class="nav-center">
+        <a href="{% url 'home' %}" class="nav-pill {% if request.resolver_match.url_name == 'home' %}active{% endif %}">
+            <i class="fas fa-grid-2"></i> Dashboard
+        </a>
+
+        {% if request.user.is_staff %}
+        <!-- Employees Dropdown -->
+        <div class="nav-item-dropdown">
+            <a href="#"
+                class="nav-pill {% if request.resolver_match.url_name == 'employee' or request.resolver_match.url_name == 'department' or request.resolver_match.url_name == 'designation' %}active{% endif %}">
+                <i class="fas fa-users-rectangle"></i> Employees
+                <i class="fas fa-chevron-down"></i>
+            </a>
+            <div class="dropdown-content">
+                <a href="{% url 'employee' %}" class="dropdown-item">
+                    <i class="fas fa-list-ul"></i> Employee Dashboard
+                </a>
+                <a href="{% url 'department' %}" class="dropdown-item">
+                    <i class="fas fa-sitemap"></i> Departments
+                </a>
+                <a href="{% url 'designation' %}" class="dropdown-item">
+                    <i class="fas fa-id-card"></i> Designations
+                </a>
+            </div>
+        </div>
+
+        <!-- Attendance Dropdown -->
+        <div class="nav-item-dropdown">
+            <a href="#"
+                class="nav-pill {% if request.resolver_match.url_name == 'attendance' or request.resolver_match.url_name == 'create_shift' or request.resolver_match.url_name == 'assign_shift' or request.resolver_match.url_name == 'attendance_calendar' or request.resolver_match.url_name == 'attendance_analytics' or request.resolver_match.url_name == 'overtime_dashboard' %}active{% endif %}">
+                <i class="fas fa-fingerprint"></i> Attendance
+                <i class="fas fa-chevron-down"></i>
+            </a>
+            <div class="dropdown-content">
+                <a href="{% url 'attendance' %}" class="dropdown-item">
+                    <i class="fas fa-list-ul"></i> Attendance Dashboard
+                </a>
+                <a href="{% url 'create_shift' %}" class="dropdown-item">
+                    <i class="fas fa-sitemap"></i> Create Shift
+                </a>
+                <a href="{% url 'assign_shift' %}" class="dropdown-item">
+                    <i class="fas fa-id-card"></i> Assign Shift
+                </a>
+                <a href="{% url 'attendance_calendar' %}" class="dropdown-item">
+                    <i class="fas fa-calendar"></i> My Calendar
+                </a>
+                <a href="{% url 'attendance_analytics' %}" class="dropdown-item">
+                    <i class="fas fa-chart-line"></i> Analytics
+                </a>
+                <a href="{% url 'overtime_dashboard' %}" class="dropdown-item">
+                    <i class="fas fa-clock"></i> Overtime Module
+                </a>
+            </div>
+        </div>
+
+        <!-- Leaves Dropdown -->
+        <div class="nav-item-dropdown">
+            <a href="#" class="nav-pill {% if request.resolver_match.app_name == 'leaves' %}active{% endif %}">
+                <i class="fas fa-calendar-alt"></i> Leaves
+                <i class="fas fa-chevron-down"></i>
+            </a>
+            <div class="dropdown-content">
+                <a href="{% url 'leaves:dashboard' %}" class="dropdown-item">
+                    <i class="fas fa-list-ul"></i> Leave Dashboard
+                </a>
+                <a href="{% url 'leaves:history' %}" class="dropdown-item">
+                    <i class="fas fa-history"></i> Leave History
+                </a>
+                <a href="{% url 'leaves:pending_approvals' %}" class="dropdown-item">
+                    <i class="fas fa-check-circle"></i> Approvals
+                </a>
+                <a href="{% url 'leaves:calendar' %}" class="dropdown-item">
+                    <i class="fas fa-calendar"></i> Team Calendar
+                </a>
+            </div>
+        </div>
+
+        <!-- Payroll Dropdown -->
+        <div class="nav-item-dropdown">
+            <a href="#" class="nav-pill {% if request.resolver_match.url_name == 'payroll' %}active{% endif %}">
+                <i class="fas fa-receipt"></i> Payroll
+                <i class="fas fa-chevron-down"></i>
+            </a>
+            <div class="dropdown-content">
+                <a href="{% url 'payroll' %}" class="dropdown-item">
+                    <i class="fas fa-list-ul"></i> Payroll Dashboard
+                </a>
+                <a href="#" class="dropdown-item">
+                    <i class="fas fa-sitemap"></i> Generate Payroll
+                </a>
+                <a href="#" class="dropdown-item">
+                    <i class="fas fa-id-card"></i> Payroll History
+                </a>
+            </div>
+        </div>
+        {% else %}
+        <!-- Attendance Dropdown for Employee -->
+        <div class="nav-item-dropdown">
+            <a href="#"
+                class="nav-pill {% if request.resolver_match.url_name == 'attendance' or request.resolver_match.url_name == 'attendance_calendar' or request.resolver_match.url_name == 'overtime_dashboard' %}active{% endif %}">
+                <i class="fas fa-fingerprint"></i> My Attendance
+                <i class="fas fa-chevron-down"></i>
+            </a>
+            <div class="dropdown-content">
+                <a href="{% url 'attendance' %}" class="dropdown-item">
+                    <i class="fas fa-list-ul"></i> Dashboard
+                </a>
+                <a href="{% url 'attendance_calendar' %}" class="dropdown-item">
+                    <i class="fas fa-calendar"></i> My Calendar
+                </a>
+                <a href="{% url 'overtime_dashboard' %}" class="dropdown-item">
+                    <i class="fas fa-clock"></i> Request Overtime
+                </a>
+            </div>
+        </div>
+
+        <a href="{% url 'leaves:dashboard' %}"
+            class="nav-pill {% if request.resolver_match.app_name == 'leaves' %}active{% endif %}"><i
+                class="fas fa-calendar-alt"></i> My Leaves</a>
+        {% endif %}
+        <a href="#" class="nav-pill"><i class="fas fa-briefcase"></i> More</a>
+    </nav>
+
+    <div class="header-right">
+        <div class="nav-item-dropdown">
+            <div class="profile-trigger">
+                <div class="avatar-box">
+                    {% if current_employee and current_employee.profile_img %}
+                    <img src="{{ current_employee.profile_img.url }}" alt="Profile">
+                    {% else %}
+                    {{ request.user.username|slice:":1"|upper }}
+                    {% endif %}
+                </div>
+                <i class="fas fa-chevron-down" style="font-size: 10px; color: var(--text-secondary);"></i>
+            </div>
+            <div class="dropdown-content" style="right: 0; left: auto; min-width: 180px;">
+                <a href="{% url 'edit_profile' %}" class="dropdown-item">
+                    <i class="fas fa-user-circle"></i> Manage Profile
+                </a>
+                <a href="{% url 'logout' %}" class="dropdown-item" style="color: #ef4444;">
+                    <i class="fas fa-sign-out-alt"></i> Logout
+                </a>
+            </div>
+        </div>
+
+        <div class="nav-item-dropdown" style="display: flex; align-items: center;">
+            <div class="action-icon-circle" onclick="window.location.href='{% url 'notifications' %}'">
+                <i class="fas fa-bell"></i>
+                {% if global_notifications_count > 0 %}
+                <div class="notification-badge"></div>
+                {% endif %}
+            </div>
+            <div class="dropdown-content"
+                style="right: 0; left: auto; width: 360px; padding: 0; top: 100%; margin-top: 10px;">
+                <div
+                    style="padding: 15px; font-weight: 700; border-bottom: 1px solid var(--border-light); font-size: 14px; display: flex; justify-content: space-between; align-items: center;">
+                    <span>Notifications</span>
+                    <a href="{% url 'notifications' %}" style="font-size: 12px; color: var(--primary-color); font-weight: 600;">View All</a>
+                </div>
+                <div style="max-height: 350px; overflow-y: auto;">
+                    {% for notification in global_notifications|slice:":5" %}
+                    <a href="{{ notification.link }}" class="dropdown-item"
+                        style="display: flex; flex-direction: column; align-items: flex-start; padding: 12px 15px; border-bottom: 1px solid var(--border-light);">
+                        <div style="display: flex; justify-content: space-between; width: 100%;">
+                            <span style="font-weight: 600; font-size: 13px; color: var(--text-main);">{{ notification.title }}</span>
+                            <span style="font-size: 11px; color: #ef4444; font-weight: 700;">Action Required</span>
+                        </div>
+                        <span style="font-size: 12px; color: var(--text-secondary); margin-top: 4px;">{{ notification.message }}</span>
+                    </a>
+                    {% empty %}
+                    <div style="padding: 24px; text-align: center; color: var(--text-secondary); font-size: 13px;">
+                        <i class="fas fa-check-circle" style="font-size: 24px; color: #10b981; margin-bottom: 8px; display: block;"></i>
+                        You're all caught up!
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</header>

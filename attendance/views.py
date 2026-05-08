@@ -743,4 +743,165 @@ def export_attendance_view(request):
         return response
 
     return redirect('attendance')
+
+from django.db.models import Avg, Sum, Count, Q
+from django.utils import timezone
+from datetime import timedelta
+
+@login_required
+def attendance_analytics_view(request):
+    if not request.user.is_staff:
+        from django.http import HttpResponseForbidden
+        return HttpResponseForbidden("You are not authorized to view this page.")
+        
+    today = timezone.localdate()
+    start_of_month = today.replace(day=1)
+    
+    month_attendances = Attendance.objects.filter(date__gte=start_of_month, date__lte=today)
+    
+    from employees.models import Employee, Department
+    total_employees = Employee.objects.count()
+    
+    today_attendances = Attendance.objects.filter(date=today)
+    present_today = today_attendances.filter(clock_in__isnull=False).count()
+    absent_today = total_employees - present_today
+    
+    total_punches = month_attendances.filter(clock_in__isnull=False).count()
+    late_punches = month_attendances.filter(late_minutes__gt=0).count()
+    early_departures = month_attendances.filter(early_out_minutes__gt=0).count()
+    on_time_punches = total_punches - late_punches
+    
+    punctuality_percent = 0
+    if total_punches > 0:
+        punctuality_percent = round((on_time_punches / total_punches) * 100, 1)
+        
+    avg_hours_decimal = month_attendances.aggregate(avg=Avg('net_work_hours'))['avg']
+    avg_hours = round(avg_hours_decimal, 1) if avg_hours_decimal else 0
+    
+    # 7-Day Trend
+    last_7_days = [today - timedelta(days=i) for i in range(6, -1, -1)]
+    trend_labels = [d.strftime('%b %d') for d in last_7_days]
+    
+    trend_present = []
+    trend_late = []
+    trend_overtime = []
+    
+    for d in last_7_days:
+        day_att = Attendance.objects.filter(date=d)
+        p_count = day_att.filter(clock_in__isnull=False).count()
+        l_count = day_att.filter(late_minutes__gt=0).count()
+        o_hours = day_att.aggregate(total=Sum('overtime_hours'))['total'] or 0
+        trend_present.append(p_count)
+        trend_late.append(l_count)
+        trend_overtime.append(float(o_hours))
+        
+    # Department Wise Attendance
+    departments = Department.objects.filter(is_deleted=False)
+    dept_labels = []
+    dept_present_rates = []
+    
+    for dept in departments:
+        dept_emps = Employee.objects.filter(department=dept, is_active=True).count()
+        if dept_emps > 0:
+            dept_att = today_attendances.filter(employee__department=dept, clock_in__isnull=False).count()
+            rate = round((dept_att / dept_emps) * 100, 1)
+            dept_labels.append(dept.name)
+            dept_present_rates.append(rate)
+
+    # Top Latecomers
+    late_list = month_attendances.filter(late_minutes__gt=0).values('employee__first_name', 'employee__last_name').annotate(total_late=Sum('late_minutes'), times_late=Count('id')).order_by('-total_late')[:5]
+
+    context = {
+        'total_employees': total_employees,
+        'present_today': present_today,
+        'absent_today': absent_today,
+        'punctuality_percent': punctuality_percent,
+        'avg_hours': avg_hours,
+        'early_departures': early_departures,
+        'trend_labels': trend_labels,
+        'trend_present': trend_present,
+        'trend_late': trend_late,
+        'trend_overtime': trend_overtime,
+        'dept_labels': dept_labels,
+        'dept_present_rates': dept_present_rates,
+        'late_list': late_list,
+    }
+    
+    return render(request, 'attendance_analytics.html', context)
+
+@login_required
+def overtime_dashboard_view(request):
+    from employees.models import Employee
+    from .models import OvertimeRequest
+    
+    employee = Employee.objects.filter(email=request.user.email, is_active=True, is_deleted=False).first()
+    
+    if request.method == 'POST' and employee:
+        date = request.POST.get('date')
+        hours = request.POST.get('hours')
+        reason = request.POST.get('reason')
+        
+        if date and hours and reason:
+            OvertimeRequest.objects.create(
+                employee=employee,
+                date=date,
+                hours_requested=hours,
+                reason=reason,
+                created_by=request.user
+            )
+            messages.success(request, "Overtime request submitted successfully.")
+            return redirect('overtime_dashboard')
+            
+    if employee and not request.user.is_staff:
+        requests_list = OvertimeRequest.objects.filter(employee=employee).order_by('-created_at')
+        pending_requests = None
+        
+    elif request.user.is_staff:
+        requests_list = OvertimeRequest.objects.all().order_by('-created_at')
+        pending_requests = OvertimeRequest.objects.filter(status='PENDING').order_by('-created_at')
+        
+    else:
+        requests_list = []
+        pending_requests = None
+        
+    context = {
+        'requests': requests_list,
+        'pending_requests': pending_requests,
+        'employee': employee,
+    }
+    
+    return render(request, 'overtime_dashboard.html', context)
+
+@login_required
+def overtime_action_view(request, request_id):
+    if not request.user.is_staff:
+        from django.http import HttpResponseForbidden
+        return HttpResponseForbidden("Access Denied")
+        
+    from .models import OvertimeRequest
+    from django.shortcuts import get_object_or_404
+    
+    ot_request = get_object_or_404(OvertimeRequest, id=request_id)
+    
+    if request.method == 'POST':
+        action = request.POST.get('action')
+        if action == 'APPROVE':
+            ot_request.status = 'APPROVED'
+            ot_request.approved_by = request.user
+            ot_request.save()
+            messages.success(request, "Overtime approved.")
+            
+            att = Attendance.objects.filter(employee=ot_request.employee, date=ot_request.date).first()
+            if att:
+                att.overtime_hours = float(att.overtime_hours) + float(ot_request.hours_requested)
+                att.save()
+                
+        elif action == 'REJECT':
+            ot_request.status = 'REJECTED'
+            ot_request.approved_by = request.user
+            ot_request.save()
+            messages.success(request, "Overtime rejected.")
+            
+    return redirect('overtime_dashboard')
+
 

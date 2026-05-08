@@ -24,143 +24,7 @@
     {% include 'includes/_messages.html' %}
 
     <!-- Header Navigation -->
-    <header class="platform-header">
-        <a href="{% url 'home' %}" class="brand-section">
-            <img src="{% static 'img/logo.png' %}" alt="GlassEntials Logo" class="brand-logo-img">
-        </a>
-
-        <nav class="nav-center">
-            <a href="{% url 'home' %}" class="nav-pill active"><i class="fas fa-grid-2"></i> Dashboard</a>
-
-            {% if request.user.is_staff %}
-            <div class="nav-item-dropdown">
-                <a href="#" class="nav-pill">
-                    <i class="fas fa-users-rectangle"></i> Employees
-                    <i class="fas fa-chevron-down"></i>
-                </a>
-                <div class="dropdown-content">
-                    <a href="{% url 'employee' %}" class="dropdown-item">
-                        <i class="fas fa-list-ul"></i> Employee Dashboard
-                    </a>
-                    <a href="{% url 'department' %}" class="dropdown-item">
-                        <i class="fas fa-sitemap"></i> Departments
-                    </a>
-                    <a href="{% url 'designation' %}" class="dropdown-item">
-                        <i class="fas fa-id-card"></i> Designations
-                    </a>
-                </div>
-            </div>
-            <div class="nav-item-dropdown">
-                <a href="#" class="nav-pill">
-                    <i class="fas fa-fingerprint"></i> Attendance
-                    <i class="fas fa-chevron-down"></i>
-                </a>
-                <div class="dropdown-content">
-                    <a href="{% url 'attendance' %}" class="dropdown-item">
-                        <i class="fas fa-list-ul"></i> Attendance Dashboard
-                    </a>
-                    <a href="{% url 'create_shift' %}" class="dropdown-item">
-                        <i class="fas fa-sitemap"></i> Create Shift
-                    </a>
-                    <a href="{% url 'assign_shift' %}" class="dropdown-item">
-                        <i class="fas fa-id-card"></i> Assign Shift
-                    </a>
-                    <a href="{% url 'attendance_calendar' %}" class="dropdown-item">
-                        <i class="fas fa-calendar"></i> My Calendar
-                    </a>
-                </div>
-            </div>
-            <div class="nav-item-dropdown">
-                <a href="#" class="nav-pill">
-                    <i class="fas fa-calendar-alt"></i> Leaves
-                    <i class="fas fa-chevron-down"></i>
-                </a>
-                <div class="dropdown-content">
-                    <a href="#" class="dropdown-item">
-                        <i class="fas fa-list-ul"></i> Leave Dashboard
-                    </a>
-                    <a href="#" class="dropdown-item">
-                        <i class="fas fa-sitemap"></i> Leave Balance
-                    </a>
-                    <a href="#" class="dropdown-item">
-                        <i class="fas fa-id-card"></i> Leave Policy
-                    </a>
-                </div>
-            </div>
-            <div class="nav-item-dropdown">
-                <a href="#" class="nav-pill">
-                    <i class="fas fa-receipt"></i> Payroll
-                    <i class="fas fa-chevron-down"></i>
-                </a>
-                <div class="dropdown-content">
-                    <a href="{% url 'payroll' %}" class="dropdown-item">
-                        <i class="fas fa-list-ul"></i> Payroll Dashboard
-                    </a>
-                    <a href="#" class="dropdown-item">
-                        <i class="fas fa-sitemap"></i> Generate Payroll
-                    </a>
-                    <a href="#" class="dropdown-item">
-                        <i class="fas fa-id-card"></i> Payroll History
-                    </a>
-                </div>
-            </div>
-            {% else %}
-            <a href="{% url 'attendance' %}" class="nav-pill"><i class="fas fa-fingerprint"></i> My Attendance</a>
-            <a href="{% url 'attendance_calendar' %}" class="nav-pill"><i class="fas fa-calendar"></i> My Calendar</a>
-            {% endif %}
-            <a href="#" class="nav-pill"><i class="fas fa-briefcase"></i> More</a>
-        </nav>
-
-        <div class="header-right">
-            <div class="nav-item-dropdown">
-                <div class="profile-trigger">
-                    <div class="avatar-box">
-                        {% if current_employee and current_employee.profile_img %}
-                            <img src="{{ current_employee.profile_img.url }}" alt="Profile">
-                        {% else %}
-                            {{ request.user.username|slice:":1"|upper }}
-                        {% endif %}
-                    </div>
-                    <i class="fas fa-chevron-down" style="font-size: 10px; color: var(--text-secondary);"></i>
-                </div>
-                <div class="dropdown-content" style="right: 0; left: auto; min-width: 180px;">
-                    <a href="{% url 'edit_profile' %}" class="dropdown-item">
-                        <i class="fas fa-user-circle"></i> Manage Profile
-                    </a>
-                    <a href="{% url 'logout' %}" class="dropdown-item" style="color: #ef4444;">
-                        <i class="fas fa-sign-out-alt"></i> Logout
-                    </a>
-                </div>
-            </div>
-
-            <div class="nav-item-dropdown" style="display: flex; align-items: center;">
-                <div class="action-icon-circle">
-                    <i class="fas fa-bell"></i>
-                    {% if pending_approvals and pending_approvals|length > 0 %}
-                    <div class="notification-badge"></div>
-                    {% endif %}
-                </div>
-                <div class="dropdown-content" style="right: 0; left: auto; width: 320px; padding: 0; top: 100%; margin-top: 10px;">
-                    <div style="padding: 15px; font-weight: 700; border-bottom: 1px solid var(--border-light); font-size: 14px;">Notifications</div>
-                    <div style="max-height: 300px; overflow-y: auto;">
-                        {% for pending in pending_approvals %}
-                            <a href="#pending-approvals-section" class="dropdown-item" style="display: flex; flex-direction: column; align-items: flex-start; padding: 12px 15px; border-bottom: 1px solid var(--border-light);">
-                                <div style="display: flex; justify-content: space-between; width: 100%;">
-                                    <span style="font-weight: 600; font-size: 13px;">{{ pending.username }}</span>
-                                    <span style="font-size: 11px; color: #ef4444; font-weight: 700;">Action Required</span>
-                                </div>
-                                <span style="font-size: 12px; color: var(--text-secondary); margin-top: 4px;">Requested to join as an employee.</span>
-                            </a>
-                        {% empty %}
-                            <div style="padding: 20px; text-align: center; color: var(--text-secondary); font-size: 13px;">
-                                No new notifications
-                            </div>
-                        {% endfor %}
-                    </div>
-                </div>
-            </div>
-        </div>
-    </header>
+    {% include 'includes/navbar.html' %}
 
     <!-- App Content -->
     <main class="workspace">
@@ -304,8 +168,7 @@
             @media (max-width: 768px) { .bento-grid { grid-template-columns: 1fr; } }
         </style>
         <div class="bento-grid">
-
-            <!-- Announcements -->
+            <!-- Announcements (Col 1) -->
             <div class="bento-card">
                 <div class="bento-header">
                     <h2 class="bento-title">Announcements</h2>
@@ -328,40 +191,94 @@
                 </div>
             </div>
 
-            <!-- Pending Approvals (HR/Admin only) -->
-            {% if request.user.is_staff %}
-            <div class="bento-card" id="pending-approvals-section">
-                <div class="bento-header">
-                    <h2 class="bento-title">Pending Approvals</h2>
-                    {% if pending_approvals %}
-                    <span style="background: rgba(239,68,68,0.1); color: #ef4444; font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 99px;">{{ pending_approvals|length }}</span>
-                    {% endif %}
-                </div>
-                {% for pending_user in pending_approvals %}
-                <div class="announce-item" style="display: flex; justify-content: space-between; align-items: center;">
-                    <div>
-                        <span class="item-tag" style="background: rgba(239,68,68,0.1); color: #ef4444;">New</span>
-                        <h3 class="item-h">{{ pending_user.username }}</h3>
-                        <div class="item-meta">{{ pending_user.email }}</div>
-                    </div>
-                    <div style="display: flex; gap: 6px; flex-shrink: 0;">
-                        <a href="{% url 'approve_employee' pending_user.id %}" style="background: #10b981; color: white; padding: 5px 10px; border-radius: 6px; text-decoration: none; font-size: 11px; font-weight: 700;">✓</a>
-                        <a href="{% url 'reject_employee' pending_user.id %}" style="background: #ef4444; color: white; padding: 5px 10px; border-radius: 6px; text-decoration: none; font-size: 11px; font-weight: 700;">✕</a>
-                    </div>
-                </div>
-                {% empty %}
-                <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 24px 0; gap: 8px; color: var(--text-secondary);">
-                    <i class="fas fa-check-circle" style="font-size: 28px; color: #10b981; opacity: 0.7;"></i>
-                    <span style="font-size: 13px; font-weight: 600;">All clear!</span>
-                    <span style="font-size: 11px;">No pending requests</span>
-                </div>
-                {% endfor %}
-            </div>
-            {% endif %}
-
-            <!-- Right Column: Active Now + Payslip -->
+            <!-- Middle Column (Col 2) -->
             <div style="display: flex; flex-direction: column; gap: 18px;">
+                <!-- Pending Approvals (HR/Admin only) -->
+                {% if request.user.is_staff %}
+                <div class="bento-card" id="pending-approvals-section">
+                    <div class="bento-header">
+                        <h2 class="bento-title">Pending Approvals</h2>
+                        {% if pending_approvals %}
+                        <span style="background: rgba(239,68,68,0.1); color: #ef4444; font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 99px;">{{ pending_approvals|length }}</span>
+                        {% endif %}
+                    </div>
+                    {% for pending_user in pending_approvals %}
+                    <div class="announce-item" style="display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <span class="item-tag" style="background: rgba(239,68,68,0.1); color: #ef4444;">New</span>
+                            <h3 class="item-h">{{ pending_user.username }}</h3>
+                            <div class="item-meta">{{ pending_user.email }}</div>
+                        </div>
+                        <div style="display: flex; gap: 6px; flex-shrink: 0;">
+                            <a href="{% url 'approve_employee' pending_user.id %}" style="background: #10b981; color: white; padding: 5px 10px; border-radius: 6px; text-decoration: none; font-size: 11px; font-weight: 700;">✓</a>
+                            <a href="{% url 'reject_employee' pending_user.id %}" style="background: #ef4444; color: white; padding: 5px 10px; border-radius: 6px; text-decoration: none; font-size: 11px; font-weight: 700;">✕</a>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 24px 0; gap: 8px; color: var(--text-secondary);">
+                        <i class="fas fa-check-circle" style="font-size: 28px; color: #10b981; opacity: 0.7;"></i>
+                        <span style="font-size: 13px; font-weight: 600;">All clear!</span>
+                        <span style="font-size: 11px;">No pending requests</span>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
 
+                <!-- Upcoming Time Off -->
+                <div class="bento-card" style="border: 1px solid rgba(37, 99, 235, 0.1); background: rgba(255, 255, 255, 0.6);">
+                    <div class="bento-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <div style="width: 32px; height: 32px; border-radius: 8px; background: rgba(37, 99, 235, 0.1); color: var(--accent); display: flex; align-items: center; justify-content: center;">
+                                <i class="fas fa-calendar-alt" style="font-size: 14px;"></i>
+                            </div>
+                            <h2 class="bento-title" style="margin: 0; font-weight: 800; font-size: 15px;">Upcoming Time Off</h2>
+                        </div>
+                        <a href="{% url 'leaves:dashboard' %}" style="font-size: 11px; font-weight: 700; color: var(--accent); text-decoration: none;">View All</a>
+                    </div>
+                    
+                    {% if upcoming_leaves %}
+                    <div style="margin-bottom: 24px;">
+                        <div style="font-size: 10px; font-weight: 800; color: var(--text-secondary); margin-bottom: 12px; letter-spacing: 1px; text-transform: uppercase; display: flex; align-items: center; gap: 6px;">
+                            <span style="width: 4px; height: 4px; border-radius: 50%; background: #10b981;"></span> Approved Leaves
+                        </div>
+                        {% for leave in upcoming_leaves %}
+                        <div style="padding: 10px 12px; background: #fff; border-radius: 12px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; border: 1px solid var(--border-light); transition: transform 0.2s; cursor: default;" onmouseover="this.style.transform='translateX(4px)'" onmouseout="this.style.transform='translateX(0)'">
+                            <div style="display: flex; flex-direction: column;">
+                                <span style="font-size: 13px; font-weight: 700;">{{ leave.start_date|date:"M d, Y" }}</span>
+                                <span style="font-size: 11px; color: var(--text-secondary);">{{ leave.leave_type.name }}</span>
+                            </div>
+                            <span style="font-size: 11px; font-weight: 800; background: rgba(37, 99, 235, 0.08); color: var(--accent); padding: 4px 8px; border-radius: 6px;">{{ leave.total_days }}d</span>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+
+                    <div>
+                        <div style="font-size: 10px; font-weight: 800; color: var(--text-secondary); margin-bottom: 12px; letter-spacing: 1px; text-transform: uppercase; display: flex; align-items: center; gap: 6px;">
+                            <span style="width: 4px; height: 4px; border-radius: 50%; background: var(--accent);"></span> Company Holidays
+                        </div>
+                        <div class="compact-list" style="max-height: 180px; overflow-y: auto; padding-right: 4px;">
+                            {% for holiday in upcoming_holidays %}
+                            <div style="padding: 8px 0; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px dashed var(--border-light);">
+                                <div style="display: flex; flex-direction: column;">
+                                    <span style="font-size: 12px; font-weight: 600; color: var(--text-main);">{{ holiday.name }}</span>
+                                    <span style="font-size: 10px; color: var(--text-secondary);">{{ holiday.date|date:"l" }}</span>
+                                </div>
+                                <span style="font-size: 12px; font-weight: 700; color: var(--text-main);">{{ holiday.date|date:"M d" }}</span>
+                            </div>
+                            {% empty %}
+                            <div style="text-align: center; padding: 20px; opacity: 0.5;">
+                                <i class="fas fa-calendar-check" style="font-size: 20px; margin-bottom: 8px; display: block;"></i>
+                                <span style="font-size: 11px;">No upcoming holidays</span>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Column (Col 3) -->
+            <div style="display: flex; flex-direction: column; gap: 18px;">
                 {% if request.user.is_staff %}
                 <div class="bento-card">
                     <div class="bento-header">
@@ -403,7 +320,6 @@
                         <i class="fas fa-download" style="font-size: 11px;"></i> Download PDF
                     </a>
                 </div>
-
             </div>
         </div>
     </main>

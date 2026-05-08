@@ -1,0 +1,431 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Team Calendar | HRMS GlassEntials{% endblock %}
+
+{% block extra_css %}
+<link href='https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.css' rel='stylesheet' />
+<style>
+    .calendar-layout {
+        display: grid;
+        grid-template-columns: 280px 1fr;
+        gap: 24px;
+        align-items: start;
+    }
+
+    /* ── Sidebar ── */
+    .cal-sidebar {
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+        position: sticky;
+        top: 100px;
+    }
+
+    .sidebar-card {
+        background: rgba(255, 255, 255, 0.75);
+        backdrop-filter: blur(16px);
+        border: 1px solid rgba(255, 255, 255, 0.35);
+        border-radius: 20px;
+        padding: 20px;
+        box-shadow: 0 4px 24px rgba(0,0,0,0.04);
+    }
+
+    .sidebar-title {
+        font-size: 11px;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 1.2px;
+        color: var(--text-secondary);
+        margin-bottom: 16px;
+    }
+
+    .legend-item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 8px 0;
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--text-main);
+        border-bottom: 1px solid var(--border-light);
+    }
+
+    .legend-item:last-child { border-bottom: none; }
+
+    .legend-dot {
+        width: 12px;
+        height: 12px;
+        border-radius: 4px;
+        flex-shrink: 0;
+    }
+
+    .upcoming-item {
+        display: flex;
+        flex-direction: column;
+        padding: 10px 0;
+        border-bottom: 1px solid var(--border-light);
+        gap: 2px;
+    }
+
+    .upcoming-item:last-child { border-bottom: none; }
+
+    .upcoming-name {
+        font-size: 13px;
+        font-weight: 700;
+        color: var(--text-main);
+    }
+
+    .upcoming-date {
+        font-size: 11px;
+        color: var(--text-secondary);
+        font-weight: 600;
+    }
+
+    .upcoming-badge {
+        font-size: 10px;
+        font-weight: 800;
+        padding: 2px 8px;
+        border-radius: 6px;
+        display: inline-block;
+        margin-top: 4px;
+        width: fit-content;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    /* ── Main Calendar ── */
+    .calendar-card {
+        background: rgba(255, 255, 255, 0.75);
+        backdrop-filter: blur(16px);
+        border: 1px solid rgba(255, 255, 255, 0.35);
+        border-radius: 24px;
+        padding: 28px;
+        box-shadow: 0 8px 32px rgba(0,0,0,0.05);
+    }
+
+    /* Override FullCalendar styles */
+    .fc { font-family: 'Plus Jakarta Sans', sans-serif; }
+
+    .fc-toolbar.fc-header-toolbar {
+        margin-bottom: 24px !important;
+    }
+
+    .fc-toolbar-title {
+        font-size: 22px !important;
+        font-weight: 800 !important;
+        color: var(--text-main) !important;
+        letter-spacing: -0.5px;
+    }
+
+    .fc-button {
+        background: transparent !important;
+        border: 1px solid var(--border-light) !important;
+        color: var(--text-main) !important;
+        border-radius: 10px !important;
+        font-weight: 700 !important;
+        font-size: 12px !important;
+        padding: 6px 14px !important;
+        transition: all 0.2s !important;
+        box-shadow: none !important;
+        text-transform: capitalize !important;
+    }
+
+    .fc-button:hover {
+        background: var(--accent-muted) !important;
+        border-color: var(--accent) !important;
+        color: var(--accent) !important;
+    }
+
+    .fc-button-active, .fc-button-primary:not(:disabled).fc-button-active {
+        background: var(--accent) !important;
+        border-color: var(--accent) !important;
+        color: #fff !important;
+    }
+
+    .fc-today-button {
+        background: var(--accent-muted) !important;
+        border-color: transparent !important;
+        color: var(--accent) !important;
+    }
+
+    .fc-col-header-cell-cushion {
+        font-size: 12px;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        color: var(--text-secondary);
+        text-decoration: none;
+    }
+
+    .fc-daygrid-day-number {
+        font-weight: 700;
+        font-size: 13px;
+        color: var(--text-main);
+        text-decoration: none !important;
+    }
+
+    .fc-daygrid-day.fc-day-today {
+        background: rgba(37, 99, 235, 0.05) !important;
+        border-radius: 12px;
+    }
+
+    .fc-daygrid-day.fc-day-today .fc-daygrid-day-number {
+        background: var(--accent);
+        color: #fff;
+        border-radius: 8px;
+        width: 28px;
+        height: 28px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 4px;
+    }
+
+    .fc-event {
+        border-radius: 8px !important;
+        padding: 3px 8px !important;
+        font-weight: 700 !important;
+        font-size: 11px !important;
+        border: none !important;
+        cursor: pointer;
+        transition: transform 0.15s !important;
+    }
+
+    .fc-event:hover { transform: scale(1.02); }
+
+    /* Event color classes */
+    .event-leave {
+        background: rgba(37, 99, 235, 0.12) !important;
+        color: #1d4ed8 !important;
+        border-left: 3px solid #2563eb !important;
+    }
+
+    .event-holiday {
+        background: rgba(239, 68, 68, 0.12) !important;
+        color: #dc2626 !important;
+        border-left: 3px solid #ef4444 !important;
+    }
+
+    .event-optional {
+        background: rgba(245, 158, 11, 0.12) !important;
+        color: #d97706 !important;
+        border-left: 3px solid #f59e0b !important;
+    }
+
+    .fc-scrollgrid { border: none !important; border-radius: 12px; overflow: hidden; }
+    .fc-scrollgrid td, .fc-scrollgrid th { border-color: var(--border-light) !important; }
+
+    /* Tooltip */
+    .cal-tooltip {
+        position: fixed;
+        background: rgba(17, 24, 39, 0.95);
+        backdrop-filter: blur(8px);
+        color: #fff;
+        padding: 10px 14px;
+        border-radius: 12px;
+        font-size: 12px;
+        font-weight: 600;
+        max-width: 220px;
+        z-index: 9999;
+        pointer-events: none;
+        display: none;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    }
+
+    .cal-tooltip .tip-title { font-weight: 800; font-size: 13px; margin-bottom: 4px; }
+    .cal-tooltip .tip-dates { opacity: 0.75; font-size: 11px; }
+
+    /* Mini stats bar */
+    .mini-stats {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 12px;
+        margin-bottom: 24px;
+    }
+
+    .mini-stat {
+        background: rgba(255,255,255,0.8);
+        border: 1px solid var(--border-light);
+        border-radius: 16px;
+        padding: 16px;
+        text-align: center;
+    }
+
+    .mini-stat-val { font-size: 28px; font-weight: 800; color: var(--accent); }
+    .mini-stat-label { font-size: 11px; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; margin-top: 4px; }
+
+    @media (max-width: 900px) {
+        .calendar-layout { grid-template-columns: 1fr; }
+        .cal-sidebar { position: static; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="workspace">
+    <!-- Header -->
+    <div class="hero-banner">
+        <div class="hero-text">
+            <h1>Team Calendar</h1>
+            <p>Unified visibility across all leave requests, holidays, and team availability.</p>
+        </div>
+        <div class="header-actions">
+            {% if request.user.is_staff %}
+            <a href="{% url 'leaves:pending_approvals' %}" class="punch-btn" style="background: rgba(255,255,255,0.1); color: var(--text-main); border: 1px solid var(--border-light);">
+                <i class="fas fa-tasks"></i> Approvals
+            </a>
+            {% endif %}
+            <a href="{% url 'leaves:dashboard' %}" class="punch-btn">
+                <i class="fas fa-calendar-plus"></i> Apply Leave
+            </a>
+        </div>
+    </div>
+
+    <!-- Mini Stats -->
+    <div class="mini-stats">
+        <div class="mini-stat">
+            <div class="mini-stat-val">{{ leaves|length }}</div>
+            <div class="mini-stat-label">Approved Leaves</div>
+        </div>
+        <div class="mini-stat">
+            <div class="mini-stat-val">{{ holidays|length }}</div>
+            <div class="mini-stat-label">Holidays This Year</div>
+        </div>
+        <div class="mini-stat" style="background: linear-gradient(135deg, #2563eb, #7c3aed); border: none;">
+            <div class="mini-stat-val" style="color: #fff;">Live</div>
+            <div class="mini-stat-label" style="color: rgba(255,255,255,0.75);">Real-time Sync</div>
+        </div>
+    </div>
+
+    <!-- Main Layout -->
+    <div class="calendar-layout">
+        <!-- Sidebar -->
+        <div class="cal-sidebar">
+            <!-- Legend -->
+            <div class="sidebar-card">
+                <div class="sidebar-title">Legend</div>
+                <div class="legend-item">
+                    <div class="legend-dot" style="background: #2563eb;"></div>
+                    Approved Leave
+                </div>
+                <div class="legend-item">
+                    <div class="legend-dot" style="background: #ef4444;"></div>
+                    Public Holiday
+                </div>
+                <div class="legend-item">
+                    <div class="legend-dot" style="background: #f59e0b;"></div>
+                    Optional Holiday
+                </div>
+            </div>
+
+            <!-- Upcoming Holidays -->
+            <div class="sidebar-card">
+                <div class="sidebar-title">Upcoming Holidays</div>
+                {% for holiday in holidays|slice:":6" %}
+                <div class="upcoming-item">
+                    <span class="upcoming-name">{{ holiday.name }}</span>
+                    <span class="upcoming-date">{{ holiday.date|date:"D, d M Y" }}</span>
+                    <span class="upcoming-badge" style="{% if holiday.is_optional %}background: rgba(245,158,11,0.1); color: #d97706;{% else %}background: rgba(239,68,68,0.1); color: #dc2626;{% endif %}">
+                        {% if holiday.is_optional %}Optional{% else %}Public{% endif %}
+                    </span>
+                </div>
+                {% empty %}
+                <p style="font-size: 13px; color: var(--text-secondary);">No holidays scheduled.</p>
+                {% endfor %}
+            </div>
+
+            <!-- Who's On Leave Today -->
+            <div class="sidebar-card">
+                <div class="sidebar-title">On Leave Today</div>
+                {% for leave in leaves %}
+                    {% now "Y-m-d" as today %}
+                    {% if leave.start_date|date:"Y-m-d" <= today and leave.end_date|date:"Y-m-d" >= today %}
+                    <div class="upcoming-item">
+                        <span class="upcoming-name">{{ leave.employee.first_name }} {{ leave.employee.last_name }}</span>
+                        <span class="upcoming-date">{{ leave.leave_type.name }}</span>
+                    </div>
+                    {% endif %}
+                {% empty %}
+                <p style="font-size: 13px; color: var(--text-secondary);">Everyone is in today! 🎉</p>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Calendar Main -->
+        <div class="calendar-card">
+            <div id='calendar'></div>
+        </div>
+    </div>
+</div>
+
+<!-- Tooltip -->
+<div class="cal-tooltip" id="calTooltip">
+    <div class="tip-title" id="tipTitle"></div>
+    <div class="tip-dates" id="tipDates"></div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src='https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.js'></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const tooltip = document.getElementById('calTooltip');
+    const tipTitle = document.getElementById('tipTitle');
+    const tipDates = document.getElementById('tipDates');
+
+    const calendarEl = document.getElementById('calendar');
+    const calendar = new FullCalendar.Calendar(calendarEl, {
+        initialView: 'dayGridMonth',
+        height: 'auto',
+        headerToolbar: {
+            left: 'prev,next today',
+            center: 'title',
+            right: 'dayGridMonth,dayGridWeek,listMonth'
+        },
+        buttonText: {
+            today: 'Today',
+            month: 'Month',
+            week: 'Week',
+            list: 'Agenda'
+        },
+        dayMaxEvents: 3,
+        eventMouseEnter: function(info) {
+            tipTitle.textContent = info.event.title;
+            tipDates.textContent = info.event.startStr + (info.event.endStr ? ' → ' + info.event.endStr : '');
+            tooltip.style.display = 'block';
+        },
+        eventMouseLeave: function() {
+            tooltip.style.display = 'none';
+        },
+        events: [
+            {% for holiday in holidays %}
+            {
+                title: '{{ holiday.name|escapejs }}',
+                start: '{{ holiday.date|date:"Y-m-d" }}',
+                className: '{% if holiday.is_optional %}event-optional{% else %}event-holiday{% endif %}',
+                allDay: true,
+            },
+            {% endfor %}
+            {% for leave in leaves %}
+            {
+                title: '{{ leave.employee.first_name|escapejs }} ({{ leave.leave_type.code|escapejs }})',
+                start: '{{ leave.start_date|date:"Y-m-d" }}',
+                end: '{{ leave.end_date|date:"Y-m-d" }}',
+                className: 'event-leave',
+                allDay: true,
+            },
+            {% endfor %}
+        ],
+    });
+
+    calendar.render();
+
+    // Move tooltip with mouse
+    document.addEventListener('mousemove', function(e) {
+        tooltip.style.left = (e.clientX + 14) + 'px';
+        tooltip.style.top = (e.clientY - 40) + 'px';
+    });
+});
+</script>
+{% endblock %}

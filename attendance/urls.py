@@ -13,4 +13,7 @@ urlpatterns = [
     path('break-toggle/', views.break_toggle_view, name='break_toggle'),
     path('calendar/', views.attendance_calendar_view, name='attendance_calendar'),
     path('export/', views.export_attendance_view, name='export_attendance'),
+    path('analytics/', views.attendance_analytics_view, name='attendance_analytics'),
+    path('overtime/', views.overtime_dashboard_view, name='overtime_dashboard'),
+    path('overtime/action/<int:request_id>/', views.overtime_action_view, name='overtime_action'),
 ]
