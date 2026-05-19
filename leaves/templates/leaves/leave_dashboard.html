@@ -3,7 +3,24 @@
 
 {% block extra_css %}
 <link rel="stylesheet" href="{% static 'css/leaves.css' %}?v=3.0">
+<style>
+    .glass-scroll::-webkit-scrollbar {
+        width: 4px;
+    }
+    .glass-scroll::-webkit-scrollbar-track {
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 10px;
+    }
+    .glass-scroll::-webkit-scrollbar-thumb {
+        background: rgba(255, 255, 255, 0.2);
+        border-radius: 10px;
+    }
+    .glass-scroll::-webkit-scrollbar-thumb:hover {
+        background: rgba(255, 255, 255, 0.3);
+    }
+</style>
 {% endblock %}
+
 
 {% block content %}
 <div class="workspace">
@@ -14,6 +31,9 @@
             <p>Manage your time off and track team availability.</p>
         </div>
         <div class="header-actions" style="display: flex; gap: 12px;">
+            <a href="{% url 'leaves:rh_picker' %}" class="punch-btn" style="background: rgba(124, 58, 237, 0.1); color: #7c3aed; border: 1px solid #7c3aed; text-decoration: none;">
+                <i class="fas fa-gift"></i> Claim Restricted Holiday
+            </a>
             <button class="punch-btn" style="background: rgba(37, 99, 235, 0.1); color: var(--accent); border: 1px solid var(--accent);" onclick="openCompOffModal()">
                 <i class="fas fa-history"></i> Request Comp-off Credit
             </button>
@@ -21,6 +41,7 @@
                 <i class="fas fa-plus"></i> Apply for Leave
             </button>
         </div>
+
     </div>
 
     <!-- Admin Stats (Visible only to HR/Managers) -->
@@ -187,7 +208,8 @@
 
             <div style="margin-top: 24px; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.1);">
                 <div style="font-size: 11px; font-weight: 800; opacity: 0.7; margin-bottom: 12px; letter-spacing: 0.5px; text-transform: uppercase;">Upcoming Holidays</div>
-                <div style="max-height: 120px; overflow-y: auto;">
+                <div class="glass-scroll" style="max-height: 150px; overflow-y: auto; padding-right: 8px;">
+
                     {% for holiday in upcoming_holidays %}
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
                         <span style="font-size: 13px; font-weight: 600;">{{ holiday.name }}</span>

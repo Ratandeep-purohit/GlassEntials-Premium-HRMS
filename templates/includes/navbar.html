@@ -83,28 +83,50 @@
 
         <!-- Payroll Dropdown -->
         <div class="nav-item-dropdown">
-            <a href="#" class="nav-pill {% if request.resolver_match.url_name == 'payroll' %}active{% endif %}">
+            <a href="#" class="nav-pill {% if 'payroll' in request.resolver_match.url_name or request.resolver_match.url_name == 'admin_loans' or request.resolver_match.url_name == 'salary_list' or request.resolver_match.url_name == 'salary_components' or request.resolver_match.url_name == 'admin_arrears' %}active{% endif %}">
                 <i class="fas fa-receipt"></i> Payroll
                 <i class="fas fa-chevron-down"></i>
             </a>
             <div class="dropdown-content">
+                <a href="{% url 'salary_list' %}" class="dropdown-item">
+                    <i class="fas fa-coins"></i> Manage Salaries
+                </a>
                 <a href="{% url 'payroll' %}" class="dropdown-item">
                     <i class="fas fa-list-ul"></i> Payroll Dashboard
                 </a>
-                <a href="#" class="dropdown-item">
-                    <i class="fas fa-sitemap"></i> Generate Payroll
+                <a href="{% url 'payroll' %}?openModal=true" class="dropdown-item">
+                    <i class="fas fa-play"></i> Run Monthly Payroll
                 </a>
-                <a href="#" class="dropdown-item">
-                    <i class="fas fa-id-card"></i> Payroll History
+                <a href="{% url 'salary_components' %}" class="dropdown-item">
+                    <i class="fas fa-gears"></i> Salary Components
+                </a>
+                <a href="{% url 'admin_loans' %}" class="dropdown-item">
+                    <i class="fas fa-hand-holding-dollar"></i> Loan Management
+                </a>
+                <a href="{% url 'admin_arrears' %}" class="dropdown-item">
+                    <i class="fas fa-money-bill-transfer"></i> Arrears &amp; Adjustments
                 </a>
             </div>
         </div>
         {% else %}
+        <!-- Employees Dropdown for Employee -->
+        <div class="nav-item-dropdown">
+            <a href="#" class="nav-pill">
+                <i class="fas fa-users-rectangle"></i> Employees
+                <i class="fas fa-chevron-down"></i>
+            </a>
+            <div class="dropdown-content">
+                <a href="{% url 'employee_directory' %}" class="dropdown-item">
+                    <i class="fas fa-address-book"></i> Directory
+                </a>
+            </div>
+        </div>
+
         <!-- Attendance Dropdown for Employee -->
         <div class="nav-item-dropdown">
             <a href="#"
                 class="nav-pill {% if request.resolver_match.url_name == 'attendance' or request.resolver_match.url_name == 'attendance_calendar' or request.resolver_match.url_name == 'overtime_dashboard' %}active{% endif %}">
-                <i class="fas fa-fingerprint"></i> My Attendance
+                <i class="fas fa-fingerprint"></i> Attendance
                 <i class="fas fa-chevron-down"></i>
             </a>
             <div class="dropdown-content">
@@ -120,9 +142,47 @@
             </div>
         </div>
 
-        <a href="{% url 'leaves:dashboard' %}"
-            class="nav-pill {% if request.resolver_match.app_name == 'leaves' %}active{% endif %}"><i
-                class="fas fa-calendar-alt"></i> My Leaves</a>
+        <!-- Leaves Dropdown for Employee -->
+        <div class="nav-item-dropdown">
+            <a href="#" class="nav-pill {% if request.resolver_match.app_name == 'leaves' %}active{% endif %}">
+                <i class="fas fa-calendar-alt"></i> Leaves
+                <i class="fas fa-chevron-down"></i>
+            </a>
+            <div class="dropdown-content">
+                <a href="{% url 'leaves:dashboard' %}" class="dropdown-item">
+                    <i class="fas fa-list-ul"></i> Leave Dashboard
+                </a>
+                <a href="{% url 'leaves:history' %}" class="dropdown-item">
+                    <i class="fas fa-history"></i> Leave History
+                </a>
+                <a href="{% url 'leaves:calendar' %}" class="dropdown-item">
+                    <i class="fas fa-calendar"></i> Leave Calendar
+                </a>
+            </div>
+        </div>
+
+        <!-- Payroll Dropdown for Employee -->
+        <div class="nav-item-dropdown">
+            <a href="#" class="nav-pill {% if request.resolver_match.url_name == 'my_payslips' or request.resolver_match.url_name == 'my_salary_structure' or request.resolver_match.url_name == 'my_loans' or request.resolver_match.url_name == 'my_arrears' %}active{% endif %}">
+                <i class="fas fa-receipt"></i> Payroll
+                <i class="fas fa-chevron-down"></i>
+            </a>
+            <div class="dropdown-content">
+                <a href="{% url 'my_payslips' %}" class="dropdown-item">
+                    <i class="fas fa-file-invoice-dollar"></i> My Payslips
+                </a>
+                <a href="{% url 'my_salary_structure' %}" class="dropdown-item">
+                    <i class="fas fa-layer-group"></i> My Salary Structure
+                </a>
+                <a href="{% url 'my_loans' %}" class="dropdown-item">
+                    <i class="fas fa-hand-holding-dollar"></i> My Loans &amp; Advances
+                </a>
+                <a href="{% url 'my_arrears' %}" class="dropdown-item">
+                    <i class="fas fa-money-bill-transfer"></i> My Arrears &amp; Adjustments
+                </a>
+            </div>
+        </div>
+
         {% endif %}
         <a href="#" class="nav-pill"><i class="fas fa-briefcase"></i> More</a>
     </nav>
@@ -150,7 +210,7 @@
         </div>
 
         <div class="nav-item-dropdown" style="display: flex; align-items: center;">
-            <div class="action-icon-circle" onclick="window.location.href='{% url 'notifications' %}'">
+            <div class="action-icon-circle" data-url="{% url 'notifications' %}" onclick="window.location.href=this.dataset.url">
                 <i class="fas fa-bell"></i>
                 {% if global_notifications_count > 0 %}
                 <div class="notification-badge"></div>
@@ -161,7 +221,8 @@
                 <div
                     style="padding: 15px; font-weight: 700; border-bottom: 1px solid var(--border-light); font-size: 14px; display: flex; justify-content: space-between; align-items: center;">
                     <span>Notifications</span>
-                    <a href="{% url 'notifications' %}" style="font-size: 12px; color: var(--primary-color); font-weight: 600;">View All</a>
+                    <a href="{% url 'notifications' %}"
+                        style="font-size: 12px; color: var(--primary-color); font-weight: 600;">View All</a>
                 </div>
                 <div style="max-height: 350px; overflow-y: auto;">
                     {% for notification in global_notifications|slice:":5" %}
@@ -175,7 +236,8 @@
                     </a>
                     {% empty %}
                     <div style="padding: 24px; text-align: center; color: var(--text-secondary); font-size: 13px;">
-                        <i class="fas fa-check-circle" style="font-size: 24px; color: #10b981; margin-bottom: 8px; display: block;"></i>
+                        <i class="fas fa-check-circle"
+                            style="font-size: 24px; color: #10b981; margin-bottom: 8px; display: block;"></i>
                         You're all caught up!
                     </div>
                     {% endfor %}

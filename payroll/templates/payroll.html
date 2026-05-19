@@ -69,40 +69,173 @@
                 <p>Process salaries, manage bonuses, and generate financial reports</p>
             </div>
             <div class="header-actions">
-                <button class="btn-primary">
+                <button class="btn-primary" onclick="openModal()">
                     <i class="fas fa-plus"></i> Run Payroll
                 </button>
             </div>
         </div>
 
-        <div class="payroll-grid">
-            <div class="payroll-card">
-                <div class="stat-label">Total Monthly Payout</div>
-                <div class="stat-value">$0.00</div>
-                <div style="color: #64748b; font-size: 12px;">For current month (April 2026)</div>
-            </div>
-            <div class="payroll-card">
-                <div class="stat-label">Pending Approvals</div>
-                <div class="stat-value">0</div>
-                <div style="color: #64748b; font-size: 12px;">Salaries awaiting verification</div>
-            </div>
-            <div class="payroll-card">
-                <div class="stat-label">Next Pay Date</div>
-                <div class="stat-value">May 1, 2026</div>
-                <div style="color: #64748b; font-size: 12px;">Scheduled automatic processing</div>
+        <!-- ... stats ... -->
+
+        <!-- Modal -->
+        <div id="payrollModal" class="modal-overlay"
+            style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); backdrop-filter: blur(8px); z-index: 1000; align-items: center; justify-content: center;">
+            <div class="payroll-card" style="width: 400px; background: white; padding: 40px; position: relative;">
+                <button onclick="closeModal()"
+                    style="position: absolute; top: 20px; right: 20px; background: none; border: none; font-size: 20px; cursor: pointer; color: #94a3b8;">
+                    <i class="fas fa-times"></i>
+                </button>
+                <h2 style="margin-bottom: 20px;">New Payroll Run</h2>
+                <form action="{% url 'create_payroll_run' %}" method="POST">
+                    {% csrf_token %}
+                    <div style="margin-bottom: 20px;">
+                        <label
+                            style="display: block; font-size: 14px; font-weight: 600; margin-bottom: 8px;">Month</label>
+                        <select name="month" class="form-control"
+                            style="width: 100%; padding: 12px; border-radius: 12px; border: 1px solid #e2e8f0;">
+                            <option value="1">January</option>
+                            <option value="2">February</option>
+                            <option value="3">March</option>
+                            <option value="4">April</option>
+                            <option value="5" selected>May</option>
+                            <option value="6">June</option>
+                            <option value="7">July</option>
+                            <option value="8">August</option>
+                            <option value="9">September</option>
+                            <option value="10">October</option>
+                            <option value="11">November</option>
+                            <option value="12">December</option>
+                        </select>
+                    </div>
+                    <div style="margin-bottom: 20px;">
+                        <label
+                            style="display: block; font-size: 14px; font-weight: 600; margin-bottom: 8px;">Year</label>
+                        <input type="number" name="year" value="2026" class="form-control"
+                            style="width: 100%; padding: 12px; border-radius: 12px; border: 1px solid #e2e8f0;">
+                    </div>
+                    <div style="margin-bottom: 30px;">
+                        <label style="display: block; font-size: 14px; font-weight: 600; margin-bottom: 8px;">Department
+                            (Optional)</label>
+                        <select name="department" class="form-control"
+                            style="width: 100%; padding: 12px; border-radius: 12px; border: 1px solid #e2e8f0;">
+                            <option value="">All Departments</option>
+                            {% for dept in departments %}
+                            <option value="{{ dept.id }}">{{ dept.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <button type="submit" class="btn-primary" style="width: 100%; padding: 14px;">
+                        Initialize Run
+                    </button>
+                </form>
             </div>
         </div>
 
-        <div class="card" style="margin-top: 30px; padding: 40px; text-align: center;">
-            <div style="color: #64748b; opacity: 0.5; margin-bottom: 20px;">
-                <i class="fas fa-receipt" style="font-size: 64px;"></i>
+        <script>
+            function openModal() {
+                document.getElementById('payrollModal').style.display = 'flex';
+            }
+            function closeModal() {
+                document.getElementById('payrollModal').style.display = 'none';
+            }
+
+            // Auto-open modal if requested via URL
+            window.onload = function () {
+                const urlParams = new URLSearchParams(window.location.search);
+                if (urlParams.get('openModal') === 'true') {
+                    openModal();
+                }
+            }
+        </script>
+
+        <div class="payroll-grid">
+            <div class="payroll-card">
+                <div class="stat-label">Total Monthly Payout</div>
+                <div class="stat-value">₹{{ runs.0.total_net|default:"0.00" }}</div>
+                <div style="color: #64748b; font-size: 12px;">For latest run ({{ runs.0.get_month_display }} {{
+                    runs.0.year }})</div>
             </div>
-            <h3>No Payroll Data Available</h3>
-            <p style="color: #64748b; max-width: 400px; margin: 10px auto;">You haven't processed any payroll records
-                yet. Start by running payroll for the current month.</p>
-            <button class="btn-outline" style="margin-top: 20px;">
-                <i class="fas fa-play"></i> Get Started
-            </button>
+            <div class="payroll-card">
+                <div class="stat-label">Active Employees</div>
+                <div class="stat-value">{{ runs.0.total_employees|default:"0" }}</div>
+                <div style="color: #64748b; font-size: 12px;">Processed in the latest batch</div>
+            </div>
+            <div class="payroll-card">
+                <div class="stat-label">Next Pay Date</div>
+                <div class="stat-value">Scheduled</div>
+                <div style="color: #64748b; font-size: 12px;">Calculated based on organization policy</div>
+            </div>
+        </div>
+
+        <div class="card" style="margin-top: 30px; padding: 0;">
+            <div
+                style="padding: 24px; border-bottom: 1px solid rgba(0,0,0,0.05); display: flex; justify-content: space-between; align-items: center;">
+                <h3 style="margin: 0;">Recent Payroll Runs</h3>
+            </div>
+
+            {% if runs %}
+            <table style="width: 100%; border-collapse: collapse;">
+                <thead>
+                    <tr style="text-align: left; background: rgba(0,0,0,0.02);">
+                        <th style="padding: 16px 24px;">Period</th>
+                        <th style="padding: 16px 24px;">Status</th>
+                        <th style="padding: 16px 24px;">Net Payout</th>
+                        <th style="padding: 16px 24px; text-align: right;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for run in runs %}
+                    <tr style="border-bottom: 1px solid rgba(0,0,0,0.05);">
+                        <td style="padding: 16px 24px;">
+                            <div style="font-weight: 600;">{{ run.get_month_display }} {{ run.year }}</div>
+                            <div style="font-size: 12px; color: #64748b;">{{ run.department|default:"All Departments" }}
+                            </div>
+                        </td>
+                        <td style="padding: 16px 24px;">
+                            <span class="badge" style="
+                                background: {% if run.status == 'PAID' %}#dcfce7{% elif run.status == 'FINALIZED' %}#dbeafe{% else %}#f1f5f9{% endif %};
+                                color: {% if run.status == 'PAID' %}#166534{% elif run.status == 'FINALIZED' %}#1e40af{% else %}#475569{% endif %};
+                                padding: 4px 12px; border-radius: 12px; font-size: 12px; font-weight: 600;
+                            ">
+                                {{ run.get_status_display }}
+                            </span>
+                        </td>
+                        <td style="padding: 16px 24px; font-weight: 600;">₹{{ run.total_net }}</td>
+                        <td style="padding: 16px 24px; text-align: right;">
+                            {% if not run.is_locked %}
+                            <a href="{% url 'run_payroll' run.id %}" class="btn-outline"
+                                style="padding: 6px 12px; font-size: 13px;">
+                                <i class="fas fa-play"></i> Run
+                            </a>
+                            {% else %}
+                            <button class="btn-outline" style="padding: 6px 12px; font-size: 13px; opacity: 0.5;"
+                                disabled>
+                                <i class="fas fa-lock"></i> Locked
+                            </button>
+                            {% endif %}
+                            <a href="{% url 'payslip_list' run.id %}" class="btn-outline"
+                                style="padding: 6px 12px; font-size: 13px; text-decoration: none;">
+                                <i class="fas fa-eye"></i> View
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <div style="padding: 40px; text-align: center;">
+                <div style="color: #64748b; opacity: 0.5; margin-bottom: 20px;">
+                    <i class="fas fa-receipt" style="font-size: 64px;"></i>
+                </div>
+                <h3>No Payroll Data Available</h3>
+                <p style="color: #64748b; max-width: 400px; margin: 10px auto;">You haven't processed any payroll
+                    records
+                    yet. Start by running payroll for the current month.</p>
+                <button class="btn-outline" style="margin-top: 20px;" onclick="openModal()">
+                    <i class="fas fa-plus"></i> Create First Run
+                </button>
+            </div>
+            {% endif %}
         </div>
     </main>
 

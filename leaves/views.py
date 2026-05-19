@@ -3,10 +3,15 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.db.models import Sum
 from django.utils import timezone
-from .models import Location, LeaveType, LeavePolicy, LeaveBalance, LeaveRequest, ApprovalWorkflow, LeaveAccrualLog, Holiday, CompOffRequest
+from .models import (
+    Location, LeaveType, LeavePolicy, LeaveBalance, LeaveRequest, 
+    ApprovalWorkflow, LeaveAccrualLog, Holiday, CompOffRequest,
+    LeaveApprovalMatrix, LeaveApprovalMatrixStep
+)
 from employees.models import Employee
 from datetime import datetime, timedelta
 from accounts.models import CustomUser
+
 
 def get_working_days(start_date, end_date, organization):
     """
@@ -190,36 +195,84 @@ def apply_leave_view(request):
                 total_days=total_days,
                 organization=request.user.organization,
                 created_by=request.user,
-                current_handler=employee.manager.user if employee.manager else None,
                 start_time=request.POST.get('start_time') if session == 'SHORT' else None,
                 end_time=request.POST.get('end_time') if session == 'SHORT' else None
             )
 
+            # Workflow Generation Logic
+            matrix = LeaveApprovalMatrix.objects.filter(
+                organization=request.user.organization,
+                leave_type=leave_type,
+                is_active=True
+            ).first()
 
-            # Log initial action in the workflow
-            ApprovalWorkflow.objects.create(
-                leave_request=leave_req,
-                approver=request.user,
-                sequence_order=1,
-                status='APPROVED', # The applicant "approves" their own submission phase
-                action_date=timezone.now(),
-                comments="Leave application submitted."
-            )
-
-            # Create Notification for Staff/HR
-            from home.models import Notification
-            staff_users = CustomUser.objects.filter(organization=request.user.organization, is_staff=True)
-            for staff in staff_users:
-                Notification.objects.create(
-                    user=staff,
+            if not matrix:
+                matrix = LeaveApprovalMatrix.objects.filter(
                     organization=request.user.organization,
-                    title=f"New Leave: {employee.first_name} {employee.last_name}",
-                    message=f"Applied for {leave_type.name} from {start_date} ({total_days} days).",
+                    department=employee.department,
+                    is_active=True
+                ).first()
+
+            if matrix:
+                steps = matrix.steps.all().order_by('order')
+                for step in steps:
+                    # Resolve Approver based on role
+                    approver = None
+                    if step.approver_role == 'MANAGER':
+                        approver = employee.manager.user if employee.manager else None
+                    elif step.approver_role == 'HR':
+                        approver = CustomUser.objects.filter(organization=request.user.organization, is_staff=True).first()
+                    
+                    ApprovalWorkflow.objects.create(
+                        leave_request=leave_req,
+                        approver=approver,
+                        approver_role=step.approver_role,
+                        sequence_order=step.order,
+                        is_parallel=step.is_parallel,
+                        status='PENDING',
+                        organization=request.user.organization
+                    )
+            else:
+                # Default Fallback: Manager -> HR
+                if employee.manager:
+                    ApprovalWorkflow.objects.create(
+                        leave_request=leave_req,
+                        approver=employee.manager.user,
+                        approver_role='MANAGER',
+                        sequence_order=1,
+                        status='PENDING',
+                        organization=request.user.organization
+                    )
+                
+                ApprovalWorkflow.objects.create(
+                    leave_request=leave_req,
+                    approver=None, # Any staff
+                    approver_role='HR',
+                    sequence_order=2,
+                    status='PENDING',
+                    organization=request.user.organization
+                )
+
+            # Set current handler to the first step approver
+            first_step = leave_req.workflow_steps.filter(status='PENDING').first()
+            if first_step:
+                leave_req.current_handler = first_step.approver
+                leave_req.save()
+
+            # Initial Notification for First Approver
+            if leave_req.current_handler:
+                from home.models import Notification
+                Notification.objects.create(
+                    user=leave_req.current_handler,
+                    organization=request.user.organization,
+                    title=f"New Leave: {employee.first_name}",
+                    message=f"Awaiting your approval for {leave_type.name}.",
                     notification_type='LEAVE',
                     link='/leaves/pending/'
                 )
 
             messages.success(request, "Leave application submitted successfully.")
+
         except Exception as e:
             messages.error(request, f"Error: {str(e)}")
         
@@ -266,11 +319,22 @@ def pending_approvals_view(request):
             status='PENDING'
         ).order_by('-created_at')
         
+    for leave in pending_leaves:
+        pending_step = leave.workflow_steps.filter(status='PENDING').first()
+        leave.awaiting_role = pending_step.approver_role if pending_step else "Finalized"
+
+    employees_for_export = None
+    if request.user.is_staff:
+        employees_for_export = Employee.objects.filter(organization=request.user.organization, is_active=True, is_deleted=False).order_by('first_name')
+
     return render(request, 'leaves/pending_approvals.html', {
         'pending_leaves': pending_leaves,
         'pending_compoffs': pending_compoffs,
-        'cancel_requests': cancel_requests
+        'cancel_requests': cancel_requests,
+        'employees_for_export': employees_for_export
     })
+
+
 
 
 
@@ -291,30 +355,29 @@ def approve_reject_action_view(request, leave_id):
         
         old_status = leave_req.status
         if action == 'approve':
-            if leave_req.status == 'PENDING':
-                # If manager approved, move to next level or fully approve if no next level
-                # For now, let's say Manager -> HR. 
-                # If the user is a manager, move to MANAGER_APPROVED.
-                # If the user is HR/Staff, move to APPROVED.
-                if request.user.is_staff:
-                    leave_req.status = 'APPROVED'
-                    # Deduct from balance
-                    balance = LeaveBalance.objects.get(
-                        employee=leave_req.employee, 
-                        leave_type=leave_req.leave_type, 
-                        year=leave_req.start_date.year
-                    )
-                    balance.current_balance -= leave_req.total_days
-                    balance.used_balance += leave_req.total_days
-                    balance.save()
-                else:
-                    leave_req.status = 'MANAGER_APPROVED'
-                    # Route to HR (for now, any staff)
-                    # In a real system, we'd find the specific HR person
-                    leave_req.current_handler = None # Placeholder for next level
-            elif leave_req.status == 'MANAGER_APPROVED' and request.user.is_staff:
+            # Update the current step in the workflow
+            current_step = leave_req.workflow_steps.filter(status='PENDING').first()
+            if current_step:
+                current_step.status = 'APPROVED'
+                current_step.action_date = timezone.now()
+                current_step.comments = comments
+                current_step.save()
+
+            # Find the next step
+            next_step = leave_req.workflow_steps.filter(status='PENDING').order_by('sequence_order').first()
+            
+            if next_step:
+                leave_req.status = 'MANAGER_APPROVED'
+                leave_req.current_handler = next_step.approver
+                # If next step is HR (Parallel), any staff can approve
+                if next_step.approver_role == 'HR' and not next_step.approver:
+                    leave_req.current_handler = None # Broad access
+            else:
+                # No more steps - Fully Approved
                 leave_req.status = 'APPROVED'
-                # Deduct balance
+                leave_req.current_handler = None
+                
+                # Deduct from balance
                 balance = LeaveBalance.objects.get(
                     employee=leave_req.employee, 
                     leave_type=leave_req.leave_type, 
@@ -323,6 +386,7 @@ def approve_reject_action_view(request, leave_id):
                 balance.current_balance -= leave_req.total_days
                 balance.used_balance += leave_req.total_days
                 balance.save()
+
                 
         elif action == 'reject':
             leave_req.status = 'REJECTED'
@@ -558,4 +622,243 @@ def cancel_approval_action_view(request, leave_id):
         leave_req.save()
         messages.success(request, f"Cancellation {action}ed.")
         
+    return redirect('leaves:pending_approvals')
+
+@login_required
+def rh_picker_view(request):
+    """
+    Displays available optional holidays for the current year.
+    """
+    employee = Employee.objects.filter(email=request.user.email, organization=request.user.organization).first()
+    current_year = timezone.now().year
+    
+    # Get RH Leave Policy for limit
+    rh_type = LeaveType.objects.filter(code='RH', organization=request.user.organization).first()
+    policy = LeavePolicy.objects.filter(leave_type=rh_type, organization=request.user.organization).first()
+    rh_limit = int(policy.max_balance) if policy else 2
+
+    # Get all optional holidays for the year
+    optional_holidays = Holiday.objects.filter(
+        organization=request.user.organization,
+        is_optional=True,
+        date__year=current_year
+    ).order_by('date')
+
+    # Get employee's claims
+    from .models import RestrictedHolidayClaim
+    claims = RestrictedHolidayClaim.objects.filter(
+        employee=employee,
+        year=current_year,
+        status__in=['APPROVED', 'PENDING']
+    )
+    claimed_holiday_ids = list(claims.values_list('holiday_id', flat=True))
+    
+    context = {
+        'optional_holidays': optional_holidays,
+        'claimed_holiday_ids': claimed_holiday_ids,
+        'rh_limit': rh_limit,
+        'claims_count': claims.count(),
+        'remaining': rh_limit - claims.count()
+    }
+    return render(request, 'leaves/rh_picker.html', context)
+
+@login_required
+def claim_rh_view(request, holiday_id):
+    """
+    Processes the claim or cancellation of a restricted holiday.
+    """
+    if request.method == 'POST':
+        employee = Employee.objects.filter(email=request.user.email, organization=request.user.organization).first()
+        holiday = get_object_or_404(Holiday, id=holiday_id, organization=request.user.organization, is_optional=True)
+        current_year = holiday.date.year
+        
+        # Check if already claimed
+        from .models import RestrictedHolidayClaim
+        existing_claim = RestrictedHolidayClaim.objects.filter(
+            employee=employee,
+            holiday=holiday
+        ).first()
+
+        if existing_claim:
+            # Cancel claim
+            existing_claim.delete()
+            messages.success(request, f"Cancelled claim for {holiday.name}.")
+        else:
+            # New claim - check limit
+            rh_type = LeaveType.objects.filter(code='RH', organization=request.user.organization).first()
+            policy = LeavePolicy.objects.filter(leave_type=rh_type, organization=request.user.organization).first()
+            rh_limit = int(policy.max_balance) if policy else 2
+            
+            current_claims_count = RestrictedHolidayClaim.objects.filter(
+                employee=employee,
+                year=current_year,
+                status__in=['APPROVED', 'PENDING']
+            ).count()
+
+            if current_claims_count >= rh_limit:
+                messages.error(request, f"You have already reached your limit of {rh_limit} Restricted Holidays.")
+            else:
+                RestrictedHolidayClaim.objects.create(
+                    employee=employee,
+                    holiday=holiday,
+                    year=current_year,
+                    organization=request.user.organization
+                )
+                messages.success(request, f"Successfully claimed {holiday.name} as a Restricted Holiday.")
+
+    return redirect('leaves:rh_picker')
+
+
+@login_required
+def export_leave_card_view(request):
+    if not request.user.is_staff:
+        messages.error(request, "Access denied.")
+        return redirect('leaves:dashboard')
+
+    employee_id = request.GET.get('employee_id')
+    export_format = request.GET.get('format', 'excel')
+
+    if not employee_id:
+        messages.error(request, "Please select an employee.")
+        return redirect('leaves:pending_approvals')
+
+    employee = get_object_or_404(Employee, id=employee_id, organization=request.user.organization)
+    current_year = timezone.now().year
+
+    # Gather data
+    balances = LeaveBalance.objects.filter(employee=employee, year=current_year)
+    leave_requests = LeaveRequest.objects.filter(employee=employee, status='APPROVED').order_by('-start_date')
+    accruals = LeaveAccrualLog.objects.filter(employee=employee).order_by('-created_at')
+
+    import io
+    from django.http import HttpResponse
+
+    if export_format == 'excel':
+        import xlsxwriter
+        output = io.BytesIO()
+        workbook = xlsxwriter.Workbook(output)
+
+        # 1. Balances Sheet
+        ws_bal = workbook.add_worksheet("Leave Balances")
+        header_fmt = workbook.add_format({'bold': True, 'bg_color': '#4F46E5', 'font_color': 'white', 'border': 1})
+        border_fmt = workbook.add_format({'border': 1})
+        title_fmt = workbook.add_format({'bold': True, 'font_size': 14})
+
+        ws_bal.write(0, 0, f"Leave Card for {employee.first_name} {employee.last_name} ({current_year})", title_fmt)
+        
+        headers_bal = ['Leave Type', 'Current Balance']
+        for col, text in enumerate(headers_bal):
+            ws_bal.write(2, col, text, header_fmt)
+
+        for row, bal in enumerate(balances, start=3):
+            ws_bal.write(row, 0, bal.leave_type.name, border_fmt)
+            ws_bal.write(row, 1, float(bal.current_balance), border_fmt)
+
+        ws_bal.set_column(0, 1, 20)
+
+        # 2. Leave History Sheet
+        ws_req = workbook.add_worksheet("Leave History")
+        headers_req = ['Leave Type', 'Start Date', 'End Date', 'Total Days', 'Reason']
+        for col, text in enumerate(headers_req):
+            ws_req.write(0, col, text, header_fmt)
+
+        for row, req in enumerate(leave_requests, start=1):
+            ws_req.write(row, 0, req.leave_type.name, border_fmt)
+            ws_req.write(row, 1, req.start_date.strftime('%Y-%m-%d'), border_fmt)
+            ws_req.write(row, 2, req.end_date.strftime('%Y-%m-%d'), border_fmt)
+            ws_req.write(row, 3, float(req.total_days), border_fmt)
+            ws_req.write(row, 4, req.reason, border_fmt)
+
+        ws_req.set_column(0, 4, 15)
+
+        # 3. Accrual Logs Sheet
+        ws_acc = workbook.add_worksheet("Accrual History")
+        headers_acc = ['Date', 'Leave Type', 'Action Type', 'Amount', 'Description']
+        for col, text in enumerate(headers_acc):
+            ws_acc.write(0, col, text, header_fmt)
+
+        for row, log in enumerate(accruals, start=1):
+            ws_acc.write(row, 0, log.created_at.strftime('%Y-%m-%d'), border_fmt)
+            ws_acc.write(row, 1, log.leave_type.name, border_fmt)
+            ws_acc.write(row, 2, log.get_action_type_display(), border_fmt)
+            ws_acc.write(row, 3, float(log.amount), border_fmt)
+            ws_acc.write(row, 4, log.description, border_fmt)
+
+        ws_acc.set_column(0, 4, 20)
+
+        workbook.close()
+        output.seek(0)
+        
+        response = HttpResponse(output.read(), content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+        response['Content-Disposition'] = f'attachment; filename="{employee.first_name}_Leave_Card_{current_year}.xlsx"'
+        return response
+
+    elif export_format == 'pdf':
+        from reportlab.lib import colors
+        from reportlab.lib.pagesizes import A4
+        from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
+        from reportlab.lib.styles import getSampleStyleSheet
+
+        output = io.BytesIO()
+        doc = SimpleDocTemplate(output, pagesize=A4)
+        elements = []
+        styles = getSampleStyleSheet()
+        
+        # Title
+        elements.append(Paragraph(f"Employee Leave Card: {employee.first_name} {employee.last_name}", styles['Title']))
+        elements.append(Paragraph(f"Year: {current_year} | ID: {employee.employee_id}", styles['Normal']))
+        elements.append(Spacer(1, 20))
+
+        # Balances
+        elements.append(Paragraph("Current Balances", styles['Heading2']))
+        data_bal = [['Leave Type', 'Current Balance']]
+        for bal in balances:
+            data_bal.append([bal.leave_type.name, str(bal.current_balance)])
+        
+        if len(data_bal) > 1:
+            t_bal = Table(data_bal, colWidths=[200, 100])
+            t_bal.setStyle(TableStyle([
+                ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#4F46E5')),
+                ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+                ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+                ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+                ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+                ('GRID', (0, 0), (-1, -1), 1, colors.black)
+            ]))
+            elements.append(t_bal)
+        else:
+            elements.append(Paragraph("No balances found.", styles['Normal']))
+            
+        elements.append(Spacer(1, 20))
+
+        # Leave History
+        elements.append(Paragraph("Leave History (Approved)", styles['Heading2']))
+        data_req = [['Leave Type', 'Start Date', 'End Date', 'Days']]
+        for req in leave_requests[:20]: # Limit to 20 for PDF
+            data_req.append([
+                req.leave_type.name,
+                req.start_date.strftime('%d/%m/%Y'),
+                req.end_date.strftime('%d/%m/%Y'),
+                str(req.total_days)
+            ])
+            
+        if len(data_req) > 1:
+            t_req = Table(data_req, colWidths=[150, 100, 100, 50])
+            t_req.setStyle(TableStyle([
+                ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#4F46E5')),
+                ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+                ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+                ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+                ('GRID', (0, 0), (-1, -1), 1, colors.black)
+            ]))
+            elements.append(t_req)
+        else:
+            elements.append(Paragraph("No approved leave requests found.", styles['Normal']))
+
+        doc.build(elements)
+        output.seek(0)
+        response = HttpResponse(output.read(), content_type='application/pdf')
+        response['Content-Disposition'] = f'attachment; filename="{employee.first_name}_Leave_Card_{current_year}.pdf"'
+        return response
+
     return redirect('leaves:pending_approvals')

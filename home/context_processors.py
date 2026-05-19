@@ -65,12 +65,22 @@ def global_notifications(request):
                 'timestamp': o.created_at,
             })
             
+    # Find current employee if logged in
+    current_employee = None
+    if request.user.is_authenticated:
+        try:
+            from employees.models import Employee
+            current_employee = Employee.objects.filter(email=request.user.email).first()
+        except Exception:
+            pass
+
     # Sort notifications by timestamp descending
     if notifications:
         notifications.sort(key=lambda x: x['timestamp'], reverse=True)
         
     return {
         'global_notifications': notifications,
-        'global_notifications_count': len(notifications)
+        'global_notifications_count': len(notifications),
+        'current_employee': current_employee
     }
 

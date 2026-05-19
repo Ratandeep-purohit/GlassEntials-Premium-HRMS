@@ -10,7 +10,7 @@
         href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Manrope:wght@600;700;800&display=swap">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <link rel="stylesheet" href="{% static 'css/landing.css' %}?v=3.0">
-    <link rel="stylesheet" href="{% static 'css/home.css' %}?v=3.0">
+    <link rel="stylesheet" href="{% static 'css/home.css' %}?v=1.0">
 
 </head>
 
@@ -92,8 +92,7 @@
             </div>
         </section>
 
-        <!-- KPI Stat Grid (HR/Admin Only) -->
-        {% if request.user.is_staff %}
+        <!-- KPI Stat Grid -->
         <style>
             .stat-grid { gap: 16px; margin-bottom: 20px; }
             .stat-card {
@@ -112,6 +111,7 @@
             .label-primary { font-size: 11px !important; margin-top: 0 !important; }
         </style>
         <section class="stat-grid">
+            {% if request.user.is_staff %}
             <div class="stat-card">
                 <div class="stat-info">
                     <div class="val-primary">{{ user_count }}</div>
@@ -148,8 +148,45 @@
                     <i class="fas fa-receipt"></i>
                 </div>
             </div>
+            {% else %}
+            <div class="stat-card">
+                <div class="stat-info">
+                    <div class="val-primary">{{ my_present_days }}</div>
+                    <div class="label-primary">Days Present (This Month)</div>
+                </div>
+                <div class="stat-icon" style="background: rgba(34,197,94,0.08); color: #16a34a; border-radius: 10px; display:flex; align-items:center; justify-content:center;">
+                    <i class="fas fa-user-check"></i>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-info">
+                    <div class="val-primary">{{ my_approved_leaves }}</div>
+                    <div class="label-primary">Approved Leaves</div>
+                </div>
+                <div class="stat-icon" style="background: rgba(37,99,235,0.08); color: #2563eb; border-radius: 10px; display:flex; align-items:center; justify-content:center;">
+                    <i class="fas fa-calendar-check"></i>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-info">
+                    <div class="val-primary">{{ my_pending_leaves }}</div>
+                    <div class="label-primary">Pending Leave Requests</div>
+                </div>
+                <div class="stat-icon" style="background: rgba(245,158,11,0.08); color: #d97706; border-radius: 10px; display:flex; align-items:center; justify-content:center;">
+                    <i class="fas fa-clock"></i>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-info">
+                    <div class="val-primary">$0</div>
+                    <div class="label-primary">Next Payout</div>
+                </div>
+                <div class="stat-icon" style="background: rgba(124,58,237,0.08); color: #7c3aed; border-radius: 10px; display:flex; align-items:center; justify-content:center;">
+                    <i class="fas fa-receipt"></i>
+                </div>
+            </div>
+            {% endif %}
         </section>
-        {% endif %}
         <!-- Dynamic Content Bento -->
         <style>
             .bento-grid { grid-template-columns: 1.4fr 1fr 0.8fr; gap: 18px; }

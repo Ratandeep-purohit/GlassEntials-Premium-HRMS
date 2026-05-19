@@ -153,7 +153,6 @@
 }
 
 .btn-primary {
-    width: 100%;
     background: var(--accent);
     color: white;
     text-decoration: none;
@@ -164,7 +163,7 @@
     font-size: 14px;
     cursor: pointer;
     transition: all 0.2s;
-    display: flex;
+    display: inline-flex;
     align-items: center;
     justify-content: center;
     gap: 10px;
@@ -186,7 +185,7 @@
     font-size: 14px;
     cursor: pointer;
     transition: all 0.2s;
-    display: flex;
+    display: inline-flex;
     align-items: center;
     justify-content: center;
     gap: 8px;
@@ -207,7 +206,7 @@
     font-size: 14px;
     cursor: pointer;
     transition: all 0.2s;
-    display: flex;
+    display: inline-flex;
     align-items: center;
     justify-content: center;
     gap: 8px;

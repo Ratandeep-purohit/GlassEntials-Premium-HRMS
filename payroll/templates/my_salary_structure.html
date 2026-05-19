@@ -1,0 +1,622 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>My Salary Structure | GlassEntials HRMS</title>
+<meta name="description" content="View your current compensation package, salary breakdown and component details.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<link rel="stylesheet" href="{% static 'css/landing.css' %}?v=3.0">
+<link rel="stylesheet" href="{% static 'css/home.css' %}?v=3.0">
+<link rel="stylesheet" href="{% static 'css/dashboard.css' %}?v=3.0">
+<style>
+:root {
+  --font-sans: 'Plus Jakarta Sans', system-ui, sans-serif;
+  --font-mono: 'IBM Plex Mono', monospace;
+  --primary: #0f172a;
+  --primary-hover: #1e293b;
+  --accent: #2563eb;
+  --accent-light: #eff6ff;
+  --success: #10b981;
+  --success-light: #ecfdf5;
+  --success-mid: #d1fae5;
+  --warning: #f59e0b;
+  --warning-light: #fffbeb;
+  --danger: #ef4444;
+  --danger-light: #fef2f2;
+  --info: #8b5cf6;
+  --info-light: #f5f3ff;
+  --bg-gradient: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  --card-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.04), 0 1px 3px rgba(0, 0, 0, 0.02);
+  --hover-shadow: 0 20px 40px -15px rgba(37, 99, 235, 0.1), 0 1px 8px rgba(0, 0, 0, 0.04);
+}
+
+body {
+  background: var(--bg-gradient);
+  font-family: var(--font-sans);
+  color: #334155;
+  -webkit-font-smoothing: antialiased;
+}
+
+.workspace {
+  padding: 40px 24px;
+}
+
+.ss-container {
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+/* GORGEOUS TOOLBAR / META STRIP */
+.ss-toolbar-strip {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 32px;
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(12px);
+  padding: 20px 32px;
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  box-shadow: var(--card-shadow);
+}
+
+.ss-back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: #475569;
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+.ss-back-link:hover {
+  color: var(--accent);
+}
+
+.ss-active-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--success-light);
+  color: var(--success);
+  border: 1px solid var(--success-mid);
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 6px 16px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* HERO COMP CARD */
+.ss-hero-premium {
+  background: linear-gradient(90deg, #1e293b 0%, #0f172a 100%);
+  border-radius: 24px;
+  padding: 40px;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 40px;
+  align-items: center;
+  position: relative;
+  overflow: hidden;
+  margin-bottom: 32px;
+  box-shadow: var(--card-shadow);
+}
+
+.ss-hero-premium::before {
+  content: '';
+  position: absolute;
+  right: -60px;
+  top: -60px;
+  width: 250px;
+  height: 250px;
+  border-radius: 50%;
+  background: rgba(37, 99, 235, 0.15);
+  filter: blur(20px);
+}
+
+.ss-hero-left h2 {
+  font-size: 12px;
+  font-weight: 700;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  margin-bottom: 10px;
+}
+
+.ss-hero-ctc-val {
+  font-family: var(--font-mono);
+  font-size: 48px;
+  font-weight: 800;
+  color: #fff;
+  letter-spacing: -1.5px;
+  line-height: 1;
+}
+
+.ss-hero-date-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: #cbd5e1;
+  margin-top: 16px;
+}
+
+.ss-hero-date-tag i {
+  color: var(--success);
+}
+
+.ss-hero-metrics {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1px;
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 16px;
+  overflow: hidden;
+  min-width: 340px;
+}
+
+.ss-metric-tile {
+  background: rgba(255, 255, 255, 0.05);
+  padding: 20px 24px;
+}
+
+.ss-metric-tile-lbl {
+  font-size: 10.5px;
+  font-weight: 700;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  display: block;
+}
+
+.ss-metric-tile-val {
+  font-family: var(--font-mono);
+  font-size: 22px;
+  font-weight: 700;
+  color: #fff;
+  margin-top: 6px;
+  display: block;
+}
+
+.ss-metric-tile-val.emerald {
+  color: #34d399;
+}
+
+/* SECTION CARD */
+.ss-section-premium {
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 20px;
+  margin-bottom: 32px;
+  overflow: hidden;
+  box-shadow: var(--card-shadow);
+}
+
+.ss-section-header-prem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 32px;
+  border-bottom: 1px solid #e2e8f0;
+  background: #f8fafc;
+}
+
+.ss-section-title-prem {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 14px;
+  font-weight: 800;
+  color: #334155;
+  text-transform: uppercase;
+  letter-spacing: 0.75px;
+}
+
+.ss-section-title-prem i {
+  font-size: 16px;
+  color: var(--accent);
+}
+
+.ss-count-badge {
+  font-size: 11.5px;
+  font-weight: 700;
+  color: #64748b;
+  background: #e2e8f0;
+  padding: 4px 12px;
+  border-radius: 12px;
+}
+
+/* TABLE STYLING */
+.ss-table-premium {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.ss-table-premium th {
+  padding: 16px 32px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  text-align: left;
+  border-bottom: 1px solid #e2e8f0;
+  background: #fafbfc;
+}
+
+.ss-table-premium th:last-child {
+  text-align: right;
+}
+
+.ss-table-premium td {
+  padding: 18px 32px;
+  color: #475569;
+  border-bottom: 1px solid #f1f5f9;
+  vertical-align: middle;
+}
+
+.ss-table-premium td:last-child {
+  text-align: right;
+}
+
+.ss-table-premium tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.ss-table-premium tbody tr:hover {
+  background: #fafbfc;
+}
+
+/* CELL STYLES */
+.ss-comp-identity {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.ss-comp-name {
+  font-size: 14.5px;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.ss-comp-code {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: #94a3b8;
+}
+
+/* BADGES AND PILLS */
+.ss-badge-calc {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 4px 12px;
+  border-radius: 12px;
+  text-transform: uppercase;
+}
+
+.ss-badge-fixed { background: #eff6ff; color: #2563eb; }
+.ss-badge-percent { background: #f5f3ff; color: #7c3aed; }
+.ss-badge-formula { background: #fffbeb; color: #d97706; }
+
+.ss-flag-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 10px;
+  margin-right: 6px;
+}
+
+.ss-flag-taxable { background: #fef3c7; color: #b45309; }
+.ss-flag-statutory { background: #e0f2fe; color: #0369a1; }
+
+.ss-amount-val {
+  font-family: var(--font-mono);
+  font-size: 16px;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.ss-amount-val.earn { color: var(--success); }
+.ss-amount-val.deduct { color: var(--danger); }
+
+.ss-amount-desc {
+  font-size: 11px;
+  color: #94a3b8;
+  margin-top: 2px;
+}
+
+/* STRIP AT FOOT OF SECTION */
+.ss-section-footer {
+  display: flex;
+  gap: 40px;
+  padding: 20px 32px;
+  background: #f8fafc;
+  border-top: 1px solid #e2e8f0;
+}
+
+.ss-footer-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.ss-footer-stat-lbl {
+  font-size: 10px;
+  font-weight: 700;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.75px;
+}
+
+.ss-footer-stat-val {
+  font-family: var(--font-mono);
+  font-size: 15px;
+  font-weight: 700;
+  color: #334155;
+}
+
+/* ADVISORY STRIP */
+.ss-advisory {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 20px 24px;
+  background: var(--warning-light);
+  border: 1px solid rgba(245, 158, 11, 0.25);
+  border-radius: 16px;
+  font-size: 13.5px;
+  color: #b45309;
+  font-weight: 500;
+}
+
+.ss-advisory i {
+  font-size: 20px;
+  color: var(--warning);
+}
+
+/* EMPTY STATE */
+.ss-empty-card-premium {
+  text-align: center;
+  padding: 80px 40px;
+  background: #fff;
+  border-radius: 24px;
+  border: 1px solid #e2e8f0;
+  box-shadow: var(--card-shadow);
+}
+
+.ss-empty-icon-box {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: var(--accent-light);
+  color: var(--accent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 32px;
+  margin: 0 auto 24px;
+}
+</style>
+</head>
+<body>
+{% include 'includes/navbar.html' %}
+<main class="workspace">
+<div class="ss-container">
+
+  <!-- TOOLBAR -->
+  <div class="ss-toolbar-strip">
+    <a href="{% url 'my_payslips' %}" class="ss-back-link">
+      <i class="fas fa-arrow-left"></i> Back to My Payslips
+    </a>
+    {% if structure %}
+    <span class="ss-active-badge">
+      <i class="fas fa-circle-check"></i> Active Structure
+    </span>
+    {% endif %}
+  </div>
+
+  {% if structure %}
+
+  <!-- HERO BANNER -->
+  <div class="ss-hero-premium">
+    <div class="ss-hero-left">
+      <h2>Annual Compensation (CTC)</h2>
+      <div class="ss-hero-ctc-val">₹{{ structure.ctc }}</div>
+      <div class="ss-hero-date-tag">
+        <i class="fas fa-calendar-alt"></i> Effective Date: {{ structure.effective_date|date:"d M Y" }}
+        {% if structure.revision_notes %} &nbsp;·&nbsp; {{ structure.revision_notes }}{% endif %}
+      </div>
+    </div>
+    
+    <div class="ss-hero-metrics">
+      <div class="ss-metric-tile">
+        <span class="ss-metric-tile-lbl">Monthly Gross</span>
+        <span class="ss-metric-tile-val emerald">₹{{ structure.gross_salary }}</span>
+      </div>
+      <div class="ss-metric-tile">
+        <span class="ss-metric-tile-lbl">Monthly Basic</span>
+        <span class="ss-metric-tile-val">₹{{ structure.basic_salary }}</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- EARNINGS SECTION -->
+  <div class="ss-section-premium">
+    <div class="ss-section-header-prem">
+      <div class="ss-section-title-prem">
+        <i class="fas fa-circle-plus"></i> Earnings &amp; Allowances
+      </div>
+      <span class="ss-count-badge">{{ earnings_items|length }} Item{{ earnings_items|length|pluralize }}</span>
+    </div>
+
+    {% if earnings_items %}
+    <table class="ss-table-premium">
+      <thead>
+        <tr>
+          <th>Component</th>
+          <th>Calculation Type</th>
+          <th>Regulatory Flags</th>
+          <th style="text-align: right;">Monthly Amount</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for item in earnings_items %}
+        <tr>
+          <td>
+            <div class="ss-comp-identity">
+              <span class="ss-comp-name">{{ item.component.name }}</span>
+              <span class="ss-comp-code">{{ item.component.code }}</span>
+            </div>
+          </td>
+          <td>
+            {% if item.component.calculation_type == 'FIXED' %}
+            <span class="ss-badge-calc ss-badge-fixed"><i class="fas fa-lock"></i> Fixed Amount</span>
+            {% elif item.component.calculation_type == 'PERCENTAGE' %}
+            <span class="ss-badge-calc ss-badge-percent"><i class="fas fa-percent"></i> % of Basic</span>
+            {% else %}
+            <span class="ss-badge-calc ss-badge-formula"><i class="fas fa-calculator"></i> Custom Formula</span>
+            {% endif %}
+          </td>
+          <td>
+            {% if item.component.is_taxable %}<span class="ss-flag-pill ss-flag-taxable">Taxable</span>{% endif %}
+            {% if item.component.is_statutory %}<span class="ss-flag-pill ss-flag-statutory">Statutory</span>{% endif %}
+            {% if not item.component.is_taxable and not item.component.is_statutory %}
+            <span style="color:#cbd5e1;">—</span>
+            {% endif %}
+          </td>
+          <td>
+            {% if item.component.calculation_type == 'FIXED' %}
+              <div class="ss-amount-val earn">₹{{ item.fixed_amount }}</div>
+              <div class="ss-amount-desc">Flat rate / month</div>
+            {% elif item.component.calculation_type == 'PERCENTAGE' %}
+              <div class="ss-amount-val earn">{{ item.percentage }}%</div>
+              <div class="ss-amount-desc">of ₹{{ structure.basic_salary }} base</div>
+            {% else %}
+              <div class="ss-amount-val earn" style="font-family:inherit;font-size:12.5px;color:#334155;">
+                {{ item.formula_override|default:item.component.formula }}
+              </div>
+              <div class="ss-amount-desc">Derived formula</div>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <div style="padding: 40px; text-align: center; color: #94a3b8;">No earning components assigned to this structure.</div>
+    {% endif %}
+
+    <div class="ss-section-footer">
+      <div class="ss-footer-stat">
+        <span class="ss-footer-stat-lbl">Aggregate Monthly Gross</span>
+        <span class="ss-footer-stat-val">₹{{ structure.gross_salary }}</span>
+      </div>
+      <div class="ss-footer-stat">
+        <span class="ss-footer-stat-lbl">Aggregate Annual Gross</span>
+        <span class="ss-footer-stat-val">₹{{ structure.gross_salary|floatformat:2 }}</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- DEDUCTIONS SECTION -->
+  <div class="ss-section-premium">
+    <div class="ss-section-header-prem">
+      <div class="ss-section-title-prem">
+        <i class="fas fa-circle-minus" style="color:var(--danger);"></i> Deductions &amp; Recoveries
+      </div>
+      <span class="ss-count-badge">{{ deduction_items|length }} Item{{ deduction_items|length|pluralize }}</span>
+    </div>
+
+    {% if deduction_items %}
+    <table class="ss-table-premium">
+      <thead>
+        <tr>
+          <th>Component</th>
+          <th>Calculation Type</th>
+          <th>Regulatory Flags</th>
+          <th style="text-align: right;">Monthly Amount</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for item in deduction_items %}
+        <tr>
+          <td>
+            <div class="ss-comp-identity">
+              <span class="ss-comp-name">{{ item.component.name }}</span>
+              <span class="ss-comp-code">{{ item.component.code }}</span>
+            </div>
+          </td>
+          <td>
+            {% if item.component.calculation_type == 'FIXED' %}
+            <span class="ss-badge-calc ss-badge-fixed"><i class="fas fa-lock"></i> Fixed Amount</span>
+            {% elif item.component.calculation_type == 'PERCENTAGE' %}
+            <span class="ss-badge-calc ss-badge-percent"><i class="fas fa-percent"></i> % of Basic</span>
+            {% else %}
+            <span class="ss-badge-calc ss-badge-formula"><i class="fas fa-calculator"></i> Custom Formula</span>
+            {% endif %}
+          </td>
+          <td>
+            {% if item.component.is_taxable %}<span class="ss-flag-pill ss-flag-taxable">Taxable</span>{% endif %}
+            {% if item.component.is_statutory %}<span class="ss-flag-pill ss-flag-statutory">Statutory</span>{% endif %}
+            {% if not item.component.is_taxable and not item.component.is_statutory %}
+            <span style="color:#cbd5e1;">—</span>
+            {% endif %}
+          </td>
+          <td>
+            {% if item.component.calculation_type == 'FIXED' %}
+              <div class="ss-amount-val deduct">₹{{ item.fixed_amount }}</div>
+              <div class="ss-amount-desc">Flat rate / month</div>
+            {% elif item.component.calculation_type == 'PERCENTAGE' %}
+              <div class="ss-amount-val deduct">{{ item.percentage }}%</div>
+              <div class="ss-amount-desc">of ₹{{ structure.basic_salary }} base</div>
+            {% else %}
+              <div class="ss-amount-val deduct" style="font-family:inherit;font-size:12.5px;color:#334155;">
+                {{ item.formula_override|default:item.component.formula }}
+              </div>
+              <div class="ss-amount-desc">Derived formula</div>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <div style="padding: 40px; text-align: center; color: #94a3b8;">No deduction components assigned to this structure.</div>
+    {% endif %}
+  </div>
+
+  <!-- ADVISORY STRIP -->
+  <div class="ss-advisory">
+    <i class="fas fa-circle-info"></i>
+    <span>This page displays a read-only statement of your active corporate compensation structures. For adjustments, package updates, or declarations, please contact HR at <strong>hr@glassentials.com</strong>.</span>
+  </div>
+
+  {% else %}
+  <!-- EMPTY STATE -->
+  <div class="ss-empty-card-premium">
+    <div class="ss-empty-icon-box">
+      <i class="fas fa-file-invoice-dollar"></i>
+    </div>
+    <h3>No Active Compensation Plan</h3>
+    <p>We could not find an active salary package structure linked to your employee record. Please reach out to your department supervisor or the HR administrator.</p>
+  </div>
+  {% endif %}
+
+</div>
+</main>
+</body>
+</html>

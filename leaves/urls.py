@@ -10,6 +10,9 @@ urlpatterns = [
     path('apply-compoff/', views.apply_compoff_view, name='apply_compoff'),
     path('history/', views.leave_history_view, name='history'),
     path('cancel/<int:leave_id>/', views.request_leave_cancellation_view, name='request_cancel'),
+    path('rh-picker/', views.rh_picker_view, name='rh_picker'),
+    path('claim-rh/<int:holiday_id>/', views.claim_rh_view, name='claim_rh'),
+
     
     # Manager/HR Actions
     path('pending/', views.pending_approvals_view, name='pending_approvals'),
@@ -20,4 +23,8 @@ urlpatterns = [
     
     # Policy & Settings
     path('calendar/', views.global_calendar_view, name='calendar'),
+    
+    # Reports
+    path('export-leave-card/', views.export_leave_card_view, name='export_leave_card'),
 ]
+

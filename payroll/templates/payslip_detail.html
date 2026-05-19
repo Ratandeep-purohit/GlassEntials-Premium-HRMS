@@ -1,0 +1,525 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Payslip — {{ payslip.employee.first_name }} {{ payslip.employee.last_name }} | GlassEntials HRMS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<link rel="stylesheet" href="{% static 'css/landing.css' %}?v=3.0">
+<link rel="stylesheet" href="{% static 'css/home.css' %}?v=3.0">
+<link rel="stylesheet" href="{% static 'css/dashboard.css' %}?v=3.0">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --navy:#0d1b2a;--navy-mid:#1a2e45;--navy-light:#243b55;
+  --blue:#2563eb;--blue-light:#eff6ff;--blue-mid:#dbeafe;
+  --emerald:#059669;--emerald-light:#ecfdf5;
+  --red:#dc2626;--red-light:#fef2f2;
+  --slate-50:#f8fafc;--slate-100:#f1f5f9;--slate-200:#e2e8f0;
+  --slate-400:#94a3b8;--slate-600:#475569;--slate-700:#334155;--slate-900:#0f172a;
+  --text:#0f172a;--border:#e2e8f0;
+  --font:'Inter',system-ui,sans-serif;--mono:'IBM Plex Mono',monospace;
+}
+body{background:#f0f4f8;font-family:var(--font);color:var(--text);font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased}
+
+/* ── WRAPPER ── */
+.ps-page{max-width:960px;margin:32px auto;padding:0 16px}
+.ps-toolbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px}
+.ps-toolbar a,.ps-toolbar button{display:inline-flex;align-items:center;gap:8px;font-size:13px;font-weight:500;border-radius:8px;padding:8px 16px;cursor:pointer;text-decoration:none;transition:all .15s}
+.ps-back{background:#fff;border:1px solid var(--border);color:var(--slate-700)}
+.ps-back:hover{background:var(--slate-100)}
+.ps-print{background:var(--navy);border:none;color:#fff}
+.ps-print:hover{background:var(--navy-mid)}
+
+/* ── DOCUMENT ── */
+.ps-doc{background:#fff;border:1px solid var(--border);border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,.06)}
+
+/* ── HEADER BAND ── */
+.ps-header{display:flex;justify-content:space-between;align-items:center;padding:28px 40px;border-bottom:2px solid var(--navy)}
+.ps-header-left{display:flex;align-items:center;gap:20px}
+.ps-logo{height:56px;width:auto}
+.ps-company h2{font-size:15px;font-weight:700;color:var(--navy);letter-spacing:-.2px}
+.ps-company p{font-size:11.5px;color:var(--slate-400);margin-top:2px;line-height:1.6}
+.ps-header-right{text-align:right}
+.ps-title{font-size:22px;font-weight:700;color:var(--navy);letter-spacing:1.5px;text-transform:uppercase}
+.ps-period{font-size:12px;font-weight:600;color:var(--blue);text-transform:uppercase;letter-spacing:1px;margin-top:4px}
+.ps-slip-no{font-size:11px;color:var(--slate-400);margin-top:2px;font-family:var(--mono)}
+
+/* ── STATUS BAR ── */
+.ps-statusbar{display:flex;gap:0;background:var(--slate-50);border-bottom:1px solid var(--border)}
+.ps-stat{flex:1;padding:14px 24px;border-right:1px solid var(--border)}
+.ps-stat:last-child{border-right:none}
+.ps-stat-label{font-size:10.5px;font-weight:600;color:var(--slate-400);text-transform:uppercase;letter-spacing:.8px}
+.ps-stat-val{font-size:18px;font-weight:700;color:var(--text);margin-top:4px;font-family:var(--mono)}
+.ps-stat-val.emerald{color:var(--emerald)}
+.ps-stat-val.red{color:var(--red)}
+
+/* ── BODY ── */
+.ps-body{padding:32px 40px;display:flex;flex-direction:column;gap:28px}
+
+/* ── SECTION HEADER ── */
+.ps-section-title{font-size:10.5px;font-weight:700;color:var(--slate-400);text-transform:uppercase;letter-spacing:1px;padding-bottom:10px;border-bottom:1px solid var(--border);margin-bottom:16px}
+
+/* ── EMPLOYEE INFO ── */
+.ps-emp{display:flex;gap:24px;align-items:flex-start}
+.ps-avatar{width:64px;height:64px;border-radius:12px;background:var(--navy);color:#fff;font-size:22px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;letter-spacing:-1px}
+.ps-emp-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px 24px;width:100%}
+.ps-field label{font-size:10.5px;font-weight:600;color:var(--slate-400);text-transform:uppercase;letter-spacing:.7px;display:block;margin-bottom:3px}
+.ps-field span{font-size:13.5px;font-weight:500;color:var(--slate-900)}
+.ps-field span.mono{font-family:var(--mono);font-size:12.5px;color:var(--blue)}
+
+/* ── TABLES ── */
+.ps-tables{display:grid;grid-template-columns:1fr 1fr;gap:24px}
+.ps-table{width:100%;border-collapse:collapse;font-size:13px}
+.ps-table thead tr{background:var(--navy);color:#fff}
+.ps-table thead th{padding:9px 14px;font-size:10.5px;font-weight:600;text-transform:uppercase;letter-spacing:.7px;text-align:left}
+.ps-table thead th:last-child{text-align:right}
+.ps-table tbody tr{border-bottom:1px solid var(--slate-100)}
+.ps-table tbody tr:nth-child(even){background:#fafbfc}
+.ps-table tbody tr:hover{background:var(--blue-light)}
+.ps-table tbody td{padding:10px 14px;color:var(--slate-700)}
+.ps-table tbody td:last-child{text-align:right;font-family:var(--mono);font-weight:500;color:var(--slate-900)}
+.ps-table tfoot tr{border-top:2px solid var(--border);background:var(--slate-50)}
+.ps-table tfoot td{padding:11px 14px;font-weight:700;font-size:13px}
+.ps-table tfoot td:last-child{text-align:right;font-family:var(--mono);font-size:14px}
+.earn-total{color:var(--emerald)!important}
+.deduct-total{color:var(--red)!important}
+
+/* ── NET SALARY ── */
+.ps-net{background:var(--navy);border-radius:12px;padding:28px 36px;display:flex;justify-content:space-between;align-items:center;position:relative;overflow:hidden}
+.ps-net::after{content:'';position:absolute;right:-60px;top:-60px;width:220px;height:220px;border-radius:50%;background:rgba(255,255,255,.04)}
+.ps-net-left .label{font-size:10.5px;font-weight:700;color:rgba(255,255,255,.5);text-transform:uppercase;letter-spacing:1px}
+.ps-net-left .amount{font-size:40px;font-weight:700;color:#fff;font-family:var(--mono);margin-top:6px;letter-spacing:-1px}
+.ps-net-left .words{font-size:12px;color:rgba(255,255,255,.5);margin-top:8px;font-style:italic}
+.ps-net-right{display:flex;flex-direction:column;gap:10px;min-width:200px}
+.ps-net-row{display:flex;justify-content:space-between;align-items:center;gap:32px}
+.ps-net-row .k{font-size:11px;color:rgba(255,255,255,.5);font-weight:500}
+.ps-net-row .v{font-size:12.5px;color:#fff;font-family:var(--mono);font-weight:600}
+.ps-net-row .v.emerald{color:#34d399}
+.ps-net-row .v.red{color:#f87171}
+.ps-net-divider{border:none;border-top:1px solid rgba(255,255,255,.1);margin:4px 0}
+
+/* ── ATTENDANCE ── */
+.ps-attend{display:grid;grid-template-columns:repeat(6,1fr);gap:1px;background:var(--border);border:1px solid var(--border);border-radius:10px;overflow:hidden}
+.ps-att-cell{background:#fff;padding:14px 12px;text-align:center}
+.ps-att-cell .lbl{font-size:10px;font-weight:600;color:var(--slate-400);text-transform:uppercase;letter-spacing:.6px}
+.ps-att-cell .val{font-size:20px;font-weight:700;color:var(--navy);margin-top:4px;font-family:var(--mono)}
+.ps-att-cell .val.red{color:var(--red)}
+
+/* ── STATUTORY ── */
+.ps-statutory{display:grid;grid-template-columns:repeat(2,1fr);gap:24px}
+.ps-stat-table{width:100%;border-collapse:collapse;font-size:12.5px}
+.ps-stat-table tr{border-bottom:1px solid var(--slate-100)}
+.ps-stat-table tr:last-child{border-bottom:none}
+.ps-stat-table td{padding:9px 0;color:var(--slate-600)}
+.ps-stat-table td:last-child{text-align:right;font-family:var(--mono);font-weight:600;color:var(--slate-900)}
+
+/* ── FOOTER ── */
+.ps-footer{border-top:1px solid var(--border);padding:20px 40px;display:flex;justify-content:space-between;align-items:center;background:var(--slate-50)}
+.ps-footer-note{font-size:11px;color:var(--slate-400);max-width:400px;line-height:1.6}
+.ps-footer-right{text-align:right}
+.ps-footer-right .sig-line{width:160px;border-top:1px solid var(--slate-400);margin-left:auto;padding-top:4px;font-size:10.5px;color:var(--slate-400);text-align:center}
+.ps-generated{font-size:10.5px;color:var(--slate-400);margin-top:6px}
+
+@media print{
+  @page {
+    size: A4 portrait;
+    margin: 0mm;
+  }
+  body{
+    background:#fff!important;
+    color:#000!important;
+    font-size:11px!important;
+    margin:10mm 15mm!important;
+  }
+  .ps-toolbar, .navbar, .platform-header{display:none!important}
+  .workspace{padding:0!important;margin:0!important;background:transparent!important}
+  .ps-page{margin:0!important;padding:0!important;max-width:100%!important;width:100%!important}
+  .ps-doc{border:none!important;border-radius:0!important;box-shadow:none!important}
+  
+  /* Compact layouts for A4 fit */
+  .ps-header {
+    padding: 12px 20px !important;
+    border-bottom: 2px solid #0d1b2a !important;
+  }
+  .ps-logo {
+    height: 40px !important;
+  }
+  .ps-company h2 {
+    font-size: 13px !important;
+  }
+  .ps-company p {
+    font-size: 10px !important;
+    line-height: 1.4 !important;
+  }
+  .ps-title {
+    font-size: 18px !important;
+  }
+  .ps-period {
+    font-size: 11px !important;
+  }
+  
+  .ps-statusbar {
+    background: #fafafa !important;
+  }
+  .ps-stat {
+    padding: 8px 12px !important;
+  }
+  .ps-stat-label {
+    font-size: 9px !important;
+  }
+  .ps-stat-val {
+    font-size: 14px !important;
+  }
+  
+  .ps-body {
+    padding: 16px 20px !important;
+    gap: 14px !important;
+  }
+  .ps-section-title {
+    font-size: 9px !important;
+    margin-bottom: 8px !important;
+    padding-bottom: 4px !important;
+  }
+  .ps-emp-grid {
+    gap: 8px 16px !important;
+  }
+  .ps-field label {
+    font-size: 9px !important;
+    margin-bottom: 2px !important;
+  }
+  .ps-field span {
+    font-size: 11.5px !important;
+  }
+  .ps-attend {
+    border-radius: 6px !important;
+  }
+  .ps-att-cell {
+    padding: 8px 6px !important;
+  }
+  .ps-att-cell .lbl {
+    font-size: 9px !important;
+  }
+  .ps-att-cell .val {
+    font-size: 14px !important;
+  }
+  
+  .ps-tables {
+    gap: 16px !important;
+  }
+  .ps-table thead th {
+    padding: 6px 10px !important;
+    font-size: 9px !important;
+  }
+  .ps-table tbody td {
+    padding: 6px 10px !important;
+    font-size: 11px !important;
+  }
+  .ps-table tfoot td {
+    padding: 6px 10px !important;
+    font-size: 11px !important;
+  }
+  
+  .ps-net {
+    padding: 12px 20px !important;
+    border-radius: 8px !important;
+  }
+  .ps-net-left .amount {
+    font-size: 24px !important;
+    margin-top: 2px !important;
+  }
+  .ps-net-left .words {
+    font-size: 10px !important;
+    margin-top: 4px !important;
+  }
+  .ps-net-right {
+    min-width: 160px !important;
+    gap: 4px !important;
+  }
+  .ps-net-row .v {
+    font-size: 11px !important;
+  }
+  
+  .ps-statutory {
+    gap: 16px !important;
+  }
+  .ps-stat-table td {
+    padding: 5px 0 !important;
+    font-size: 11px !important;
+  }
+  
+  .ps-footer {
+    padding: 10px 20px !important;
+  }
+  .ps-footer-note {
+    font-size: 9px !important;
+    max-width: 320px !important;
+  }
+  .ps-footer-right .ps-sig-line {
+    width: 140px !important;
+    font-size: 9px !important;
+  }
+  .ps-generated {
+    font-size: 9px !important;
+  }
+  
+  /* Avoid breaking elements */
+  .ps-doc, .ps-header, .ps-statusbar, .ps-body > div, .ps-net, .ps-footer {
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+  }
+  
+  /* Color adjustments */
+  .ps-net, .ps-table thead tr {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    background-color: #0d1b2a !important;
+  }
+  .ps-net * {
+    color: #fff !important;
+  }
+  .ps-net-row .v.emerald {
+    color: #34d399 !important;
+  }
+  .ps-net-row .v.red {
+    color: #f87171 !important;
+  }
+  .ps-table thead th {
+    color: #fff !important;
+    background-color: #0d1b2a !important;
+  }
+}
+</style>
+</head>
+<body>
+{% include 'includes/navbar.html' %}
+<main class="workspace">
+<div class="ps-page">
+
+  <!-- Toolbar -->
+  <div class="ps-toolbar">
+    <a href="{% url 'payslip_list' payslip.payroll_run.id %}" class="ps-back">
+      <i class="fas fa-arrow-left"></i> All Payslips
+    </a>
+    <button class="ps-print" onclick="window.print()">
+      <i class="fas fa-print"></i> Print / Export PDF
+    </button>
+  </div>
+
+  <div class="ps-doc">
+
+    <!-- HEADER -->
+    <div class="ps-header">
+      <div class="ps-header-left">
+        <img src="{% static 'img/logo.png' %}" alt="GlassEntials" class="ps-logo">
+        <div class="ps-company">
+          <h2>GlassEntials Premium Pvt. Ltd.</h2>
+          <p>CIN: U74999MH2020PTC000000 &nbsp;|&nbsp; PAN: AAACG0000A<br>
+             GSTIN: 27AAACG0000A1ZV &nbsp;|&nbsp; hr@glassentials.com</p>
+        </div>
+      </div>
+      <div class="ps-header-right">
+        <div class="ps-title">Pay Slip</div>
+        <div class="ps-period">{{ payslip.payroll_run.get_month_display }} {{ payslip.payroll_run.year }}</div>
+        <div class="ps-slip-no">REF# PS-{{ payslip.payroll_run.year }}-{{ payslip.id|stringformat:"04d" }}</div>
+      </div>
+    </div>
+
+    <!-- STATUS BAR -->
+    <div class="ps-statusbar">
+      <div class="ps-stat">
+        <div class="ps-stat-label">Gross Earnings</div>
+        <div class="ps-stat-val">₹{{ payslip.gross_earnings }}</div>
+      </div>
+      <div class="ps-stat">
+        <div class="ps-stat-label">Total Deductions</div>
+        <div class="ps-stat-val red">₹{{ payslip.total_deductions }}</div>
+      </div>
+      <div class="ps-stat">
+        <div class="ps-stat-label">Paid Days</div>
+        <div class="ps-stat-val">{{ payslip.paid_days }}<span style="font-size:13px;color:#94a3b8"> / {{ payslip.total_working_days }}</span></div>
+      </div>
+      <div class="ps-stat">
+        <div class="ps-stat-label">LOP Days</div>
+        <div class="ps-stat-val red">{{ payslip.lop_days }}</div>
+      </div>
+      <div class="ps-stat">
+        <div class="ps-stat-label">Net Payable</div>
+        <div class="ps-stat-val emerald">₹{{ payslip.net_salary }}</div>
+      </div>
+    </div>
+
+    <div class="ps-body">
+
+      <!-- EMPLOYEE INFORMATION -->
+      <div>
+        <div class="ps-section-title">Employee Information</div>
+        <div class="ps-emp">
+          <div class="ps-avatar">{{ payslip.employee.first_name|first }}{{ payslip.employee.last_name|first }}</div>
+          <div class="ps-emp-grid">
+            <div class="ps-field">
+              <label>Full Name</label>
+              <span style="font-weight:700;font-size:15px">{{ payslip.employee.first_name }} {{ payslip.employee.last_name }}</span>
+            </div>
+            <div class="ps-field">
+              <label>Employee ID</label>
+              <span class="mono">{{ payslip.employee.employee_id }}</span>
+            </div>
+            <div class="ps-field">
+              <label>Designation</label>
+              <span>{{ payslip.employee.designation }}</span>
+            </div>
+            <div class="ps-field">
+              <label>Department</label>
+              <span>{{ payslip.employee.department }}</span>
+            </div>
+            <div class="ps-field">
+              <label>Date of Joining</label>
+              <span>{{ payslip.employee.joining_date|date:"d M Y"|default:"—" }}</span>
+            </div>
+            <div class="ps-field">
+              <label>Employment Type</label>
+              <span>{{ payslip.employee.employment_type|default:"Full Time" }}</span>
+            </div>
+            <div class="ps-field">
+              <label>PAN Number</label>
+              <span class="mono">{{ payslip.employee.pan_number|default:"—" }}</span>
+            </div>
+            <div class="ps-field">
+              <label>Bank Account</label>
+              <span class="mono">{{ payslip.employee.bank_account_number|default:"—" }}</span>
+            </div>
+            <div class="ps-field">
+              <label>Bank Name</label>
+              <span>{{ payslip.employee.bank_name|default:"—" }}</span>
+            </div>
+            <div class="ps-field">
+              <label>IFSC Code</label>
+              <span class="mono">{{ payslip.employee.ifsc_code|default:"—" }}</span>
+            </div>
+            <div class="ps-field">
+              <label>Work Location</label>
+              <span>{{ payslip.employee.work_location|default:"Head Office" }}</span>
+            </div>
+            <div class="ps-field">
+              <label>Email</label>
+              <span style="font-size:12px">{{ payslip.employee.email }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ATTENDANCE SUMMARY -->
+      <div>
+        <div class="ps-section-title">Attendance Summary</div>
+        <div class="ps-attend">
+          <div class="ps-att-cell"><div class="lbl">Working Days</div><div class="val">{{ payslip.total_working_days }}</div></div>
+          <div class="ps-att-cell"><div class="lbl">Paid Days</div><div class="val">{{ payslip.paid_days }}</div></div>
+          <div class="ps-att-cell"><div class="lbl">LOP Days</div><div class="val red">{{ payslip.lop_days }}</div></div>
+          <div class="ps-att-cell"><div class="lbl">Leave Taken</div><div class="val">—</div></div>
+          <div class="ps-att-cell"><div class="lbl">Overtime Hrs</div><div class="val">—</div></div>
+          <div class="ps-att-cell"><div class="lbl">Pay Period</div><div class="val" style="font-size:13px">{{ payslip.payroll_run.get_month_display|slice:":3" }} {{ payslip.payroll_run.year }}</div></div>
+        </div>
+      </div>
+
+      <!-- EARNINGS & DEDUCTIONS -->
+      <div>
+        <div class="ps-section-title">Earnings &amp; Deductions</div>
+        <div class="ps-tables">
+          <div class="ps-table-wrap">
+            <table class="ps-table">
+              <thead><tr><th>Earnings Component</th><th>Amount (₹)</th></tr></thead>
+              <tbody>
+                {% for item in earnings %}
+                <tr><td>{{ item.component.name }}</td><td>{{ item.amount }}</td></tr>
+                {% empty %}
+                <tr><td colspan="2" style="text-align:center;color:#94a3b8;font-style:italic;padding:20px">No earnings recorded</td></tr>
+                {% endfor %}
+              </tbody>
+              <tfoot>
+                <tr><td>Gross Earnings</td><td class="earn-total">{{ payslip.gross_earnings }}</td></tr>
+              </tfoot>
+            </table>
+          </div>
+          <div class="ps-table-wrap">
+            <table class="ps-table">
+              <thead><tr><th>Deductions Component</th><th>Amount (₹)</th></tr></thead>
+              <tbody>
+                {% if payslip.lop_days > 0 %}
+                <tr><td>Loss of Pay ({{ payslip.lop_days }} days)</td><td style="color:var(--red)">—</td></tr>
+                {% endif %}
+                {% for item in deductions %}
+                <tr><td>{{ item.component.name }}</td><td>{{ item.amount }}</td></tr>
+                {% empty %}
+                <tr><td colspan="2" style="text-align:center;color:#94a3b8;font-style:italic;padding:20px">No deductions recorded</td></tr>
+                {% endfor %}
+              </tbody>
+              <tfoot>
+                <tr><td>Total Deductions</td><td class="deduct-total">{{ payslip.total_deductions }}</td></tr>
+              </tfoot>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- NET SALARY -->
+      <div class="ps-net">
+        <div class="ps-net-left">
+          <div class="label">Net Salary Payable</div>
+          <div class="amount">₹{{ payslip.net_salary }}</div>
+          <div class="words">Amount credited to {{ payslip.employee.bank_name|default:"registered bank account" }}</div>
+        </div>
+        <div class="ps-net-right">
+          <div class="ps-net-row"><span class="k">Gross Earnings</span><span class="v">₹{{ payslip.gross_earnings }}</span></div>
+          <hr class="ps-net-divider">
+          <div class="ps-net-row"><span class="k">Total Deductions</span><span class="v red">- ₹{{ payslip.total_deductions }}</span></div>
+          <hr class="ps-net-divider">
+          <div class="ps-net-row"><span class="k" style="color:#fff;font-weight:600">Net Payable</span><span class="v emerald" style="font-size:15px">₹{{ payslip.net_salary }}</span></div>
+        </div>
+      </div>
+
+      <!-- STATUTORY COMPLIANCE -->
+      <div>
+        <div class="ps-section-title">Statutory &amp; Compliance</div>
+        <div class="ps-statutory">
+          <table class="ps-stat-table">
+            <tr><td>PF Employee Contribution (12%)</td><td>As per deductions</td></tr>
+            <tr><td>PF Employer Contribution (12%)</td><td>—</td></tr>
+            <tr><td>ESI Employee (0.75%)</td><td>—</td></tr>
+            <tr><td>ESI Employer (3.25%)</td><td>—</td></tr>
+          </table>
+          <table class="ps-stat-table">
+            <tr><td>Professional Tax</td><td>—</td></tr>
+            <tr><td>TDS (Income Tax)</td><td>—</td></tr>
+            <tr><td>Gratuity (4.81%)</td><td>—</td></tr>
+            <tr><td>Labour Welfare Fund</td><td>—</td></tr>
+          </table>
+        </div>
+      </div>
+
+    </div><!-- /ps-body -->
+
+    <!-- FOOTER -->
+    <div class="ps-footer">
+      <div class="ps-footer-note">
+        <i class="fas fa-lock" style="color:#94a3b8;margin-right:6px"></i>
+        This is a system-generated payslip and does not require a physical signature.
+        This document is confidential and intended solely for the named employee.
+        For queries, contact hr@glassentials.com
+      </div>
+      <div class="ps-footer-right">
+        <div class="ps-sig-line" style="width:180px;border-top:1px solid #cbd5e1;padding-top:6px;font-size:10.5px;color:#94a3b8;text-align:center;margin-left:auto">Authorised Signatory</div>
+        <div class="ps-generated" style="font-size:10.5px;color:#94a3b8;margin-top:6px;text-align:right">
+          Generated: {{ now|date:"d M Y, H:i" }} &nbsp;|&nbsp; GlassEntials HRMS v2.0
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /ps-doc -->
+</div><!-- /ps-page -->
+</main>
+</body>
+</html>

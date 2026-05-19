@@ -1,0 +1,355 @@
+{% load static payroll_extras %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Salary Configuration — {{ employee.first_name }} {{ employee.last_name }} | GlassEntials Enterprise</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<link rel="stylesheet" href="{% static 'css/landing.css' %}?v=3.0">
+<link rel="stylesheet" href="{% static 'css/home.css' %}?v=3.0">
+<link rel="stylesheet" href="{% static 'css/dashboard.css' %}?v=3.0">
+
+<style>
+/* ── ENTERPRISE DESIGN SYSTEM ── */
+:root {
+  --ent-navy: #0B132B;
+  --ent-navy-soft: #1A2542;
+  --ent-blue: #2563EB;
+  --ent-blue-light: #EFF6FF;
+  --ent-blue-hover: #1D4ED8;
+  --ent-emerald: #059669;
+  --ent-emerald-bg: #ECFDF5;
+  --ent-red: #DC2626;
+  --ent-red-bg: #FEF2F2;
+  --ent-slate-50: #F8FAFC;
+  --ent-slate-100: #F1F5F9;
+  --ent-slate-200: #E2E8F0;
+  --ent-slate-300: #CBD5E1;
+  --ent-slate-500: #64748B;
+  --ent-slate-700: #334155;
+  --ent-slate-900: #0F172A;
+  
+  --font-sans: 'Inter', system-ui, sans-serif;
+  --font-mono: 'IBM Plex Mono', monospace;
+  
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+  --shadow-float: 0 20px 25px -5px rgba(0, 0, 0, 0.05), 0 10px 10px -5px rgba(0, 0, 0, 0.02);
+}
+
+body { background: var(--ent-slate-50); font-family: var(--font-sans); color: var(--ent-slate-900); -webkit-font-smoothing: antialiased; }
+
+.ent-layout { max-width: 1400px; margin: 0 auto; padding: 32px 40px; }
+
+/* ── HEADER & BREADCRUMBS ── */
+.ent-header { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 32px; }
+.ent-breadcrumbs { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 500; color: var(--ent-slate-500); margin-bottom: 12px; }
+.ent-breadcrumbs a { color: var(--ent-blue); text-decoration: none; transition: color 0.2s; }
+.ent-breadcrumbs a:hover { color: var(--ent-blue-hover); }
+.ent-breadcrumbs i { font-size: 10px; color: var(--ent-slate-300); }
+.ent-title h1 { font-size: 28px; font-weight: 700; color: var(--ent-navy); letter-spacing: -0.5px; margin: 0 0 6px 0; }
+.ent-title p { font-size: 14px; color: var(--ent-slate-500); margin: 0; }
+.ent-actions { display: flex; gap: 12px; }
+.btn-ent { padding: 10px 20px; font-size: 14px; font-weight: 600; border-radius: 8px; cursor: pointer; transition: all 0.2s; border: none; display: inline-flex; align-items: center; gap: 8px; }
+.btn-ent-secondary { background: white; color: var(--ent-slate-700); border: 1px solid var(--ent-slate-200); box-shadow: var(--shadow-sm); }
+.btn-ent-secondary:hover { background: var(--ent-slate-50); border-color: var(--ent-slate-300); }
+.btn-ent-primary { background: var(--ent-blue); color: white; box-shadow: 0 4px 12px rgba(37,99,235,0.2); }
+.btn-ent-primary:hover { background: var(--ent-blue-hover); transform: translateY(-1px); }
+
+/* ── GRID LAYOUT ── */
+.ent-grid { display: grid; grid-template-columns: minmax(0, 1fr) 380px; gap: 32px; align-items: start; }
+
+/* ── CARDS ── */
+.ent-card { background: white; border-radius: 16px; border: 1px solid var(--ent-slate-200); box-shadow: var(--shadow-sm); overflow: hidden; margin-bottom: 32px; }
+.ent-card-header { padding: 24px 32px; border-bottom: 1px solid var(--ent-slate-100); background: rgba(248, 250, 252, 0.5); display: flex; justify-content: space-between; align-items: center; }
+.ent-card-title { font-size: 16px; font-weight: 600; color: var(--ent-navy); margin: 0; display: flex; align-items: center; gap: 10px; }
+.ent-card-title i { color: var(--ent-slate-400); }
+.ent-card-body { padding: 32px; }
+
+/* ── FORMS ── */
+.ent-form-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 24px; }
+.ent-form-group { display: flex; flex-direction: column; gap: 8px; }
+.ent-label { font-size: 12px; font-weight: 600; color: var(--ent-slate-700); text-transform: uppercase; letter-spacing: 0.5px; }
+.ent-input-wrapper { position: relative; display: flex; align-items: center; }
+.ent-input-prefix { position: absolute; left: 16px; color: var(--ent-slate-400); font-family: var(--font-mono); font-weight: 500; font-size: 14px; }
+.ent-input { width: 100%; background: var(--ent-slate-50); border: 1px solid var(--ent-slate-200); border-radius: 10px; padding: 12px 16px; font-size: 14px; color: var(--ent-navy); transition: all 0.2s; font-family: var(--font-mono); font-weight: 500; }
+.ent-input.has-prefix { padding-left: 36px; }
+.ent-input:focus { outline: none; background: white; border-color: var(--ent-blue); box-shadow: 0 0 0 4px var(--ent-blue-light); }
+
+/* ── COMPONENTS TABLE ── */
+.ent-table-container { width: 100%; overflow-x: auto; }
+.ent-table { width: 100%; border-collapse: separate; border-spacing: 0; }
+.ent-table th { background: var(--ent-slate-50); padding: 14px 24px; font-size: 11px; font-weight: 600; color: var(--ent-slate-500); text-transform: uppercase; letter-spacing: 0.5px; text-align: left; border-bottom: 1px solid var(--ent-slate-200); position: sticky; top: 0; z-index: 10; }
+.ent-table td { padding: 18px 24px; border-bottom: 1px solid var(--ent-slate-100); vertical-align: middle; }
+.ent-table tbody tr { transition: background 0.15s; }
+.ent-table tbody tr:hover { background: var(--ent-slate-50); }
+
+/* ── TOGGLE SWITCH ── */
+.ent-toggle { position: relative; display: inline-block; width: 44px; height: 24px; }
+.ent-toggle input { opacity: 0; width: 0; height: 0; }
+.ent-slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: var(--ent-slate-200); transition: .3s; border-radius: 24px; }
+.ent-slider:before { position: absolute; content: ""; height: 18px; width: 18px; left: 3px; bottom: 3px; background-color: white; transition: .3s; border-radius: 50%; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+.ent-toggle input:checked + .ent-slider { background-color: var(--ent-blue); }
+.ent-toggle input:checked + .ent-slider:before { transform: translateX(20px); }
+
+/* ── BADGES & CHIPS ── */
+.ent-badge { display: inline-flex; align-items: center; gap: 4px; padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 600; letter-spacing: 0.3px; text-transform: uppercase; }
+.ent-badge.earning { background: var(--ent-emerald-bg); color: var(--ent-emerald); }
+.ent-badge.deduction { background: var(--ent-red-bg); color: var(--ent-red); }
+.ent-formula-chip { background: var(--ent-slate-100); border: 1px solid var(--ent-slate-200); padding: 4px 8px; border-radius: 6px; font-family: var(--font-mono); font-size: 12px; color: var(--ent-slate-700); font-weight: 500; display: inline-block; margin-top: 6px; }
+
+/* ── COMPONENT CELL ── */
+.comp-name { font-size: 14px; font-weight: 600; color: var(--ent-navy); margin-bottom: 4px; }
+.comp-meta { font-size: 12px; color: var(--ent-slate-500); display: flex; align-items: center; gap: 8px; }
+
+/* ── INLINE INPUTS ── */
+.inline-input-group { display: flex; align-items: center; gap: 8px; }
+.inline-input { width: 130px; background: white; border: 1px solid var(--ent-slate-200); border-radius: 6px; padding: 8px 12px; font-family: var(--font-mono); font-size: 13px; font-weight: 500; color: var(--ent-navy); transition: all 0.2s; }
+.inline-input:focus { border-color: var(--ent-blue); outline: none; box-shadow: 0 0 0 3px var(--ent-blue-light); }
+.inline-input.percent { width: 80px; }
+.calc-type { font-size: 12px; color: var(--ent-slate-500); font-weight: 500; }
+
+/* ── SUMMARY SIDEBAR ── */
+.ent-summary-sticky { position: sticky; top: 32px; }
+.ent-summary-card { background: var(--ent-navy); border-radius: 16px; color: white; padding: 32px; box-shadow: var(--shadow-float); position: relative; overflow: hidden; }
+.ent-summary-card::after { content:''; position: absolute; top: 0; right: 0; width: 200px; height: 200px; background: radial-gradient(circle, rgba(37,99,235,0.2) 0%, transparent 70%); border-radius: 50%; pointer-events: none; }
+.summary-header { font-size: 12px; font-weight: 600; color: rgba(255,255,255,0.6); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 24px; }
+.summary-stat { margin-bottom: 24px; }
+.summary-stat-label { font-size: 13px; color: rgba(255,255,255,0.7); margin-bottom: 6px; }
+.summary-stat-value { font-size: 24px; font-weight: 700; font-family: var(--font-mono); letter-spacing: -0.5px; }
+.summary-divider { height: 1px; background: rgba(255,255,255,0.1); margin: 24px 0; border: none; }
+.net-pay-block { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 20px; margin-top: 8px; }
+.net-pay-label { font-size: 12px; font-weight: 600; color: rgba(255,255,255,0.8); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; display: flex; justify-content: space-between; }
+.net-pay-label i { color: #34D399; }
+.net-pay-value { font-size: 32px; font-weight: 700; font-family: var(--font-mono); color: white; letter-spacing: -1px; }
+
+/* ── SMART INFO PANEL ── */
+.smart-info { background: white; border: 1px solid var(--ent-slate-200); border-radius: 16px; padding: 24px; margin-top: 24px; }
+.smart-info h4 { font-size: 13px; font-weight: 600; color: var(--ent-navy); margin: 0 0 16px 0; display: flex; align-items: center; gap: 8px; }
+.smart-info h4 i { color: var(--ent-blue); }
+.info-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 12px; }
+.info-list li { display: flex; align-items: flex-start; gap: 10px; font-size: 12.5px; color: var(--ent-slate-600); line-height: 1.5; }
+.info-list li i { margin-top: 3px; font-size: 14px; color: var(--ent-slate-400); }
+</style>
+</head>
+
+<body>
+    {% include 'includes/navbar.html' %}
+
+    <main class="workspace">
+        <form action="{% url 'manage_employee_salary' employee.id %}" method="POST" id="salaryForm">
+            {% csrf_token %}
+            
+            <div class="ent-layout">
+                <!-- PAGE HEADER -->
+                <div class="ent-header">
+                    <div class="ent-title">
+                        <div class="ent-breadcrumbs">
+                            <a href="{% url 'home' %}">Dashboard</a>
+                            <i class="fas fa-chevron-right"></i>
+                            <a href="#">Payroll</a>
+                            <i class="fas fa-chevron-right"></i>
+                            <a href="{% url 'view_employee' employee.id %}">Employee Profile</a>
+                            <i class="fas fa-chevron-right"></i>
+                            <span>Salary Configuration</span>
+                        </div>
+                        <h1>Salary Configuration</h1>
+                        <p>Advanced compensation modeling for {{ employee.first_name }} {{ employee.last_name }}</p>
+                    </div>
+                    <div class="ent-actions">
+                        <a href="{% url 'view_employee' employee.id %}" class="btn-ent btn-ent-secondary">
+                            <i class="fas fa-times"></i> Cancel
+                        </a>
+                        <button type="submit" class="btn-ent btn-ent-primary">
+                            <i class="fas fa-check-double"></i> Finalize Structure
+                        </button>
+                    </div>
+                </div>
+
+                <div class="ent-grid">
+                    <!-- LEFT COLUMN: MAIN WORKSPACE -->
+                    <div class="ent-main">
+                        
+                        <!-- STRUCTURE DETAILS PANEL -->
+                        <div class="ent-card">
+                            <div class="ent-card-header">
+                                <h2 class="ent-card-title"><i class="fas fa-sliders-h"></i> Compensation Architecture</h2>
+                            </div>
+                            <div class="ent-card-body">
+                                <div class="ent-form-grid">
+                                    <div class="ent-form-group">
+                                        <label class="ent-label">Annual CTC</label>
+                                        <div class="ent-input-wrapper">
+                                            <span class="ent-input-prefix">₹</span>
+                                            <input type="number" name="ctc" value="{{ structure.ctc|default:'' }}" class="ent-input has-prefix" required placeholder="0.00">
+                                        </div>
+                                    </div>
+                                    <div class="ent-form-group">
+                                        <label class="ent-label">Monthly Gross Allocation</label>
+                                        <div class="ent-input-wrapper">
+                                            <span class="ent-input-prefix">₹</span>
+                                            <input type="number" name="gross_salary" value="{{ structure.gross_salary|default:'' }}" class="ent-input has-prefix" required placeholder="0.00">
+                                        </div>
+                                    </div>
+                                    <div class="ent-form-group">
+                                        <label class="ent-label">Base Salary Component</label>
+                                        <div class="ent-input-wrapper">
+                                            <span class="ent-input-prefix">₹</span>
+                                            <input type="number" name="basic_salary" value="{{ structure.basic_salary|default:'' }}" class="ent-input has-prefix" required placeholder="0.00">
+                                        </div>
+                                    </div>
+                                    <div class="ent-form-group">
+                                        <label class="ent-label">Effective Date</label>
+                                        <div class="ent-input-wrapper">
+                                            <input type="date" name="effective_date" value="{{ structure.effective_date|date:'Y-m-d'|default:'' }}" class="ent-input" required>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- ADVANCED COMPONENTS TABLE -->
+                        <div class="ent-card">
+                            <div class="ent-card-header">
+                                <h2 class="ent-card-title"><i class="fas fa-layer-group"></i> Salary Components Matrix</h2>
+                                <div style="font-size: 13px; color: var(--ent-slate-500);"><i class="fas fa-info-circle"></i> Toggle to include components in calculation</div>
+                            </div>
+                            <div class="ent-table-container">
+                                <table class="ent-table">
+                                    <thead>
+                                        <tr>
+                                            <th style="width: 80px; text-align: center;">Status</th>
+                                            <th>Component Details</th>
+                                            <th>Evaluation Rules</th>
+                                            <th style="text-align: right;">Defined Value</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for comp in components %}
+                                        <tr>
+                                            <td style="text-align: center;">
+                                                <label class="ent-toggle">
+                                                    <input type="checkbox" name="components" value="{{ comp.id }}" 
+                                                    {% for item in structure.items.all %}{% if item.component_id == comp.id %}checked{% endif %}{% endfor %}>
+                                                    <span class="ent-slider"></span>
+                                                </label>
+                                            </td>
+                                            <td>
+                                                <div class="comp-name">{{ comp.name }}</div>
+                                                <div class="comp-meta">
+                                                    {% if comp.component_type == 'EARNING' %}
+                                                    <span class="ent-badge earning"><i class="fas fa-arrow-up"></i> Earning</span>
+                                                    {% else %}
+                                                    <span class="ent-badge deduction"><i class="fas fa-arrow-down"></i> Deduction</span>
+                                                    {% endif %}
+                                                    <span>{{ comp.get_calculation_type_display }}</span>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <div class="calc-type">
+                                                    {% if comp.calculation_type == 'FIXED' %}
+                                                    Absolute Value Assignment
+                                                    {% elif comp.calculation_type == 'PERCENTAGE' %}
+                                                    Percentage of Base
+                                                    {% elif comp.calculation_type == 'FORMULA' %}
+                                                    Expression Evaluation
+                                                    <br><div class="ent-formula-chip">{{ comp.formula }}</div>
+                                                    {% else %}
+                                                    System Derived
+                                                    {% endif %}
+                                                </div>
+                                            </td>
+                                            <td style="text-align: right;">
+                                                {% if comp.calculation_type == 'FIXED' %}
+                                                <div class="inline-input-group" style="justify-content: flex-end;">
+                                                    <span style="color:var(--ent-slate-400); font-family:var(--font-mono);">₹</span>
+                                                    <input type="number" step="0.01" name="fixed_{{ comp.id }}" placeholder="0.00" class="inline-input" 
+                                                    {% for item in structure.items.all %}{% if item.component_id == comp.id %}value="{{ item.fixed_amount }}"{% endif %}{% endfor %}>
+                                                </div>
+                                                {% elif comp.calculation_type == 'PERCENTAGE' %}
+                                                <div class="inline-input-group" style="justify-content: flex-end;">
+                                                    <input type="number" step="0.01" name="perc_{{ comp.id }}" placeholder="0.0" class="inline-input percent" 
+                                                    {% for item in structure.items.all %}{% if item.component_id == comp.id %}value="{{ item.percentage|multiply:100 }}"{% endif %}{% endfor %}>
+                                                    <span style="color:var(--ent-slate-400); font-family:var(--font-mono);">%</span>
+                                                </div>
+                                                {% else %}
+                                                <span style="color: var(--ent-slate-400); font-size: 12px; font-style: italic;"><i class="fas fa-magic"></i> Auto-calculated</span>
+                                                {% endif %}
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <!-- RIGHT COLUMN: STICKY SUMMARY -->
+                    <div class="ent-sidebar">
+                        <div class="ent-summary-sticky">
+                            
+                            <!-- LIVE FINANCIAL SUMMARY -->
+                            <div class="ent-summary-card">
+                                <div class="summary-header">Financial Projection</div>
+                                
+                                <div class="summary-stat">
+                                    <div class="summary-stat-label">Annual Cost to Company</div>
+                                    <div class="summary-stat-value">₹{{ structure.ctc|default:"0.00" }}</div>
+                                </div>
+                                
+                                <div class="summary-stat">
+                                    <div class="summary-stat-label">Monthly Gross Allocation</div>
+                                    <div class="summary-stat-value">₹{{ structure.gross_salary|default:"0.00" }}</div>
+                                </div>
+                                
+                                <hr class="summary-divider">
+                                
+                                <div class="summary-stat" style="margin-bottom: 16px;">
+                                    <div class="summary-stat-label" style="display:flex; justify-content:space-between;">
+                                        <span>Estimated Total Deductions</span>
+                                        <i class="fas fa-minus-circle" style="color:#F87171;"></i>
+                                    </div>
+                                    <div class="summary-stat-value" style="font-size:18px; color:#FCA5A5;">System Generated</div>
+                                </div>
+                                
+                                <div class="net-pay-block">
+                                    <div class="net-pay-label">
+                                        <span>Projected Net Salary</span>
+                                        <i class="fas fa-check-circle"></i>
+                                    </div>
+                                    <div class="net-pay-value">TBD</div>
+                                </div>
+                            </div>
+
+                            <!-- COMPLIANCE & RULES -->
+                            <div class="smart-info">
+                                <h4><i class="fas fa-shield-alt"></i> Compliance Engine</h4>
+                                <ul class="info-list">
+                                    <li>
+                                        <i class="fas fa-calculator"></i>
+                                        <span>Formulas automatically evaluate dependent variables recursively.</span>
+                                    </li>
+                                    <li>
+                                        <i class="fas fa-percentage"></i>
+                                        <span>Percentage components are strictly calculated against the Base Salary.</span>
+                                    </li>
+                                    <li>
+                                        <i class="fas fa-lock"></i>
+                                        <span>Saving this structure will lock it for the defined Effective Date period.</span>
+                                    </li>
+                                </ul>
+                            </div>
+
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </form>
+    </main>
+</body>
+</html>

@@ -9,14 +9,12 @@
     <link rel="stylesheet"
         href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Manrope:wght@600;700;800&display=swap">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-    <link rel="stylesheet" href="{% static 'css/home.css' %}?v=3.0">
+    <link rel="stylesheet" href="{% static 'css/landing.css' %}?v=3.0">
+    <link rel="stylesheet" href="{% static 'css/home.css' %}?v=1.0">
     {% block extra_css %}{% endblock %}
 </head>
 
 <body>
-    <!-- Subtle Background Elements -->
-    <div class="orb orb-1" style="opacity: 0.03; top: -100px; left: -100px;"></div>
-    <div class="orb orb-2" style="opacity: 0.03; bottom: -100px; right: -100px;"></div>
 
     <!-- Flash Messages -->
     {% include 'includes/_messages.html' %}

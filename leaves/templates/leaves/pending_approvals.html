@@ -1,6 +1,8 @@
 {% extends "base.html" %}
 {% load static %}
 
+
+
 {% block extra_css %}
 <link rel="stylesheet" href="{% static 'css/leaves.css' %}?v=3.0">
 <style>
@@ -41,6 +43,14 @@
         font-weight: 800;
         color: var(--accent);
         font-size: 18px;
+        overflow: hidden;
+        flex-shrink: 0;
+    }
+
+    .emp-profile img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
     }
 
     .leave-details h3 {
@@ -147,7 +157,7 @@
         <div class="approval-card" style="border-left: 4px solid #3b82f6;">
             <div class="emp-profile" style="background: rgba(59, 130, 246, 0.1); color: #3b82f6;">
                 {% if req.employee.profile_img %}
-                    <img src="{{ req.employee.profile_img.url }}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 12px;">
+                    <img src="{{ req.employee.profile_img.url }}">
                 {% else %}
                     {{ req.employee.first_name|slice:":1"|upper }}
                 {% endif %}
@@ -174,15 +184,17 @@
         </div>
         {% endfor %}
     </div>
+    {% endif %}
     <hr style="border: 0; border-top: 1px solid var(--border-light); margin: 40px 0;">
     {% if cancel_requests %}
+
     <h2 style="font-weight: 800; margin: 32px 0 20px; font-size: 20px; color: #ef4444;">Leave Cancellation Requests</h2>
     <div class="pending-container" style="margin-bottom: 48px;">
         {% for req in cancel_requests %}
         <div class="approval-card" style="border-left: 4px solid #ef4444; background: rgba(239, 68, 68, 0.02);">
             <div class="emp-profile" style="background: rgba(239, 68, 68, 0.1); color: #ef4444;">
                 {% if req.employee.profile_img %}
-                    <img src="{{ req.employee.profile_img.url }}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 12px;">
+                    <img src="{{ req.employee.profile_img.url }}">
                 {% else %}
                     {{ req.employee.first_name|slice:":1"|upper }}
                 {% endif %}
@@ -220,7 +232,7 @@
         <div class="approval-card">
             <div class="emp-profile">
                 {% if leave.employee.profile_img %}
-                    <img src="{{ leave.employee.profile_img.url }}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 12px;">
+                    <img src="{{ leave.employee.profile_img.url }}">
                 {% else %}
                     {{ leave.employee.first_name|slice:":1"|upper }}
                 {% endif %}
@@ -239,6 +251,19 @@
                 <div style="margin-top: 12px; font-size: 13px; color: var(--text-main); font-style: italic; opacity: 0.8;">
                     "{{ leave.reason }}"
                 </div>
+                <!-- Workflow Progress -->
+                <div style="margin-top: 16px; display: flex; gap: 4px; align-items: center;">
+                    {% for step in leave.workflow_steps.all %}
+                        <div style="height: 4px; width: 30px; border-radius: 2px; background: {% if step.status == 'APPROVED' %}#10b981{% elif step.status == 'PENDING' %}#e2e8f0{% else %}#ef4444{% endif %};" 
+                             title="{{ step.approver_role }}: {{ step.status }}"></div>
+                        {% if not forloop.last %}<div style="font-size: 10px; color: #cbd5e1;">•</div>{% endif %}
+                    {% endfor %}
+                    <span style="font-size: 10px; font-weight: 700; color: var(--text-secondary); margin-left: 8px; text-transform: uppercase;">
+                        Awaiting: {{ leave.awaiting_role }}
+                    </span>
+
+                </div>
+
             </div>
             <div class="action-group">
                 <form method="POST" action="{% url 'leaves:leave_action' leave.id %}" style="margin: 0; display: flex; gap: 12px;">

@@ -25,13 +25,18 @@
      height: 84px;
      background: rgba(255, 255, 255, 0.9);
      backdrop-filter: blur(20px);
+     -webkit-backdrop-filter: blur(20px);
      border-bottom: 1px solid var(--border-light);
      display: flex;
      align-items: center;
-     padding: 0 4%;
-     position: sticky;
+     justify-content: space-between;
+     padding: 0 5%;
+     position: fixed;
      top: 0;
+     left: 0;
+     width: 100%;
      z-index: 1000;
+     transition: all 0.3s ease;
  }
 
  .brand-section {
@@ -43,17 +48,11 @@
  }
 
  .brand-logo-img {
-     height: 170px;
+     height: 120px;
      width: auto;
-     max-height: 170px;
      object-fit: contain;
+     margin: -30px 0;
      flex-shrink: 0;
-     display: block;
-     transition: transform 0.3s ease;
- }
-
- .brand-section:hover .brand-logo-img {
-     transform: scale(1.05);
  }
 
  .brand-name {
@@ -67,7 +66,7 @@
  .nav-center {
      display: flex;
      align-items: center;
-     gap: 8px;
+     gap: 12px;
  }
 
  .nav-pill {
@@ -230,9 +229,9 @@
  }
 
  .avatar-box {
-     width: 38px;
-     height: 38px;
-     border-radius: 50%;
+     width: 38px !important;
+     height: 38px !important;
+     border-radius: 50% !important;
      background: #6366f1;
      color: #fff;
      display: flex;
@@ -241,6 +240,16 @@
      font-weight: 700;
      font-size: 14px;
      overflow: hidden;
+     flex-shrink: 0 !important;
+     border: 2px solid #fff;
+     box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+ }
+
+ .avatar-box img {
+     width: 100% !important;
+     height: 100% !important;
+     object-fit: cover !important;
+     border-radius: 50% !important;
  }
 
  .user-name {
@@ -253,7 +262,7 @@
  .workspace {
      padding: 24px 4%;
      max-width: 1540px;
-     margin: 0 auto;
+     margin: 84px auto 0;
  }
 
  /* Welcome Row */

@@ -4,6 +4,7 @@ from employees import views as view
 
 urlpatterns = [
     path('', view.employee_view, name='employee'),
+    path('directory/', view.employee_directory, name='employee_directory'),
     path('department', view.department_view, name='department'),
     path('department/edit/<int:pk>/', view.department_view, name='edit_department'),
     path('department/delete/<int:pk>/', view.delete_department, name='delete_department'),

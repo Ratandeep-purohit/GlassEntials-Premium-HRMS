@@ -1,0 +1,716 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>My Loans & Advances | GlassEntials HRMS</title>
+<meta name="description" content="Track your salary advances, loans, and month-by-month EMI repayment schedule.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<link rel="stylesheet" href="{% static 'css/landing.css' %}?v=3.0">
+<link rel="stylesheet" href="{% static 'css/home.css' %}?v=3.0">
+<link rel="stylesheet" href="{% static 'css/dashboard.css' %}?v=3.0">
+<style>
+:root {
+  --font-sans: 'Plus Jakarta Sans', system-ui, sans-serif;
+  --font-mono: 'IBM Plex Mono', monospace;
+  --primary: #0f172a;
+  --primary-hover: #1e293b;
+  --accent: #2563eb;
+  --accent-light: #eff6ff;
+  --success: #10b981;
+  --success-light: #ecfdf5;
+  --warning: #f59e0b;
+  --warning-light: #fffbeb;
+  --danger: #ef4444;
+  --danger-light: #fef2f2;
+  --info: #8b5cf6;
+  --info-light: #f5f3ff;
+  --bg-gradient: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  --card-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.04), 0 1px 3px rgba(0, 0, 0, 0.02);
+  --hover-shadow: 0 20px 40px -15px rgba(37, 99, 235, 0.1), 0 1px 8px rgba(0, 0, 0, 0.04);
+}
+
+body {
+  background: var(--bg-gradient);
+  font-family: var(--font-sans);
+  color: #334155;
+  -webkit-font-smoothing: antialiased;
+}
+
+.workspace {
+  padding: 40px 24px;
+}
+
+.loans-container {
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+/* GORGEOUS HEADER */
+.loans-header-strip {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 32px;
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(12px);
+  padding: 24px 32px;
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  box-shadow: var(--card-shadow);
+}
+
+.header-meta h1 {
+  font-size: 26px;
+  font-weight: 800;
+  color: #0f172a;
+  letter-spacing: -0.75px;
+}
+
+.header-meta p {
+  font-size: 14px;
+  color: #64748b;
+  margin-top: 4px;
+}
+
+.btn-trigger-request {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--accent);
+  color: #fff;
+  font-weight: 600;
+  font-size: 14px;
+  padding: 12px 24px;
+  border-radius: 12px;
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(37, 99, 235, 0.3);
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.btn-trigger-request:hover {
+  background: #1d4ed8;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(37, 99, 235, 0.4);
+}
+
+.btn-trigger-request:active {
+  transform: translateY(0);
+}
+
+/* PREMIUM STAT CARDS FOR ACTIVE LOANS */
+.loan-card-premium {
+  background: #fff;
+  border-radius: 24px;
+  border: 1px solid #e2e8f0;
+  box-shadow: var(--card-shadow);
+  margin-bottom: 32px;
+  overflow: hidden;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.loan-card-premium:hover {
+  box-shadow: var(--hover-shadow);
+}
+
+.loan-banner {
+  background: linear-gradient(90deg, #1e293b 0%, #0f172a 100%);
+  padding: 24px 32px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.loan-banner::before {
+  content: '';
+  position: absolute;
+  right: -50px;
+  top: -50px;
+  width: 200px;
+  height: 200px;
+  border-radius: 50%;
+  background: rgba(37, 99, 235, 0.15);
+  filter: blur(20px);
+}
+
+.loan-title-group {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  position: relative;
+  z-index: 1;
+}
+
+.loan-avatar-box {
+  width: 52px;
+  height: 52px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.loan-identity {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.loan-number-tag {
+  font-family: var(--font-mono);
+  font-size: 15px;
+  font-weight: 700;
+  color: #fff;
+  letter-spacing: 0.5px;
+}
+
+.loan-type-tag {
+  font-size: 12.5px;
+  color: #94a3b8;
+  font-weight: 550;
+}
+
+/* PREMIUM STATUS PILLS */
+.premium-status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 6px 16px;
+  border-radius: 20px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  position: relative;
+  z-index: 1;
+}
+
+.status-active-p { background: var(--success-light); color: var(--success); border: 1px solid rgba(16, 185, 129, 0.2); }
+.status-pending-p { background: var(--warning-light); color: var(--warning); border: 1px solid rgba(245, 158, 11, 0.2); }
+.status-approved-p { background: var(--accent-light); color: var(--accent); border: 1px solid rgba(37, 99, 235, 0.2); }
+.status-closed-p { background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; }
+.status-rejected-p { background: var(--danger-light); color: var(--danger); border: 1px solid rgba(239, 68, 68, 0.2); }
+
+/* GRID METRICS */
+.loan-metrics-strip {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  background: #fff;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.metric-box {
+  padding: 24px 32px;
+  border-right: 1px solid #f1f5f9;
+}
+
+.metric-box:last-child {
+  border-right: none;
+}
+
+.metric-lbl {
+  font-size: 11px;
+  font-weight: 700;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  display: block;
+}
+
+.metric-val {
+  font-family: var(--font-mono);
+  font-size: 22px;
+  font-weight: 700;
+  color: #0f172a;
+  margin-top: 6px;
+  display: block;
+}
+
+.metric-val.outstanding { color: var(--danger); }
+.metric-val.principal { color: var(--accent); }
+.metric-val.emi { color: #0f172a; }
+
+/* REPAYMENT AREA */
+.repayment-container {
+  padding: 32px;
+  background: #fff;
+}
+
+.repayment-header {
+  font-size: 13.5px;
+  font-weight: 800;
+  color: #475569;
+  text-transform: uppercase;
+  letter-spacing: 0.75px;
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.repayment-header i {
+  color: var(--accent);
+}
+
+/* MODERN TRANSLUCENT TABLE */
+.premium-table-wrap {
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+.premium-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.premium-table th {
+  background: #f8fafc;
+  padding: 16px 24px;
+  font-size: 11.5px;
+  font-weight: 700;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.75px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.premium-table td {
+  padding: 16px 24px;
+  font-size: 14px;
+  color: #475569;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.premium-table tr:last-child td {
+  border-bottom: none;
+}
+
+.premium-table tbody tr:hover {
+  background: #fafafa;
+}
+
+.installment-num-col {
+  font-weight: 700;
+  color: #0f172a;
+}
+
+/* SUBTLE TIMELINE PILLS FOR PAYMENTS */
+.timeline-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 12px;
+  text-transform: uppercase;
+}
+
+.tb-pending { background: #fef3c7; color: #d97706; }
+.tb-deducted { background: #d1fae5; color: #059669; }
+.tb-waived { background: #f3e8ff; color: #7c3aed; }
+.tb-missed { background: #fee2e2; color: #dc2626; }
+
+/* MODAL DESIGN REVAMP */
+.glass-modal {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(15, 23, 42, 0.4);
+  backdrop-filter: blur(8px);
+  z-index: 1000;
+  align-items: center;
+  justify-content: center;
+}
+
+.glass-modal.active {
+  display: flex;
+}
+
+.modal-card-premium {
+  background: #fff;
+  border-radius: 24px;
+  width: 90%;
+  max-width: 520px;
+  box-shadow: 0 30px 60px -15px rgba(15, 23, 42, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  overflow: hidden;
+  animation: modalEnter 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes modalEnter {
+  from { transform: scale(0.9) translateY(30px); opacity: 0; }
+  to { transform: scale(1) translateY(0); opacity: 1; }
+}
+
+.modal-header-premium {
+  padding: 24px 32px;
+  background: #f8fafc;
+  border-bottom: 1px solid #e2e8f0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.modal-header-premium h3 {
+  font-size: 18px;
+  font-weight: 800;
+  color: #0f172a;
+  letter-spacing: -0.5px;
+}
+
+.modal-header-premium .close-btn {
+  background: #e2e8f0;
+  border: none;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #64748b;
+  cursor: pointer;
+  font-size: 16px;
+  transition: all 0.2s;
+}
+
+.modal-header-premium .close-btn:hover {
+  background: #cbd5e1;
+  color: #0f172a;
+}
+
+.modal-body-premium {
+  padding: 32px;
+}
+
+.premium-input-group {
+  margin-bottom: 24px;
+}
+
+.premium-input-group label {
+  display: block;
+  font-size: 11.5px;
+  font-weight: 700;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.75px;
+  margin-bottom: 8px;
+}
+
+.premium-select, .premium-input, .premium-textarea {
+  width: 100%;
+  padding: 12px 16px;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 12px;
+  font-family: inherit;
+  font-size: 14px;
+  color: #0f172a;
+  background: #f8fafc;
+  transition: all 0.2s;
+}
+
+.premium-select:focus, .premium-input:focus, .premium-textarea:focus {
+  outline: none;
+  border-color: var(--accent);
+  background: #fff;
+  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.15);
+}
+
+.premium-textarea {
+  resize: none;
+  height: 90px;
+}
+
+.modal-footer-premium {
+  padding: 24px 32px;
+  background: #f8fafc;
+  border-top: 1px solid #e2e8f0;
+  display: flex;
+  justify-content: flex-end;
+  gap: 16px;
+}
+
+.btn-premium-secondary {
+  background: #fff;
+  border: 1.5px solid #e2e8f0;
+  color: #475569;
+  font-weight: 600;
+  padding: 12px 24px;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-premium-secondary:hover {
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+}
+
+/* EMPTY STATE PREM */
+.loans-empty-card {
+  text-align: center;
+  padding: 80px 40px;
+  background: #fff;
+  border-radius: 24px;
+  border: 1px solid #e2e8f0;
+  box-shadow: var(--card-shadow);
+}
+
+.empty-icon-shield {
+  width: 80px;
+  height: 80px;
+  border-radius: 55% 45% 70% 30% / 50% 60% 30% 70%;
+  background: var(--accent-light);
+  color: var(--accent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 32px;
+  margin: 0 auto 24px;
+  animation: float 4s ease-in-out infinite;
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+
+.loans-empty-card h3 {
+  font-size: 20px;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.loans-empty-card p {
+  color: #64748b;
+  font-size: 14.5px;
+  max-width: 400px;
+  margin: 8px auto 28px;
+  line-height: 1.6;
+}
+</style>
+</head>
+<body>
+{% include 'includes/navbar.html' %}
+<main class="workspace">
+<div class="loans-container">
+
+  <!-- MESSAGES -->
+  {% if messages %}
+    {% for message in messages %}
+      <div style="padding: 16px 24px; border-radius: 16px; margin-bottom: 24px; font-weight: 600; font-size: 14px; display: flex; align-items: center; gap: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.02);
+        {% if message.tags == 'success' %} background: var(--success-light); border: 1px solid rgba(16, 185, 129, 0.2); color: var(--success);
+        {% else %} background: var(--danger-light); border: 1px solid rgba(239, 68, 68, 0.2); color: var(--danger); {% endif %}">
+        {% if message.tags == 'success' %}<i class="fas fa-circle-check" style="font-size: 16px;"></i>{% else %}<i class="fas fa-circle-xmark" style="font-size: 16px;"></i>{% endif %}
+        <span>{{ message }}</span>
+      </div>
+    {% endfor %}
+  {% endif %}
+
+  <!-- GORGEOUS HEADER STRIP -->
+  <div class="loans-header-strip">
+    <div class="header-meta">
+      <h1>My Loans &amp; Advances</h1>
+      <p>Track disbursed loans, view EMI schedules, or submit advance requests.</p>
+    </div>
+    {% if employee %}
+    <button class="btn-trigger-request" onclick="openRequestModal()">
+      <i class="fas fa-plus"></i> Request Loan / Advance
+    </button>
+    {% endif %}
+  </div>
+
+  {% if loans %}
+    {% for loan in loans %}
+    <div class="loan-card-premium">
+      <!-- Banner -->
+      <div class="loan-banner">
+        <div class="loan-title-group">
+          <div class="loan-avatar-box">
+            <i class="fas fa-wallet"></i>
+          </div>
+          <div class="loan-identity">
+            <div class="loan-number-tag">{{ loan.loan_number }}</div>
+            <div class="loan-type-tag">{{ loan.get_loan_type_display }}</div>
+          </div>
+        </div>
+
+        <span class="premium-status-pill 
+          {% if loan.status == 'ACTIVE' %}status-active-p
+          {% elif loan.status == 'PENDING_APPROVAL' %}status-pending-p
+          {% elif loan.status == 'APPROVED' %}status-approved-p
+          {% elif loan.status == 'CLOSED' %}status-closed-p
+          {% else %}status-rejected-p{% endif %}">
+          <i class="fas {% if loan.status == 'ACTIVE' %}fa-circle-check{% elif loan.status == 'PENDING_APPROVAL' %}fa-clock{% else %}fa-circle-info{% endif %}"></i>
+          {{ loan.get_status_display }}
+        </span>
+      </div>
+
+      <!-- Stats Grid -->
+      <div class="loan-metrics-strip">
+        <div class="metric-box">
+          <span class="metric-lbl">Principal Amount</span>
+          <span class="metric-val principal">₹{{ loan.principal_amount }}</span>
+        </div>
+        <div class="metric-box">
+          <span class="metric-lbl">Outstanding Balance</span>
+          <span class="metric-val outstanding">₹{{ loan.outstanding_amount }}</span>
+        </div>
+        <div class="metric-box">
+          <span class="metric-lbl">Monthly EMI</span>
+          <span class="metric-val emi">₹{{ loan.emi_amount }}</span>
+        </div>
+        <div class="metric-box">
+          <span class="metric-lbl">Tenure Plan</span>
+          <span class="metric-val">{{ loan.tenure_months }} Month{{ loan.tenure_months|pluralize }}</span>
+        </div>
+      </div>
+
+      <!-- Repayments -->
+      <div class="repayment-container">
+        <div class="repayment-header">
+          <i class="fas fa-list-ol"></i> EMI Repayment Schedule
+        </div>
+
+        {% if loan.installments.all %}
+        <div class="premium-table-wrap">
+          <table class="premium-table">
+            <thead>
+              <tr>
+                <th>EMI #</th>
+                <th>Payment Period</th>
+                <th>Status</th>
+                <th>Principal Share</th>
+                <th>Interest Share</th>
+                <th style="text-align: right;">EMI Amount</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for inst in loan.installments.all %}
+              <tr>
+                <td class="installment-num-col">#{{ inst.installment_number }}</td>
+                <td>{{ inst.get_due_month_display }} {{ inst.due_year }}</td>
+                <td>
+                  <span class="timeline-badge 
+                    {% if inst.status == 'PENDING' %}tb-pending
+                    {% elif inst.status == 'DEDUCTED' %}tb-deducted
+                    {% elif inst.status == 'WAIVED' %}tb-waived
+                    {% else %}tb-missed{% endif %}">
+                    {{ inst.get_status_display }}
+                  </span>
+                </td>
+                <td style="font-family: var(--font-mono);">₹{{ inst.principal_component }}</td>
+                <td style="font-family: var(--font-mono);">₹{{ inst.interest_component }}</td>
+                <td style="text-align: right; font-family: var(--font-mono); font-weight: 700; color: #0f172a;">₹{{ inst.emi_amount }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% else %}
+        <div style="text-align: center; color: #94a3b8; padding: 32px 0; font-size: 13.5px; border: 2px dashed #e2e8f0; border-radius: 16px;">
+          <i class="fas fa-info-circle" style="margin-right: 6px;"></i> The schedule will generate automatically once this loan is approved.
+        </div>
+        {% endif %}
+      </div>
+    </div>
+    {% endfor %}
+  {% else %}
+    <!-- EMPTY STATE -->
+    <div class="loans-empty-card">
+      <div class="empty-icon-shield">
+        <i class="fas fa-handshake-angle"></i>
+      </div>
+      <h3>No Active Loans or Advances</h3>
+      <p>Need financial assistance? Apply for emergency loans, personal loans, or salary advances directly from here.</p>
+      {% if employee %}
+      <button class="btn-trigger-request" onclick="openRequestModal()">
+        <i class="fas fa-plus"></i> Request Loan / Advance
+      </button>
+      {% endif %}
+    </div>
+  {% endif %}
+
+</div>
+</main>
+
+<!-- REQUEST MODAL -->
+<div class="glass-modal" id="requestModal">
+  <div class="modal-card-premium">
+    <div class="modal-header-premium">
+      <h3>Submit Loan / Advance Request</h3>
+      <button class="close-btn" onclick="closeRequestModal()">&times;</button>
+    </div>
+    <form action="{% url 'request_loan' %}" method="POST">
+      {% csrf_token %}
+      <div class="modal-body-premium">
+        <div class="premium-input-group">
+          <label for="loan_type">Loan Type</label>
+          <select name="loan_type" id="loan_type" class="premium-select" required>
+            {% for code, label in loan_types %}
+              <option value="{{ code }}">{{ label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="premium-input-group">
+          <label for="principal_amount">Requested Principal Amount (₹)</label>
+          <input type="number" name="principal_amount" id="principal_amount" min="1000" step="100" class="premium-input" placeholder="e.g. 50000" required>
+        </div>
+
+        <div class="premium-input-group">
+          <label for="tenure_months">Desired Repayment Tenure</label>
+          <select name="tenure_months" id="tenure_months" class="premium-select" required>
+            <option value="1">1 Month</option>
+            <option value="3">3 Months</option>
+            <option value="6">6 Months</option>
+            <option value="12">12 Months</option>
+            <option value="18">18 Months</option>
+            <option value="24">24 Months</option>
+          </select>
+        </div>
+
+        <div class="premium-input-group" style="margin-bottom: 0;">
+          <label for="reason">Reason / Statement of Need</label>
+          <textarea name="reason" id="reason" class="premium-textarea" placeholder="Please specify details for fast approval..." required></textarea>
+        </div>
+      </div>
+      <div class="modal-footer-premium">
+        <button type="button" class="btn-premium-secondary" onclick="closeRequestModal()">Cancel</button>
+        <button type="submit" class="btn-trigger-request">Submit Request</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+function openRequestModal() {
+  document.getElementById('requestModal').classList.add('active');
+}
+function closeRequestModal() {
+  document.getElementById('requestModal').classList.remove('active');
+}
+window.onclick = function(event) {
+  var modal = document.getElementById('requestModal');
+  if (event.target == modal) {
+    closeRequestModal();
+  }
+}
+</script>
+</body>
+</html>

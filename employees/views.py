@@ -12,6 +12,9 @@ from .models import Department, Designation, Employee
 # Create your views here.
 @login_required
 def employee_view(request):
+    if not (request.user.is_staff or request.user.is_superuser):
+        return redirect('employee_directory')
+        
     # Base query
     employees_list = Employee.objects.filter(is_deleted=False).order_by('-created_at')
     
@@ -66,6 +69,66 @@ def employee_view(request):
         'selected_desig': designation_id,
         'selected_status': status
     })
+
+@login_required
+def employee_directory(request):
+    organization = request.user.organization
+    
+    # Show active, non-deleted employees of the organization (or global seeded ones)
+    employees_list = Employee.objects.filter(
+        Q(organization=organization) | Q(organization__isnull=True),
+        is_active=True,
+        is_deleted=False
+    ).order_by('first_name', 'last_name')
+    
+    # Search filtering
+    search_query = request.GET.get('search', '')
+    if search_query:
+        employees_list = employees_list.filter(
+            Q(first_name__icontains=search_query) |
+            Q(last_name__icontains=search_query) |
+            Q(email__icontains=search_query) |
+            Q(department__name__icontains=search_query) |
+            Q(designation__name__icontains=search_query)
+        )
+        
+    # Department filtering
+    selected_dept = request.GET.get('department', '')
+    if selected_dept:
+        employees_list = employees_list.filter(department_id=selected_dept)
+        
+    # Designation filtering
+    selected_desig = request.GET.get('designation', '')
+    if selected_desig:
+        employees_list = employees_list.filter(designation_id=selected_desig)
+        
+    # Paginator: 12 cards per page (3x4 grid)
+    paginator = Paginator(employees_list, 12)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    
+    # Filter dropdown options
+    departments = Department.objects.filter(
+        Q(organization=organization) | Q(organization__isnull=True),
+        is_deleted=False,
+        is_active=True
+    ).order_by('name')
+    
+    designations = Designation.objects.filter(
+        Q(organization=organization) | Q(organization__isnull=True),
+        is_deleted=False,
+        is_active=True
+    ).order_by('name')
+    
+    context = {
+        'page_obj': page_obj,
+        'departments': departments,
+        'designations': designations,
+        'search_query': search_query,
+        'selected_dept': selected_dept,
+        'selected_desig': selected_desig,
+    }
+    return render(request, 'employee_directory.html', context)
 
 def department_view(request, pk=None):
     edit_dept = None

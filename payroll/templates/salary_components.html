@@ -1,0 +1,277 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Salary Components | GlassEntials Enterprise</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<link rel="stylesheet" href="{% static 'css/landing.css' %}?v=3.0">
+<link rel="stylesheet" href="{% static 'css/home.css' %}?v=3.0">
+<link rel="stylesheet" href="{% static 'css/dashboard.css' %}?v=3.0">
+
+<style>
+/* ── ENTERPRISE DESIGN SYSTEM ── */
+:root {
+  --ent-navy: #0B132B;
+  --ent-blue: #2563EB;
+  --ent-blue-light: #EFF6FF;
+  --ent-blue-hover: #1D4ED8;
+  --ent-emerald: #059669;
+  --ent-emerald-bg: #ECFDF5;
+  --ent-red: #DC2626;
+  --ent-red-bg: #FEF2F2;
+  --ent-slate-50: #F8FAFC;
+  --ent-slate-100: #F1F5F9;
+  --ent-slate-200: #E2E8F0;
+  --ent-slate-300: #CBD5E1;
+  --ent-slate-400: #94A3B8;
+  --ent-slate-500: #64748B;
+  --ent-slate-700: #334155;
+  --ent-slate-900: #0F172A;
+  
+  --font-sans: 'Inter', system-ui, sans-serif;
+  --font-mono: 'IBM Plex Mono', monospace;
+  
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+}
+
+body { background: var(--ent-slate-50); font-family: var(--font-sans); color: var(--ent-slate-900); -webkit-font-smoothing: antialiased; }
+.ent-layout { max-width: 1400px; margin: 0 auto; padding: 32px 40px; }
+
+/* ── HEADER & BREADCRUMBS ── */
+.ent-header { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 32px; }
+.ent-breadcrumbs { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 500; color: var(--ent-slate-500); margin-bottom: 12px; }
+.ent-breadcrumbs a { color: var(--ent-blue); text-decoration: none; transition: color 0.2s; }
+.ent-breadcrumbs a:hover { color: var(--ent-blue-hover); }
+.ent-breadcrumbs i { font-size: 10px; color: var(--ent-slate-300); }
+.ent-title h1 { font-size: 28px; font-weight: 700; color: var(--ent-navy); letter-spacing: -0.5px; margin: 0 0 6px 0; }
+.ent-title p { font-size: 14px; color: var(--ent-slate-500); margin: 0; }
+.ent-actions { display: flex; gap: 12px; }
+.btn-ent { padding: 10px 20px; font-size: 14px; font-weight: 600; border-radius: 8px; cursor: pointer; transition: all 0.2s; border: none; display: inline-flex; align-items: center; gap: 8px; }
+.btn-ent-primary { background: var(--ent-blue); color: white; box-shadow: 0 4px 12px rgba(37,99,235,0.2); text-decoration: none; }
+.btn-ent-primary:hover { background: var(--ent-blue-hover); transform: translateY(-1px); }
+
+/* ── CARD & TABLE ── */
+.ent-card { background: white; border-radius: 16px; border: 1px solid var(--ent-slate-200); box-shadow: var(--shadow-sm); overflow: hidden; }
+.ent-table-container { width: 100%; overflow-x: auto; }
+.ent-table { width: 100%; border-collapse: separate; border-spacing: 0; }
+.ent-table th { background: var(--ent-slate-50); padding: 16px 24px; font-size: 12px; font-weight: 600; color: var(--ent-slate-500); text-transform: uppercase; letter-spacing: 0.5px; text-align: left; border-bottom: 1px solid var(--ent-slate-200); }
+.ent-table td { padding: 20px 24px; border-bottom: 1px solid var(--ent-slate-100); vertical-align: middle; font-size: 14px; }
+.ent-table tbody tr { transition: background 0.15s; }
+.ent-table tbody tr:hover { background: var(--ent-slate-50); }
+
+/* ── BADGES & CHIPS ── */
+.ent-badge { display: inline-flex; align-items: center; justify-content: center; gap: 4px; padding: 6px 12px; border-radius: 6px; font-size: 12px; font-weight: 600; letter-spacing: 0.3px; text-transform: uppercase; }
+.ent-badge.earning { background: var(--ent-emerald-bg); color: var(--ent-emerald); }
+.ent-badge.deduction { background: var(--ent-red-bg); color: var(--ent-red); }
+
+.status-indicator { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 600; }
+.status-dot { width: 8px; height: 8px; border-radius: 50%; }
+.status-active .status-dot { background: var(--ent-emerald); box-shadow: 0 0 0 4px var(--ent-emerald-bg); }
+.status-inactive .status-dot { background: var(--ent-slate-400); box-shadow: 0 0 0 4px var(--ent-slate-100); }
+.status-active { color: var(--ent-slate-700); }
+.status-inactive { color: var(--ent-slate-400); }
+
+.ent-formula-chip { background: var(--ent-slate-100); border: 1px solid var(--ent-slate-200); padding: 4px 8px; border-radius: 6px; font-family: var(--font-mono); font-size: 13px; color: var(--ent-slate-700); font-weight: 500; display: inline-block; margin-top: 6px; }
+
+.comp-name { font-size: 15px; font-weight: 600; color: var(--ent-navy); margin-bottom: 4px; }
+.comp-meta { font-size: 13px; color: var(--ent-slate-500); display: flex; align-items: center; gap: 8px; }
+
+.empty-state { padding: 60px; text-align: center; color: var(--ent-slate-500); }
+.empty-state i { font-size: 48px; color: var(--ent-slate-300); margin-bottom: 16px; }
+.empty-state h3 { font-size: 18px; color: var(--ent-navy); margin: 0 0 8px 0; font-weight: 600; }
+</style>
+</head>
+<body>
+    {% include 'includes/navbar.html' %}
+
+    <main class="workspace">
+        <div class="ent-layout">
+            
+            <div class="ent-header">
+                <div class="ent-title">
+                    <div class="ent-breadcrumbs">
+                        <a href="{% url 'home' %}">Dashboard</a>
+                        <i class="fas fa-chevron-right"></i>
+                        <a href="{% url 'payroll' %}">Payroll</a>
+                        <i class="fas fa-chevron-right"></i>
+                        <span>Salary Components</span>
+                    </div>
+                    <h1>Salary Components Library</h1>
+                    <p>Manage standard earnings and deductions across your organization</p>
+                </div>
+                <div class="ent-actions">
+                    <button class="btn-ent btn-ent-primary" onclick="openComponentModal()">
+                        <i class="fas fa-plus"></i> New Component
+                    </button>
+                </div>
+            </div>
+
+            <div class="ent-card">
+                <div class="ent-table-container">
+                    <table class="ent-table">
+                        <thead>
+                            <tr>
+                                <th style="width: 250px;">Component</th>
+                                <th style="width: 150px;">Type</th>
+                                <th>Calculation Rules</th>
+                                <th style="width: 150px; text-align: center;">Taxable</th>
+                                <th style="width: 150px; text-align: center;">Status</th>
+                                <th style="width: 80px; text-align: center;">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for comp in components %}
+                            <tr>
+                                <td>
+                                    <div class="comp-name">{{ comp.name }}</div>
+                                    <div class="comp-meta"><i class="fas fa-hashtag"></i> {{ comp.code|default:"SYS_DEF" }}</div>
+                                </td>
+                                <td>
+                                    {% if comp.component_type == 'EARNING' %}
+                                    <span class="ent-badge earning"><i class="fas fa-arrow-up"></i> Earning</span>
+                                    {% else %}
+                                    <span class="ent-badge deduction"><i class="fas fa-arrow-down"></i> Deduction</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <div style="font-weight: 500; color: var(--ent-slate-700);">{{ comp.get_calculation_type_display }}</div>
+                                    {% if comp.calculation_type == 'FORMULA' %}
+                                    <div class="ent-formula-chip">{{ comp.formula }}</div>
+                                    {% endif %}
+                                </td>
+                                <td style="text-align: center;">
+                                    {% if comp.is_taxable %}
+                                    <i class="fas fa-check-circle" style="color: var(--ent-slate-400); font-size: 18px;"></i>
+                                    {% else %}
+                                    <i class="fas fa-times-circle" style="color: var(--ent-slate-300); font-size: 18px;"></i>
+                                    {% endif %}
+                                </td>
+                                <td style="text-align: center;">
+                                    {% if comp.is_active %}
+                                    <div class="status-indicator status-active">
+                                        <div class="status-dot"></div> Active
+                                    </div>
+                                    {% else %}
+                                    <div class="status-indicator status-inactive">
+                                        <div class="status-dot"></div> Inactive
+                                    </div>
+                                    {% endif %}
+                                </td>
+                                <td style="text-align: center;">
+                                    <a href="/admin/payroll/salarycomponent/{{ comp.id }}/change/" target="_blank" style="color: var(--ent-slate-400); transition: color 0.2s;">
+                                        <i class="fas fa-external-link-alt"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="6">
+                                    <div class="empty-state">
+                                        <i class="fas fa-layer-group"></i>
+                                        <h3>No Components Defined</h3>
+                                        <p>Create your first salary component to build payroll structures.</p>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <!-- CREATE COMPONENT MODAL -->
+    <div id="componentModal" style="display: none; position: fixed; inset: 0; background: rgba(11, 19, 43, 0.4); backdrop-filter: blur(4px); z-index: 1000; align-items: center; justify-content: center;">
+        <div style="background: white; border-radius: 16px; width: 100%; max-width: 500px; box-shadow: var(--shadow-float); overflow: hidden;">
+            <div style="padding: 24px 32px; border-bottom: 1px solid var(--ent-slate-100); display: flex; justify-content: space-between; align-items: center; background: rgba(248, 250, 252, 0.5);">
+                <h2 style="font-size: 18px; font-weight: 600; color: var(--ent-navy); margin: 0;">Create Component</h2>
+                <button onclick="closeComponentModal()" style="background: none; border: none; font-size: 20px; color: var(--ent-slate-400); cursor: pointer; transition: color 0.2s;"><i class="fas fa-times"></i></button>
+            </div>
+            
+            <form method="POST" action="{% url 'salary_components' %}" style="padding: 32px; display: flex; flex-direction: column; gap: 20px;">
+                {% csrf_token %}
+                
+                <div style="display: flex; gap: 20px;">
+                    <div style="flex: 2; display: flex; flex-direction: column; gap: 8px;">
+                        <label style="font-size: 12px; font-weight: 600; color: var(--ent-slate-700); text-transform: uppercase; letter-spacing: 0.5px;">Component Name</label>
+                        <input type="text" name="name" required style="width: 100%; padding: 10px 14px; border: 1px solid var(--ent-slate-200); border-radius: 8px; font-size: 14px;" placeholder="e.g. Basic Salary">
+                    </div>
+                    <div style="flex: 1; display: flex; flex-direction: column; gap: 8px;">
+                        <label style="font-size: 12px; font-weight: 600; color: var(--ent-slate-700); text-transform: uppercase; letter-spacing: 0.5px;">Code</label>
+                        <input type="text" name="code" required style="width: 100%; padding: 10px 14px; border: 1px solid var(--ent-slate-200); border-radius: 8px; font-family: var(--font-mono); font-size: 14px;" placeholder="BASIC">
+                    </div>
+                </div>
+
+                <div style="display: flex; gap: 20px;">
+                    <div style="flex: 1; display: flex; flex-direction: column; gap: 8px;">
+                        <label style="font-size: 12px; font-weight: 600; color: var(--ent-slate-700); text-transform: uppercase; letter-spacing: 0.5px;">Type</label>
+                        <select name="component_type" required style="width: 100%; padding: 10px 14px; border: 1px solid var(--ent-slate-200); border-radius: 8px; font-size: 14px; background: white;">
+                            <option value="EARNING">Earning</option>
+                            <option value="DEDUCTION">Deduction</option>
+                        </select>
+                    </div>
+                    <div style="flex: 1; display: flex; flex-direction: column; gap: 8px;">
+                        <label style="font-size: 12px; font-weight: 600; color: var(--ent-slate-700); text-transform: uppercase; letter-spacing: 0.5px;">Calculation</label>
+                        <select name="calculation_type" id="calcTypeSelect" required style="width: 100%; padding: 10px 14px; border: 1px solid var(--ent-slate-200); border-radius: 8px; font-size: 14px; background: white;" onchange="toggleFormula()">
+                            <option value="FIXED">Fixed Amount</option>
+                            <option value="PERCENTAGE">Percentage of Basic</option>
+                            <option value="FORMULA">Custom Formula</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div id="formulaDiv" style="display: none; flex-direction: column; gap: 8px;">
+                    <label style="font-size: 12px; font-weight: 600; color: var(--ent-slate-700); text-transform: uppercase; letter-spacing: 0.5px;">Formula Expression</label>
+                    <input type="text" name="formula" id="formulaInput" style="width: 100%; padding: 10px 14px; border: 1px solid var(--ent-slate-200); border-radius: 8px; font-family: var(--font-mono); font-size: 14px; background: var(--ent-slate-50);" placeholder="e.g. basic * 0.40">
+                    <span style="font-size: 11px; color: var(--ent-slate-500);"><i class="fas fa-info-circle"></i> Use variables like 'basic', 'gross', 'ctc'</span>
+                </div>
+
+                <div style="display: flex; align-items: center; gap: 10px; margin-top: 8px;">
+                    <input type="checkbox" name="is_taxable" id="isTaxable" checked style="width: 16px; height: 16px; accent-color: var(--ent-blue);">
+                    <label for="isTaxable" style="font-size: 13px; font-weight: 500; color: var(--ent-slate-700); cursor: pointer;">This component is subject to Income Tax</label>
+                </div>
+
+                <div style="display: flex; gap: 12px; justify-content: flex-end; margin-top: 16px;">
+                    <button type="button" onclick="closeComponentModal()" style="padding: 10px 20px; font-size: 14px; font-weight: 600; border-radius: 8px; background: white; color: var(--ent-slate-700); border: 1px solid var(--ent-slate-200); cursor: pointer;">Cancel</button>
+                    <button type="submit" style="padding: 10px 24px; font-size: 14px; font-weight: 600; border-radius: 8px; background: var(--ent-blue); color: white; border: none; box-shadow: 0 4px 12px rgba(37,99,235,0.2); cursor: pointer;">Save Component</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        function openComponentModal() {
+            const modal = document.getElementById('componentModal');
+            modal.style.display = 'flex';
+            // Slight delay to allow display flex to apply before opacity transition
+            setTimeout(() => { modal.style.opacity = '1'; }, 10);
+        }
+
+        function closeComponentModal() {
+            document.getElementById('componentModal').style.display = 'none';
+        }
+
+        function toggleFormula() {
+            const select = document.getElementById('calcTypeSelect');
+            const formulaDiv = document.getElementById('formulaDiv');
+            const formulaInput = document.getElementById('formulaInput');
+            
+            if (select.value === 'FORMULA') {
+                formulaDiv.style.display = 'flex';
+                formulaInput.required = true;
+            } else {
+                formulaDiv.style.display = 'none';
+                formulaInput.required = false;
+                formulaInput.value = '';
+            }
+        }
+    </script>
+</body>
+</html>

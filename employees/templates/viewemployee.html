@@ -13,7 +13,7 @@
     <link rel="stylesheet" href="{% static 'css/landing.css' %}?v=3.0">
     <link rel="stylesheet" href="{% static 'css/home.css' %}?v=3.0">
     <link rel="stylesheet" href="{% static 'css/dashboard.css' %}?v=3.0">
-    
+
     <style>
         .profile-header-card {
             display: flex;
@@ -23,7 +23,7 @@
             background: linear-gradient(145deg, #ffffff, #f9fafb);
             border-bottom: 3px solid var(--primary-blue);
         }
-        
+
         .profile-avatar {
             width: 120px;
             height: 120px;
@@ -36,7 +36,7 @@
             align-items: center;
             justify-content: center;
             border: 4px solid #fff;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
             object-fit: cover;
         }
 
@@ -80,8 +80,8 @@
             padding: 24px;
             border-radius: 16px;
             background: white;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.02);
-            border: 1px solid rgba(0,0,0,0.05);
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.02);
+            border: 1px solid rgba(0, 0, 0, 0.05);
         }
 
         .info-card-header {
@@ -90,7 +90,7 @@
             color: var(--text-primary);
             margin-bottom: 20px;
             padding-bottom: 12px;
-            border-bottom: 1px solid rgba(0,0,0,0.05);
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
             display: flex;
             align-items: center;
             gap: 10px;
@@ -139,7 +139,7 @@
         .document-link:hover {
             background: rgba(37, 99, 235, 0.1);
         }
-        
+
         .address-box {
             background: #f8fafc;
             padding: 16px;
@@ -148,14 +148,14 @@
             color: var(--text-primary);
             line-height: 1.5;
         }
-        
+
         .flex-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
             width: 100%;
         }
-        
+
         .btn-sm {
             padding: 6px 14px !important;
             font-size: 13px !important;
@@ -178,16 +178,21 @@
 
     <!--Header Navigation-->
     {% include 'includes/navbar.html' %}
-    
+
     <main class="workspace">
         <div class="page-header flex-header">
             <div class="header-main-content">
-                <a href="{% url 'employee' %}" style="color: var(--text-secondary); text-decoration: none; font-size: 14px; margin-bottom: 8px; display: inline-block; font-weight: 600;">
+                <a href="{% url 'employee' %}"
+                    style="color: var(--text-secondary); text-decoration: none; font-size: 14px; margin-bottom: 8px; display: inline-block; font-weight: 600;">
                     <i class="fas fa-arrow-left"></i> Back to Employee Directory
                 </a>
                 <h1 style="margin-top: 5px;">Employee Profile</h1>
             </div>
             <div class="header-actions" style="display: flex; gap: 10px;">
+                <a href="{% url 'manage_employee_salary' employee.pk %}" class="btn-outline btn-sm"
+                    style="border-color: #2563eb; color: #2563eb;">
+                    <i class="fas fa-coins"></i> Payroll Setup
+                </a>
                 <a href="{% url 'edit_employee' employee.pk %}" class="btn-outline btn-sm">
                     <i class="fas fa-pen"></i> Edit Profile
                 </a>
@@ -199,205 +204,205 @@
 
         <div id="pdf-content-area">
             <div class="card profile-header-card" style="padding: 0; overflow: hidden; margin-bottom: 24px;">
-            <div class="profile-header-card" style="width: 100%; box-sizing: border-box; border: none; background: transparent;">
-                {% if employee.profile_img %}
-                <img src="{{ employee.profile_img.url }}" alt="{{ employee.first_name }}" class="profile-avatar">
-                {% else %}
-                <div class="profile-avatar">
-                    {{ employee.first_name|slice:":1"|upper }}{{ employee.last_name|slice:":1"|upper }}
-                </div>
-                {% endif %}
-                
-                <div class="profile-info">
-                    <div class="profile-name">
-                        {{ employee.first_name }} {{ employee.last_name }}
-                        {% if employee.is_active %}
-                        <span class="status-pill active" style="font-size: 12px; padding: 4px 10px; height: auto;">
-                            <i class="fas fa-circle" style="font-size: 6px;"></i> Active
-                        </span>
-                        {% else %}
-                        <span class="status-pill inactive" style="font-size: 12px; padding: 4px 10px; height: auto;">
-                            <i class="fas fa-circle" style="font-size: 6px;"></i> Inactive
-                        </span>
-                        {% endif %}
+                <div class="profile-header-card"
+                    style="width: 100%; box-sizing: border-box; border: none; background: transparent;">
+                    {% if employee.profile_img %}
+                    <img src="{{ employee.profile_img.url }}" alt="{{ employee.first_name }}" class="profile-avatar">
+                    {% else %}
+                    <div class="profile-avatar">
+                        {{ employee.first_name|slice:":1"|upper }}{{ employee.last_name|slice:":1"|upper }}
                     </div>
-                    
-                    <div class="profile-subtitle">
-                        <span><i class="fas fa-id-badge" style="color: #94a3b8;"></i> ID: {{ employee.employee_id }}</span>
-                        <span><i class="fas fa-briefcase" style="color: #94a3b8;"></i> {{ employee.designation.name|default:"No Designation" }}</span>
-                        <span><i class="fas fa-building" style="color: #94a3b8;"></i> {{ employee.department.name|default:"No Department" }}</span>
-                    </div>
-                    
-                    <div class="profile-subtitle" style="margin-bottom: 0;">
-                        <span><i class="fas fa-envelope" style="color: #94a3b8;"></i> {{ employee.email }}</span>
-                        <span><i class="fas fa-phone" style="color: #94a3b8;"></i> {{ employee.phone_number }}</span>
-                    </div>
-                </div>
-            </div>
-        </div>
+                    {% endif %}
 
-        <div class="profile-grid">
-            <!-- Work Information -->
-            <div class="info-card">
-                <div class="info-card-header">
-                    <i class="fas fa-briefcase" style="color: var(--primary-blue);"></i> Work Information
-                </div>
-                <div class="info-list">
-                    <div class="info-item">
-                        <span class="info-label">Employment Type</span>
-                        <span class="info-value">{{ employee.employment_type|default:"--" }}</span>
-                    </div>
-                    <div class="info-item">
-                        <span class="info-label">Joining Date</span>
-                        <span class="info-value">{{ employee.joining_date|default:"--" }}</span>
-                    </div>
-                    <div class="info-item">
-                        <span class="info-label">Work Location</span>
-                        <span class="info-value">{{ employee.work_location|default:"--" }}</span>
-                    </div>
-                    <div class="info-item">
-                        <span class="info-label">Reporting Manager</span>
-                        <span class="info-value">
-                            {% if employee.manager %}
-                            <a href="{% url 'view_employee' employee.manager.pk %}" style="color: #2563eb; text-decoration: none; font-weight: 600; display: inline-flex; align-items: center; gap: 6px; transition: transform 0.2s;" onmouseover="this.style.transform='translateX(4px)'" onmouseout="this.style.transform='translateX(0)'">
-                                {{ employee.manager.first_name }} {{ employee.manager.last_name }} 
-                                <span style="font-size: 12px; color: #64748b; font-weight: 400;">({{ employee.manager.employee_id }})</span>
-                            </a>
+                    <div class="profile-info">
+                        <div class="profile-name">
+                            {{ employee.first_name }} {{ employee.last_name }}
+                            {% if employee.is_active %}
+                            <span class="status-pill active" style="font-size: 12px; padding: 4px 10px; height: auto;">
+                                <i class="fas fa-circle" style="font-size: 6px;"></i> Active
+                            </span>
                             {% else %}
-                            --
+                            <span class="status-pill inactive"
+                                style="font-size: 12px; padding: 4px 10px; height: auto;">
+                                <i class="fas fa-circle" style="font-size: 6px;"></i> Inactive
+                            </span>
                             {% endif %}
-                        </span>
+                        </div>
+
+                        <div class="profile-subtitle">
+                            <span><i class="fas fa-id-badge" style="color: #94a3b8;"></i> ID: {{ employee.employee_id }}</span>
+                            <span><i class="fas fa-briefcase" style="color: #94a3b8;"></i> {{ employee.designation.name|default:"No Designation" }}</span>
+                            <span><i class="fas fa-building" style="color: #94a3b8;"></i> {{ employee.department.name|default:"No Department" }}</span>
+                        </div>
+
+                        <div class="profile-subtitle" style="margin-bottom: 0;">
+                            <span><i class="fas fa-envelope" style="color: #94a3b8;"></i> {{ employee.email }}</span>
+                            <span><i class="fas fa-phone" style="color: #94a3b8;"></i> {{ employee.phone_number }}</span>
+                        </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Personal Information -->
-            <div class="info-card">
-                <div class="info-card-header">
-                    <i class="fas fa-user" style="color: var(--primary-blue);"></i> Personal Details
+            <div class="profile-grid">
+                <!-- Work Information -->
+                <div class="info-card">
+                    <div class="info-card-header">
+                        <i class="fas fa-briefcase" style="color: var(--primary-blue);"></i> Work Information
+                    </div>
+                    <div class="info-list">
+                        <div class="info-item">
+                            <span class="info-label">Employment Type</span>
+                            <span class="info-value">{{ employee.employment_type|default:"--" }}</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Joining Date</span>
+                            <span class="info-value">{{ employee.joining_date|default:"--" }}</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Work Location</span>
+                            <span class="info-value">{{ employee.work_location|default:"--" }}</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Reporting Manager</span>
+                            <span class="info-value">
+                                {% if employee.manager %}
+                                <a href="{% url 'view_employee' employee.manager.pk %}" style="color: #2563eb; text-decoration: none; font-weight: 600; display: inline-flex; align-items: center; gap: 6px; transition: transform 0.2s;" onmouseover="this.style.transform='translateX(4px)'" onmouseout="this.style.transform='translateX(0)'">{{ employee.manager.first_name }} {{ employee.manager.last_name }} <span style="font-size: 12px; color: #64748b; font-weight: 400;">({{ employee.manager.employee_id }})</span></a>
+                                {% else %}
+                                --
+                                {% endif %}
+                            </span>
+                        </div>
+                    </div>
                 </div>
-                <div class="info-list">
-                    <div class="info-item">
-                        <span class="info-label">Date of Birth</span>
-                        <span class="info-value">{{ employee.date_of_birth|default:"--" }}</span>
-                    </div>
-                    <div class="info-item">
-                        <span class="info-label">Gender</span>
-                        <span class="info-value">{{ employee.gender|default:"--" }}</span>
-                    </div>
-                    <div class="info-item">
-                        <span class="info-label">Marital Status</span>
-                        <span class="info-value">{{ employee.marital_status|default:"--" }}</span>
-                    </div>
-                    <div class="info-item">
-                        <span class="info-label">Blood Group</span>
-                        <span class="info-value">{{ employee.blood_group|default:"--" }}</span>
-                    </div>
-                    <div class="info-item">
-                        <span class="info-label">Nationality</span>
-                        <span class="info-value">{{ employee.nationality|default:"--" }}</span>
-                    </div>
-                </div>
-            </div>
 
-            <!-- Addresses -->
-            <div class="info-card">
-                <div class="info-card-header">
-                    <i class="fas fa-map-marker-alt" style="color: var(--primary-blue);"></i> Contact & Address
+                <!-- Personal Information -->
+                <div class="info-card">
+                    <div class="info-card-header">
+                        <i class="fas fa-user" style="color: var(--primary-blue);"></i> Personal Details
+                    </div>
+                    <div class="info-list">
+                        <div class="info-item">
+                            <span class="info-label">Date of Birth</span>
+                            <span class="info-value">{{ employee.date_of_birth|default:"--" }}</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Gender</span>
+                            <span class="info-value">{{ employee.gender|default:"--" }}</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Marital Status</span>
+                            <span class="info-value">{{ employee.marital_status|default:"--" }}</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Blood Group</span>
+                            <span class="info-value">{{ employee.blood_group|default:"--" }}</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Nationality</span>
+                            <span class="info-value">{{ employee.nationality|default:"--" }}</span>
+                        </div>
+                    </div>
                 </div>
-                <div class="info-list">
-                    <div class="info-item">
-                        <span class="info-label">Current Address</span>
-                        <div class="address-box">
-                            {% if employee.current_address %}
+
+                <!-- Addresses -->
+                <div class="info-card">
+                    <div class="info-card-header">
+                        <i class="fas fa-map-marker-alt" style="color: var(--primary-blue);"></i> Contact & Address
+                    </div>
+                    <div class="info-list">
+                        <div class="info-item">
+                            <span class="info-label">Current Address</span>
+                            <div class="address-box">
+                                {% if employee.current_address %}
                                 {{ employee.current_address }}<br>
                                 {{ employee.current_city|default:"" }}, {{ employee.current_state|default:"" }}<br>
                                 {{ employee.current_country|default:"" }} - {{ employee.current_pincode|default:"" }}
-                            {% else %}
+                                {% else %}
                                 --
-                            {% endif %}
+                                {% endif %}
+                            </div>
                         </div>
-                    </div>
-                    <div class="info-item">
-                        <span class="info-label">Permanent Address</span>
-                        <div class="address-box">
-                            {% if employee.permanent_address %}
+                        <div class="info-item">
+                            <span class="info-label">Permanent Address</span>
+                            <div class="address-box">
+                                {% if employee.permanent_address %}
                                 {{ employee.permanent_address }}<br>
                                 {{ employee.permanent_city|default:"" }}, {{ employee.permanent_state|default:"" }}<br>
                                 {{ employee.permanent_country|default:"" }} - {{ employee.permanent_pincode|default:"" }}
-                            {% else %}
+                                {% else %}
                                 --
-                            {% endif %}
+                                {% endif %}
+                            </div>
                         </div>
                     </div>
                 </div>
-            </div>
 
-            <!-- Financial Information -->
-            <div class="info-card">
-                <div class="info-card-header">
-                    <i class="fas fa-university" style="color: var(--primary-blue);"></i> Financial Information
+                <!-- Financial Information -->
+                <div class="info-card">
+                    <div class="info-card-header">
+                        <i class="fas fa-university" style="color: var(--primary-blue);"></i> Financial Information
+                    </div>
+                    <div class="info-list">
+                        <div class="info-item">
+                            <span class="info-label">PAN Number</span>
+                            <span class="info-value">{{ employee.pan_number|default:"--" }}</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Aadhaar Number</span>
+                            <span class="info-value">{{ employee.aadhaar_number|default:"--" }}</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Bank Name</span>
+                            <span class="info-value">{{ employee.bank_name|default:"--" }}</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Bank Account Number</span>
+                            <span class="info-value">{{ employee.bank_account_number|default:"--" }}</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">IFSC Code</span>
+                            <span class="info-value">{{ employee.ifsc_code|default:"--" }}</span>
+                        </div>
+                    </div>
                 </div>
-                <div class="info-list">
-                    <div class="info-item">
-                        <span class="info-label">PAN Number</span>
-                        <span class="info-value">{{ employee.pan_number|default:"--" }}</span>
-                    </div>
-                    <div class="info-item">
-                        <span class="info-label">Aadhaar Number</span>
-                        <span class="info-value">{{ employee.aadhaar_number|default:"--" }}</span>
-                    </div>
-                    <div class="info-item">
-                        <span class="info-label">Bank Name</span>
-                        <span class="info-value">{{ employee.bank_name|default:"--" }}</span>
-                    </div>
-                    <div class="info-item">
-                        <span class="info-label">Bank Account Number</span>
-                        <span class="info-value">{{ employee.bank_account_number|default:"--" }}</span>
-                    </div>
-                    <div class="info-item">
-                        <span class="info-label">IFSC Code</span>
-                        <span class="info-value">{{ employee.ifsc_code|default:"--" }}</span>
-                    </div>
-                </div>
-            </div>
 
-            <!-- Emergency Contact -->
-            <div class="info-card">
-                <div class="info-card-header">
-                    <i class="fas fa-heartbeat" style="color: #ef4444;"></i> Emergency Contact
+                <!-- Emergency Contact -->
+                <div class="info-card">
+                    <div class="info-card-header">
+                        <i class="fas fa-heartbeat" style="color: #ef4444;"></i> Emergency Contact
+                    </div>
+                    <div class="info-list">
+                        <div class="info-item">
+                            <span class="info-label">Contact Name</span>
+                            <span class="info-value">{{ employee.emergency_contact_name|default:"--" }}</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Relationship</span>
+                            <span class="info-value">{{ employee.emergency_contact_relationship|default:"--" }}</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Contact Number</span>
+                            <span class="info-value">
+                                {% if employee.emergency_contact_number %}
+                                <a href="tel:{{ employee.emergency_contact_number }}"
+                                    style="color: #2563eb; text-decoration: none;">
+                                    {{ employee.emergency_contact_number }}
+                                </a>
+                                {% else %}
+                                --
+                                {% endif %}
+                            </span>
+                        </div>
+                    </div>
                 </div>
-                <div class="info-list">
-                    <div class="info-item">
-                        <span class="info-label">Contact Name</span>
-                        <span class="info-value">{{ employee.emergency_contact_name|default:"--" }}</span>
-                    </div>
-                    <div class="info-item">
-                        <span class="info-label">Relationship</span>
-                        <span class="info-value">{{ employee.emergency_contact_relationship|default:"--" }}</span>
-                    </div>
-                    <div class="info-item">
-                        <span class="info-label">Contact Number</span>
-                        <span class="info-value">
-                            {% if employee.emergency_contact_number %}
-                            <a href="tel:{{ employee.emergency_contact_number }}" style="color: #2563eb; text-decoration: none;">
-                                {{ employee.emergency_contact_number }}
-                            </a>
-                            {% else %}
-                            --
-                            {% endif %}
-                        </span>
-                    </div>
-                </div>
-            </div>
 
-            <!-- Documents -->
-            <div class="info-card">
-                <div class="info-card-header">
-                    <i class="fas fa-file-alt" style="color: var(--primary-blue);"></i> Documents
-                </div>
-                <div class="info-list">
-                    {% if employee.resume or employee.offer_letter or employee.aadhaar_card or employee.pan_card or employee.appointment_letter %}
+                <!-- Documents -->
+                <div class="info-card">
+                    <div class="info-card-header">
+                        <i class="fas fa-file-alt" style="color: var(--primary-blue);"></i> Documents
+                    </div>
+                    <div class="info-list">
+                        {% if employee.resume or employee.offer_letter or employee.aadhaar_card or employee.pan_card or employee.appointment_letter %}
                         {% if employee.resume %}
                         <div class="info-item">
                             <span class="info-label">Resume / CV</span>
@@ -406,7 +411,7 @@
                             </a>
                         </div>
                         {% endif %}
-                        
+
                         {% if employee.offer_letter %}
                         <div class="info-item">
                             <span class="info-label">Offer Letter</span>
@@ -415,7 +420,7 @@
                             </a>
                         </div>
                         {% endif %}
-                        
+
                         {% if employee.appointment_letter %}
                         <div class="info-item">
                             <span class="info-label">Appointment Letter</span>
@@ -442,123 +447,218 @@
                             </a>
                         </div>
                         {% endif %}
-                    {% else %}
+                        {% else %}
                         <div style="text-align: center; padding: 20px; color: var(--text-secondary);">
-                            <i class="fas fa-folder-open" style="font-size: 24px; opacity: 0.5; margin-bottom: 8px;"></i>
+                            <i class="fas fa-folder-open"
+                                style="font-size: 24px; opacity: 0.5; margin-bottom: 8px;"></i>
                             <p>No documents uploaded yet</p>
                         </div>
-                    {% endif %}
-                </div>
-            </div>
-
-        </div> <!-- End of pdf-content-area -->
-
-        <!-- Hidden Professional PDF Template -->
-        <div id="professional-pdf-template" style="display: none;">
-            <div style="padding: 40px; font-family: 'Plus Jakarta Sans', sans-serif; color: #1e293b; background: white;">
-                <!-- PDF Header -->
-                <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #2563eb; padding-bottom: 20px; margin-bottom: 30px;">
-                    <div>
-                        <h1 style="margin: 0; color: #2563eb; font-size: 28px; font-weight: 800;">EMPLOYEE PROFILE</h1>
-                        <p style="margin: 5px 0 0 0; color: #64748b; font-size: 14px;">GlassEntials HR Management System</p>
-                    </div>
-                    <div style="text-align: right;">
-                        <p style="margin: 0; font-weight: 700; font-size: 14px;">Date Generated</p>
-                        <p style="margin: 2px 0 0 0; color: #64748b; font-size: 12px;">{% now "F j, Y" %}</p>
-                    </div>
-                </div>
-
-                <!-- Basic Profile Section -->
-                <div style="display: flex; gap: 30px; margin-bottom: 40px;">
-                    <div style="width: 140px; height: 140px; border-radius: 12px; background: #f1f5f9; display: flex; align-items: center; justify-content: center; overflow: hidden;">
-                        {% if employee.profile_img %}
-                            <img src="{{ employee.profile_img.url }}" style="width: 100%; height: 100%; object-fit: cover;">
-                        {% else %}
-                            <span style="font-size: 48px; font-weight: 800; color: #2563eb;">{{ employee.first_name|slice:":1"|upper }}{{ employee.last_name|slice:":1"|upper }}</span>
                         {% endif %}
                     </div>
-                    <div style="flex: 1;">
-                        <h2 style="margin: 0 0 10px 0; font-size: 24px; color: #0f172a;">{{ employee.first_name }} {{ employee.last_name }}</h2>
-                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
-                            <p style="margin: 0; font-size: 13px;"><strong style="color: #64748b;">Employee ID:</strong> {{ employee.employee_id }}</p>
-                            <p style="margin: 0; font-size: 13px;"><strong style="color: #64748b;">Department:</strong> {{ employee.department.name|default:"--" }}</p>
-                            <p style="margin: 0; font-size: 13px;"><strong style="color: #64748b;">Designation:</strong> {{ employee.designation.name|default:"--" }}</p>
-                            <p style="margin: 0; font-size: 13px;"><strong style="color: #64748b;">Status:</strong> {% if employee.is_active %}Active{% else %}Inactive{% endif %}</p>
-                            <p style="margin: 0; font-size: 13px;"><strong style="color: #64748b;">Email:</strong> {{ employee.email }}</p>
-                            <p style="margin: 0; font-size: 13px;"><strong style="color: #64748b;">Phone:</strong> {{ employee.phone_number }}</p>
+                </div>
+
+            </div> <!-- End of pdf-content-area -->
+
+            <!-- Hidden Professional PDF Template -->
+            <div id="professional-pdf-template" style="display: none;">
+                <div
+                    style="padding: 40px; font-family: 'Plus Jakarta Sans', sans-serif; color: #1e293b; background: white;">
+                    <!-- PDF Header -->
+                    <div
+                        style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #2563eb; padding-bottom: 20px; margin-bottom: 30px;">
+                        <div>
+                            <h1 style="margin: 0; color: #2563eb; font-size: 28px; font-weight: 800;">EMPLOYEE PROFILE
+                            </h1>
+                            <p style="margin: 5px 0 0 0; color: #64748b; font-size: 14px;">GlassEntials HR Management
+                                System</p>
+                        </div>
+                        <div style="text-align: right;">
+                            <p style="margin: 0; font-weight: 700; font-size: 14px;">Date Generated</p>
+                            <p style="margin: 2px 0 0 0; color: #64748b; font-size: 12px;">{% now "F j, Y" %}</p>
                         </div>
                     </div>
-                </div>
 
-                <!-- Detailed Information Grid -->
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px;">
-                    <!-- Employment Details -->
-                    <div style="border: 1px solid #e2e8f0; border-radius: 8px; padding: 15px;">
-                        <h3 style="margin: 0 0 12px 0; font-size: 14px; color: #2563eb; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid #f1f5f9; padding-bottom: 8px;">Employment Details</h3>
-                        <table style="width: 100%; font-size: 12px; border-collapse: collapse;">
-                            <tr style="border-bottom: 1px solid #f8fafc;"><td style="padding: 6px 0; color: #64748b; width: 40%;">Joining Date</td><td style="padding: 6px 0; font-weight: 600;">{{ employee.joining_date|default:"--" }}</td></tr>
-                            <tr style="border-bottom: 1px solid #f8fafc;"><td style="padding: 6px 0; color: #64748b;">Employment Type</td><td style="padding: 6px 0; font-weight: 600;">{{ employee.employment_type|default:"--" }}</td></tr>
-                            <tr style="border-bottom: 1px solid #f8fafc;"><td style="padding: 6px 0; color: #64748b;">Work Location</td><td style="padding: 6px 0; font-weight: 600;">{{ employee.work_location|default:"--" }}</td></tr>
-                            <tr><td style="padding: 6px 0; color: #64748b;">Manager</td><td style="padding: 6px 0; font-weight: 600;">{{ employee.manager.first_name }} {{ employee.manager.last_name|default:"--" }}</td></tr>
-                        </table>
-                    </div>
-
-                    <!-- Personal Details -->
-                    <div style="border: 1px solid #e2e8f0; border-radius: 8px; padding: 15px;">
-                        <h3 style="margin: 0 0 12px 0; font-size: 14px; color: #2563eb; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid #f1f5f9; padding-bottom: 8px;">Personal Details</h3>
-                        <table style="width: 100%; font-size: 12px; border-collapse: collapse;">
-                            <tr style="border-bottom: 1px solid #f8fafc;"><td style="padding: 6px 0; color: #64748b; width: 40%;">Date of Birth</td><td style="padding: 6px 0; font-weight: 600;">{{ employee.date_of_birth|default:"--" }}</td></tr>
-                            <tr style="border-bottom: 1px solid #f8fafc;"><td style="padding: 6px 0; color: #64748b;">Gender</td><td style="padding: 6px 0; font-weight: 600;">{{ employee.gender|default:"--" }}</td></tr>
-                            <tr style="border-bottom: 1px solid #f8fafc;"><td style="padding: 6px 0; color: #64748b;">Blood Group</td><td style="padding: 6px 0; font-weight: 600;">{{ employee.blood_group|default:"--" }}</td></tr>
-                            <tr><td style="padding: 6px 0; color: #64748b;">Nationality</td><td style="padding: 6px 0; font-weight: 600;">{{ employee.nationality|default:"--" }}</td></tr>
-                        </table>
-                    </div>
-
-                    <!-- Financial Information -->
-                    <div style="border: 1px solid #e2e8f0; border-radius: 8px; padding: 15px;">
-                        <h3 style="margin: 0 0 12px 0; font-size: 14px; color: #2563eb; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid #f1f5f9; padding-bottom: 8px;">Financial Details</h3>
-                        <table style="width: 100%; font-size: 12px; border-collapse: collapse;">
-                            <tr style="border-bottom: 1px solid #f8fafc;"><td style="padding: 6px 0; color: #64748b; width: 40%;">PAN Number</td><td style="padding: 6px 0; font-weight: 600;">{{ employee.pan_number|default:"--" }}</td></tr>
-                            <tr style="border-bottom: 1px solid #f8fafc;"><td style="padding: 6px 0; color: #64748b;">Aadhaar Number</td><td style="padding: 6px 0; font-weight: 600;">{{ employee.aadhaar_number|default:"--" }}</td></tr>
-                            <tr style="border-bottom: 1px solid #f8fafc;"><td style="padding: 6px 0; color: #64748b;">Bank Name</td><td style="padding: 6px 0; font-weight: 600;">{{ employee.bank_name|default:"--" }}</td></tr>
-                            <tr><td style="padding: 6px 0; color: #64748b;">Account No</td><td style="padding: 6px 0; font-weight: 600;">{{ employee.bank_account_number|default:"--" }}</td></tr>
-                        </table>
-                    </div>
-
-                    <!-- Emergency Contact -->
-                    <div style="border: 1px solid #e2e8f0; border-radius: 8px; padding: 15px;">
-                        <h3 style="margin: 0 0 12px 0; font-size: 14px; color: #ef4444; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid #f1f5f9; padding-bottom: 8px;">Emergency Contact</h3>
-                        <table style="width: 100%; font-size: 12px; border-collapse: collapse;">
-                            <tr style="border-bottom: 1px solid #f8fafc;"><td style="padding: 6px 0; color: #64748b; width: 40%;">Contact Name</td><td style="padding: 6px 0; font-weight: 600;">{{ employee.emergency_contact_name|default:"--" }}</td></tr>
-                            <tr style="border-bottom: 1px solid #f8fafc;"><td style="padding: 6px 0; color: #64748b;">Relationship</td><td style="padding: 6px 0; font-weight: 600;">{{ employee.emergency_contact_relationship|default:"--" }}</td></tr>
-                            <tr><td style="padding: 6px 0; color: #64748b;">Phone</td><td style="padding: 6px 0; font-weight: 600; color: #2563eb;">{{ employee.emergency_contact_number|default:"--" }}</td></tr>
-                        </table>
-                    </div>
-                </div>
-
-                <!-- Addresses -->
-                <div style="margin-top: 30px;">
-                    <div style="border: 1px solid #e2e8f0; border-radius: 8px; padding: 15px; margin-bottom: 20px;">
-                        <h3 style="margin: 0 0 10px 0; font-size: 14px; color: #2563eb; text-transform: uppercase; letter-spacing: 0.5px;">Residential Addresses</h3>
-                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 40px;">
-                            <div>
-                                <p style="margin: 0 0 5px 0; font-size: 12px; font-weight: 700; color: #64748b;">Current Address</p>
-                                <p style="margin: 0; font-size: 12px; line-height: 1.6;">{{ employee.current_address }}<br>{{ employee.current_city }}, {{ employee.current_state }} - {{ employee.current_pincode }}</p>
-                            </div>
-                            <div>
-                                <p style="margin: 0 0 5px 0; font-size: 12px; font-weight: 700; color: #64748b;">Permanent Address</p>
-                                <p style="margin: 0; font-size: 12px; line-height: 1.6;">{{ employee.permanent_address }}<br>{{ employee.permanent_city }}, {{ employee.permanent_state }} - {{ employee.permanent_pincode }}</p>
+                    <!-- Basic Profile Section -->
+                    <div style="display: flex; gap: 30px; margin-bottom: 40px;">
+                        <div
+                            style="width: 140px; height: 140px; border-radius: 12px; background: #f1f5f9; display: flex; align-items: center; justify-content: center; overflow: hidden;">
+                            {% if employee.profile_img %}
+                            <img src="{{ employee.profile_img.url }}"
+                                style="width: 100%; height: 100%; object-fit: cover;">
+                            {% else %}
+                            <span style="font-size: 48px; font-weight: 800; color: #2563eb;">{{
+                                employee.first_name|slice:":1"|upper }}{{ employee.last_name|slice:":1"|upper }}</span>
+                            {% endif %}
+                        </div>
+                        <div style="flex: 1;">
+                            <h2 style="margin: 0 0 10px 0; font-size: 24px; color: #0f172a;">{{ employee.first_name }}
+                                {{ employee.last_name }}</h2>
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                                <p style="margin: 0; font-size: 13px;"><strong style="color: #64748b;">Employee
+                                        ID:</strong> {{ employee.employee_id }}</p>
+                                <p style="margin: 0; font-size: 13px;"><strong
+                                        style="color: #64748b;">Department:</strong> {{
+                                    employee.department.name|default:"--" }}</p>
+                                <p style="margin: 0; font-size: 13px;"><strong
+                                        style="color: #64748b;">Designation:</strong> {{
+                                    employee.designation.name|default:"--" }}</p>
+                                <p style="margin: 0; font-size: 13px;"><strong style="color: #64748b;">Status:</strong>
+                                    {% if employee.is_active %}Active{% else %}Inactive{% endif %}</p>
+                                <p style="margin: 0; font-size: 13px;"><strong style="color: #64748b;">Email:</strong>
+                                    {{ employee.email }}</p>
+                                <p style="margin: 0; font-size: 13px;"><strong style="color: #64748b;">Phone:</strong>
+                                    {{ employee.phone_number }}</p>
                             </div>
                         </div>
                     </div>
-                </div>
 
-                <!-- PDF Footer -->
-                <div style="margin-top: 60px; border-top: 1px solid #e2e8f0; padding-top: 20px; text-align: center;">
-                    <p style="margin: 0; font-size: 10px; color: #94a3b8;">This is a computer-generated document from GlassEntials HRMS platform. Verified by HR Department.</p>
+                    <!-- Detailed Information Grid -->
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px;">
+                        <!-- Employment Details -->
+                        <div style="border: 1px solid #e2e8f0; border-radius: 8px; padding: 15px;">
+                            <h3
+                                style="margin: 0 0 12px 0; font-size: 14px; color: #2563eb; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid #f1f5f9; padding-bottom: 8px;">
+                                Employment Details</h3>
+                            <table style="width: 100%; font-size: 12px; border-collapse: collapse;">
+                                <tr style="border-bottom: 1px solid #f8fafc;">
+                                    <td style="padding: 6px 0; color: #64748b; width: 40%;">Joining Date</td>
+                                    <td style="padding: 6px 0; font-weight: 600;">{{ employee.joining_date|default:"--"
+                                        }}</td>
+                                </tr>
+                                <tr style="border-bottom: 1px solid #f8fafc;">
+                                    <td style="padding: 6px 0; color: #64748b;">Employment Type</td>
+                                    <td style="padding: 6px 0; font-weight: 600;">{{
+                                        employee.employment_type|default:"--" }}</td>
+                                </tr>
+                                <tr style="border-bottom: 1px solid #f8fafc;">
+                                    <td style="padding: 6px 0; color: #64748b;">Work Location</td>
+                                    <td style="padding: 6px 0; font-weight: 600;">{{ employee.work_location|default:"--"
+                                        }}</td>
+                                </tr>
+                                <tr>
+                                    <td style="padding: 6px 0; color: #64748b;">Manager</td>
+                                    <td style="padding: 6px 0; font-weight: 600;">{{ employee.manager.first_name }} {{
+                                        employee.manager.last_name|default:"--" }}</td>
+                                </tr>
+                            </table>
+                        </div>
+
+                        <!-- Personal Details -->
+                        <div style="border: 1px solid #e2e8f0; border-radius: 8px; padding: 15px;">
+                            <h3
+                                style="margin: 0 0 12px 0; font-size: 14px; color: #2563eb; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid #f1f5f9; padding-bottom: 8px;">
+                                Personal Details</h3>
+                            <table style="width: 100%; font-size: 12px; border-collapse: collapse;">
+                                <tr style="border-bottom: 1px solid #f8fafc;">
+                                    <td style="padding: 6px 0; color: #64748b; width: 40%;">Date of Birth</td>
+                                    <td style="padding: 6px 0; font-weight: 600;">{{ employee.date_of_birth|default:"--"
+                                        }}</td>
+                                </tr>
+                                <tr style="border-bottom: 1px solid #f8fafc;">
+                                    <td style="padding: 6px 0; color: #64748b;">Gender</td>
+                                    <td style="padding: 6px 0; font-weight: 600;">{{ employee.gender|default:"--" }}
+                                    </td>
+                                </tr>
+                                <tr style="border-bottom: 1px solid #f8fafc;">
+                                    <td style="padding: 6px 0; color: #64748b;">Blood Group</td>
+                                    <td style="padding: 6px 0; font-weight: 600;">{{ employee.blood_group|default:"--"
+                                        }}</td>
+                                </tr>
+                                <tr>
+                                    <td style="padding: 6px 0; color: #64748b;">Nationality</td>
+                                    <td style="padding: 6px 0; font-weight: 600;">{{ employee.nationality|default:"--"
+                                        }}</td>
+                                </tr>
+                            </table>
+                        </div>
+
+                        <!-- Financial Information -->
+                        <div style="border: 1px solid #e2e8f0; border-radius: 8px; padding: 15px;">
+                            <h3
+                                style="margin: 0 0 12px 0; font-size: 14px; color: #2563eb; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid #f1f5f9; padding-bottom: 8px;">
+                                Financial Details</h3>
+                            <table style="width: 100%; font-size: 12px; border-collapse: collapse;">
+                                <tr style="border-bottom: 1px solid #f8fafc;">
+                                    <td style="padding: 6px 0; color: #64748b; width: 40%;">PAN Number</td>
+                                    <td style="padding: 6px 0; font-weight: 600;">{{ employee.pan_number|default:"--" }}
+                                    </td>
+                                </tr>
+                                <tr style="border-bottom: 1px solid #f8fafc;">
+                                    <td style="padding: 6px 0; color: #64748b;">Aadhaar Number</td>
+                                    <td style="padding: 6px 0; font-weight: 600;">{{
+                                        employee.aadhaar_number|default:"--" }}</td>
+                                </tr>
+                                <tr style="border-bottom: 1px solid #f8fafc;">
+                                    <td style="padding: 6px 0; color: #64748b;">Bank Name</td>
+                                    <td style="padding: 6px 0; font-weight: 600;">{{ employee.bank_name|default:"--" }}
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td style="padding: 6px 0; color: #64748b;">Account No</td>
+                                    <td style="padding: 6px 0; font-weight: 600;">{{
+                                        employee.bank_account_number|default:"--" }}</td>
+                                </tr>
+                            </table>
+                        </div>
+
+                        <!-- Emergency Contact -->
+                        <div style="border: 1px solid #e2e8f0; border-radius: 8px; padding: 15px;">
+                            <h3
+                                style="margin: 0 0 12px 0; font-size: 14px; color: #ef4444; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid #f1f5f9; padding-bottom: 8px;">
+                                Emergency Contact</h3>
+                            <table style="width: 100%; font-size: 12px; border-collapse: collapse;">
+                                <tr style="border-bottom: 1px solid #f8fafc;">
+                                    <td style="padding: 6px 0; color: #64748b; width: 40%;">Contact Name</td>
+                                    <td style="padding: 6px 0; font-weight: 600;">{{
+                                        employee.emergency_contact_name|default:"--" }}</td>
+                                </tr>
+                                <tr style="border-bottom: 1px solid #f8fafc;">
+                                    <td style="padding: 6px 0; color: #64748b;">Relationship</td>
+                                    <td style="padding: 6px 0; font-weight: 600;">{{
+                                        employee.emergency_contact_relationship|default:"--" }}</td>
+                                </tr>
+                                <tr>
+                                    <td style="padding: 6px 0; color: #64748b;">Phone</td>
+                                    <td style="padding: 6px 0; font-weight: 600; color: #2563eb;">{{
+                                        employee.emergency_contact_number|default:"--" }}</td>
+                                </tr>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Addresses -->
+                    <div style="margin-top: 30px;">
+                        <div style="border: 1px solid #e2e8f0; border-radius: 8px; padding: 15px; margin-bottom: 20px;">
+                            <h3
+                                style="margin: 0 0 10px 0; font-size: 14px; color: #2563eb; text-transform: uppercase; letter-spacing: 0.5px;">
+                                Residential Addresses</h3>
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 40px;">
+                                <div>
+                                    <p style="margin: 0 0 5px 0; font-size: 12px; font-weight: 700; color: #64748b;">
+                                        Current Address</p>
+                                    <p style="margin: 0; font-size: 12px; line-height: 1.6;">{{ employee.current_address
+                                        }}<br>{{ employee.current_city }}, {{ employee.current_state }} - {{
+                                        employee.current_pincode }}</p>
+                                </div>
+                                <div>
+                                    <p style="margin: 0 0 5px 0; font-size: 12px; font-weight: 700; color: #64748b;">
+                                        Permanent Address</p>
+                                    <p style="margin: 0; font-size: 12px; line-height: 1.6;">{{
+                                        employee.permanent_address }}<br>{{ employee.permanent_city }}, {{
+                                        employee.permanent_state }} - {{ employee.permanent_pincode }}</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- PDF Footer -->
+                    <div
+                        style="margin-top: 60px; border-top: 1px solid #e2e8f0; padding-top: 20px; text-align: center;">
+                        <p style="margin: 0; font-size: 10px; color: #94a3b8;">This is a computer-generated document
+                            from GlassEntials HRMS platform. Verified by HR Department.</p>
+                    </div>
                 </div>
             </div>
-        </div>
 
     </main>
 
@@ -568,16 +668,16 @@
         function downloadProfilePDF() {
             // Use the dedicated professional template instead of the live UI
             const element = document.getElementById('professional-pdf-template');
-            
+
             // Show it temporarily for capture
             element.style.display = 'block';
-            
+
             const opt = {
-                margin:       [0, 0, 0, 0],
-                filename:     '{{ employee.first_name }}_{{ employee.last_name }}_Official_Profile.pdf',
-                image:        { type: 'jpeg', quality: 1 },
-                html2canvas:  { scale: 3, useCORS: true, letterRendering: true },
-                jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+                margin: [0, 0, 0, 0],
+                filename: '{{ employee.first_name }}_{{ employee.last_name }}_Official_Profile.pdf',
+                image: { type: 'jpeg', quality: 1 },
+                html2canvas: { scale: 3, useCORS: true, letterRendering: true },
+                jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
             };
 
             // Generate and save
@@ -591,4 +691,3 @@
 </body>
 
 </html>
-

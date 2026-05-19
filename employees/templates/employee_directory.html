@@ -1,0 +1,280 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Employee Directory | GlassEntials HRMS</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Manrope:wght@600;700;800&display=swap">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link rel="stylesheet" href="{% static 'css/landing.css' %}?v=3.0">
+    <link rel="stylesheet" href="{% static 'css/home.css' %}?v=3.0">
+    <link rel="stylesheet" href="{% static 'css/dashboard.css' %}?v=3.0">
+    
+    <style>
+        /* ── PREMIUM DIRECTORY STYLES ── */
+        .directory-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 24px;
+            margin-top: 24px;
+        }
+
+        .directory-card {
+            background: #ffffff;
+            border: 1px solid rgba(226, 232, 240, 0.8);
+            border-radius: 16px;
+            padding: 24px;
+            text-align: center;
+            position: relative;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+        }
+
+        .directory-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 80px;
+            background: linear-gradient(135deg, rgba(37, 99, 235, 0.05) 0%, rgba(139, 92, 246, 0.05) 100%);
+            border-bottom: 1px solid rgba(226, 232, 240, 0.4);
+            z-index: 1;
+        }
+
+        .directory-card:hover {
+            transform: translateY(-6px);
+            border-color: rgba(37, 99, 235, 0.3);
+            box-shadow: 0 20px 25px -5px rgba(37, 99, 235, 0.08), 0 10px 10px -5px rgba(37, 99, 235, 0.03);
+        }
+
+        .directory-avatar {
+            width: 88px;
+            height: 88px;
+            border-radius: 24px;
+            background: #2563eb;
+            color: #ffffff;
+            font-size: 32px;
+            font-weight: 800;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            z-index: 2;
+            margin-top: 12px;
+            margin-bottom: 16px;
+            border: 4px solid #ffffff;
+            box-shadow: 0 8px 16px -2px rgba(0, 0, 0, 0.06);
+            overflow: hidden;
+        }
+
+        .directory-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .directory-name {
+            font-size: 16px;
+            font-weight: 700;
+            color: #0f172a;
+            margin-bottom: 4px;
+            font-family: 'Manrope', sans-serif;
+        }
+
+        .directory-title {
+            font-size: 13px;
+            font-weight: 600;
+            color: #2563eb;
+            margin-bottom: 2px;
+        }
+
+        .directory-dept {
+            font-size: 12px;
+            font-weight: 500;
+            color: #64748b;
+            margin-bottom: 16px;
+        }
+
+        .directory-divider {
+            width: 100%;
+            height: 1px;
+            background: #f1f5f9;
+            margin-bottom: 16px;
+        }
+
+        .directory-contact {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            font-size: 13px;
+            color: #475569;
+            text-align: left;
+        }
+
+        .contact-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #64748b;
+            text-decoration: none;
+            transition: color 0.2s ease;
+        }
+
+        .contact-item:hover {
+            color: #2563eb;
+        }
+
+        .contact-item i {
+            width: 16px;
+            color: #94a3b8;
+            font-size: 14px;
+        }
+
+        /* Filter Grid Layout */
+        .filter-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)) auto;
+            gap: 16px;
+            align-items: flex-end;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Subtle Background Orbs -->
+    <div class="orb orb-1" style="opacity: 0.02; top: -100px; left: -100px;"></div>
+    <div class="orb orb-2" style="opacity: 0.02; bottom: -100px; right: -100px;"></div>
+
+    <!-- Messages -->
+    {% include 'includes/_messages.html' %}
+
+    <!-- Header Navigation -->
+    {% include 'includes/navbar.html' %}
+
+    <main class="workspace" id="main-content-area">
+        <div class="page-header">
+            <div class="header-main-content">
+                <h1 id="directory-page-title">Employee Directory</h1>
+                <p id="directory-page-subtitle">Find and connect with colleagues across the organization</p>
+            </div>
+        </div>
+
+        <!-- Search & Filter Card -->
+        <div class="card" style="margin-top: 24px; padding: 20px;" id="filter-container-card">
+            <form method="GET" class="filter-grid" id="directory-filter-form">
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label class="form-label" for="search-input">Search Employee</label>
+                    <input type="text" name="search" id="search-input" class="form-input" placeholder="Name, email, designation..." value="{{ search_query }}">
+                </div>
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label class="form-label" for="dept-select">Department</label>
+                    <select name="department" id="dept-select" class="form-input">
+                        <option value="">All Departments</option>
+                        {% for dept in departments %}
+                        <option value="{{ dept.pk }}" {% if selected_dept == dept.pk|stringformat:"s" %}selected{% endif %}>{{ dept.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label class="form-label" for="desig-select">Designation</label>
+                    <select name="designation" id="desig-select" class="form-input">
+                        <option value="">All Designations</option>
+                        {% for desig in designations %}
+                        <option value="{{ desig.pk }}" {% if selected_desig == desig.pk|stringformat:"s" %}selected{% endif %}>{{ desig.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <button type="submit" class="btn-primary" style="height: 42px; padding: 0 24px;" id="filter-submit-btn">
+                    <i class="fas fa-filter"></i> Apply Filters
+                </button>
+            </form>
+        </div>
+
+        <!-- Directory Grid -->
+        <div class="directory-grid" id="directory-cards-grid">
+            {% for emp in page_obj %}
+            <div class="directory-card" id="employee-card-{{ emp.pk }}">
+                <div class="directory-avatar" id="employee-avatar-{{ emp.pk }}">
+                    {% if emp.profile_img %}
+                    <img src="{{ emp.profile_img.url }}" alt="{{ emp.first_name }}">
+                    {% else %}
+                    {{ emp.first_name|slice:":1"|upper }}
+                    {% endif %}
+                </div>
+                <div class="directory-name" id="employee-name-{{ emp.pk }}">{{ emp.first_name }} {{ emp.last_name }}</div>
+                <div class="directory-title" id="employee-title-{{ emp.pk }}">{{ emp.designation.name|default:"--" }}</div>
+                <div class="directory-dept" id="employee-dept-{{ emp.pk }}">{{ emp.department.name|default:"--" }}</div>
+                
+                <div class="directory-divider"></div>
+                
+                <div class="directory-contact" id="employee-contact-{{ emp.pk }}">
+                    <a href="mailto:{{ emp.email }}" class="contact-item" id="employee-email-{{ emp.pk }}">
+                        <i class="fas fa-envelope"></i>
+                        <span>{{ emp.email }}</span>
+                    </a>
+                    {% if emp.phone_number %}
+                    <a href="tel:{{ emp.phone_number }}" class="contact-item" id="employee-phone-{{ emp.pk }}">
+                        <i class="fas fa-phone"></i>
+                        <span>{{ emp.phone_number }}</span>
+                    </a>
+                    {% endif %}
+                    <div class="contact-item" id="employee-location-{{ emp.pk }}">
+                        <i class="fas fa-location-dot"></i>
+                        <span>{{ emp.work_location|default:"Office" }}</span>
+                    </div>
+                </div>
+            </div>
+            {% empty %}
+            <div style="grid-column: 1 / -1; text-align: center; padding: 80px 0;" class="card" id="empty-state-card">
+                <div style="color: var(--text-secondary);">
+                    <i class="fas fa-users-slash" style="font-size: 56px; opacity: 0.2; margin-bottom: 20px; display: block;"></i>
+                    <h3 style="font-size: 18px; margin-bottom: 8px;">No Colleagues Found</h3>
+                    <p style="font-size: 14px; color: #64748b;">No employees match your search query or filters.</p>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- Pagination Section -->
+        {% if page_obj.has_other_pages %}
+        <div class="card" style="margin-top: 30px; padding: 16px 24px; display: flex; justify-content: space-between; align-items: center;" id="pagination-controls">
+            <span style="font-size: 13px; color: #64748b;" id="pagination-info">
+                Showing {{ page_obj.start_index }} to {{ page_obj.end_index }} of {{ page_obj.paginator.count }} colleagues
+            </span>
+            <div style="display: flex; gap: 8px;" id="pagination-links">
+                {% if page_obj.has_previous %}
+                <a href="?page={{ page_obj.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if selected_dept %}&department={{ selected_dept }}{% endif %}{% if selected_desig %}&designation={{ selected_desig }}{% endif %}" class="btn-outline" style="padding: 6px 14px; font-size: 13px; border-radius: 10px;" id="btn-page-prev">
+                    <i class="fas fa-chevron-left"></i> Previous
+                </a>
+                {% endif %}
+
+                {% for num in page_obj.paginator.page_range %}
+                    {% if page_obj.number == num %}
+                    <span class="btn-primary" style="padding: 6px 14px; font-size: 13px; border-radius: 10px; cursor: default;" id="page-num-active">{{ num }}</span>
+                    {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                    <a href="?page={{ num }}{% if search_query %}&search={{ search_query }}{% endif %}{% if selected_dept %}&department={{ selected_dept }}{% endif %}{% if selected_desig %}&designation={{ selected_desig }}{% endif %}" class="btn-outline" style="padding: 6px 14px; font-size: 13px; border-radius: 10px;" id="btn-page-{{ num }}">{{ num }}</a>
+                    {% endif %}
+                {% endfor %}
+
+                {% if page_obj.has_next %}
+                <a href="?page={{ page_obj.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if selected_dept %}&department={{ selected_dept }}{% endif %}{% if selected_desig %}&designation={{ selected_desig }}{% endif %}" class="btn-outline" style="padding: 6px 14px; font-size: 13px; border-radius: 10px;" id="btn-page-next">
+                    Next <i class="fas fa-chevron-right"></i>
+                </a>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+    </main>
+</body>
+
+</html>

@@ -1,0 +1,92 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Employee Salary Management | GlassEntials</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Manrope:wght@600;700;800&display=swap">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link rel="stylesheet" href="{% static 'css/landing.css' %}?v=3.0">
+    <link rel="stylesheet" href="{% static 'css/home.css' %}?v=3.0">
+    <link rel="stylesheet" href="{% static 'css/dashboard.css' %}?v=3.0">
+</head>
+
+<body>
+    <!-- Flash Messages -->
+    {% include 'includes/_messages.html' %}
+
+    {% include 'includes/navbar.html' %}
+
+    <main class="workspace">
+        <div class="page-header">
+            <div class="header-main-content">
+                <h1>Employee Salaries</h1>
+                <p>Manage salary packages and payout structures across the organization</p>
+            </div>
+        </div>
+
+        <div class="card" style="padding: 0; margin-top: 30px; overflow: hidden;">
+            <table style="width: 100%; border-collapse: collapse;">
+                <thead>
+                    <tr style="text-align: left; background: rgba(0,0,0,0.02);">
+                        <th style="padding: 16px 24px;">Employee</th>
+                        <th style="padding: 16px 24px;">Department</th>
+                        <th style="padding: 16px 24px;">Monthly Gross</th>
+                        <th style="padding: 16px 24px;">Annual CTC</th>
+                        <th style="padding: 16px 24px;">Last Updated</th>
+                        <th style="padding: 16px 24px; text-align: right;">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for emp in employees %}
+                    <tr style="border-bottom: 1px solid rgba(0,0,0,0.05); transition: background 0.2s;" onmouseover="this.style.background='rgba(0,0,0,0.01)'" onmouseout="this.style.background='transparent'">
+                        <td style="padding: 16px 24px;">
+                            <div style="display: flex; align-items: center; gap: 12px;">
+                                <div style="width: 40px; height: 40px; border-radius: 50%; background: #e2e8f0; display: flex; align-items: center; justify-content: center; font-weight: 700; color: #64748b;">
+                                    {{ emp.first_name|slice:":1" }}{{ emp.last_name|slice:":1" }}
+                                </div>
+                                <div>
+                                    <div style="font-weight: 700; color: #1e293b;">{{ emp.first_name }} {{ emp.last_name }}</div>
+                                    <div style="font-size: 12px; color: #64748b;">ID: {{ emp.employee_id }}</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td style="padding: 16px 24px;">
+                            <div style="font-size: 14px;">{{ emp.department.name|default:"--" }}</div>
+                            <div style="font-size: 12px; color: #64748b;">{{ emp.designation.name|default:"--" }}</div>
+                        </td>
+                        <td style="padding: 16px 24px; font-weight: 600; color: #1e293b;">
+                            {% if emp.current_structure %}
+                                ₹{{ emp.current_structure.gross_salary }}
+                            {% else %}
+                                <span style="color: #ef4444; font-size: 12px;">Not Defined</span>
+                            {% endif %}
+                        </td>
+                        <td style="padding: 16px 24px; font-weight: 600; color: #2563eb;">
+                            {% if emp.current_structure %}
+                                ₹{{ emp.current_structure.ctc }}
+                            {% else %}
+                                --
+                            {% endif %}
+                        </td>
+                        <td style="padding: 16px 24px; font-size: 13px; color: #64748b;">
+                            {{ emp.current_structure.updated_at|date:"M d, Y"|default:"--" }}
+                        </td>
+                        <td style="padding: 16px 24px; text-align: right;">
+                            <a href="{% url 'manage_employee_salary' emp.id %}" class="btn-outline" style="padding: 8px 16px; font-size: 13px; text-decoration: none;">
+                                <i class="fas fa-edit"></i> Configure
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </main>
+</body>
+
+</html>

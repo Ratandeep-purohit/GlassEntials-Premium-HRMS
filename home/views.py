@@ -78,6 +78,29 @@ def home_view(request):
     
     filtered_holidays = [h for h in upcoming_holidays if h.date.weekday() != 6][:5] # 6 is Sunday
 
+    # Employee specific metrics
+    my_present_days = 0
+    my_pending_leaves = 0
+    my_approved_leaves = 0
+    
+    if current_employee:
+        first_day_of_month = today.replace(day=1)
+        my_present_days = Attendance.objects.filter(
+            employee=current_employee, 
+            date__gte=first_day_of_month,
+            clock_in__isnull=False
+        ).count()
+        
+        my_pending_leaves = LeaveRequest.objects.filter(
+            employee=current_employee,
+            status='PENDING'
+        ).count()
+        
+        my_approved_leaves = LeaveRequest.objects.filter(
+            employee=current_employee,
+            status='APPROVED'
+        ).count()
+
 
     context = {
         'user_count': user_count,
@@ -95,6 +118,9 @@ def home_view(request):
         'greeting': greeting,
         'upcoming_leaves': upcoming_leaves,
         'upcoming_holidays': filtered_holidays,
+        'my_present_days': my_present_days,
+        'my_pending_leaves': my_pending_leaves,
+        'my_approved_leaves': my_approved_leaves,
     }
 
     return render(request, 'home.html', context)

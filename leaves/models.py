@@ -115,15 +115,55 @@ class ApprovalWorkflow(BaseModel):
     """
     Supports multi-level approval chains (e.g., Manager -> Dept Head -> HR).
     """
+    STATUS_CHOICES = [
+        ('PENDING', 'Pending'),
+        ('APPROVED', 'Approved'),
+        ('REJECTED', 'Rejected'),
+        ('SKIPPED', 'Skipped'),
+    ]
+
     leave_request = models.ForeignKey(LeaveRequest, on_delete=models.CASCADE, related_name='workflow_steps')
-    approver = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    approver = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, null=True, blank=True)
+    approver_role = models.CharField(max_length=50, blank=True, null=True)
     sequence_order = models.PositiveIntegerField()
-    status = models.CharField(max_length=20, choices=[('PENDING', 'Pending'), ('APPROVED', 'Approved'), ('REJECTED', 'Rejected')], default='PENDING')
+    is_parallel = models.BooleanField(default=False)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='PENDING')
     action_date = models.DateTimeField(null=True, blank=True)
     comments = models.TextField(blank=True)
 
     class Meta:
         ordering = ['sequence_order']
+
+    def __str__(self):
+        return f"Step {self.sequence_order} for {self.leave_request.id} ({self.status})"
+
+class LeaveApprovalMatrix(BaseModel):
+    """
+    SaaS-ready template for approval chains.
+    Allows HR to define if a 'SICK LEAVE' in 'SALES' needs TL -> HR approval.
+    """
+    name = models.CharField(max_length=100)
+    leave_type = models.ForeignKey(LeaveType, on_delete=models.CASCADE, null=True, blank=True)
+    department = models.ForeignKey('employees.Department', on_delete=models.CASCADE, null=True, blank=True)
+    is_active = models.BooleanField(default=True)
+
+    def __str__(self):
+        return self.name
+
+class LeaveApprovalMatrixStep(BaseModel):
+    matrix = models.ForeignKey(LeaveApprovalMatrix, on_delete=models.CASCADE, related_name='steps')
+    order = models.PositiveIntegerField()
+    approver_role = models.CharField(max_length=50, choices=[
+        ('MANAGER', 'Direct Manager'),
+        ('DEPT_HEAD', 'Department Head'),
+        ('HR', 'HR Manager'),
+        ('ADMIN', 'Global Admin'),
+    ])
+    is_parallel = models.BooleanField(default=False, help_text="Anyone with this role can approve to move to next level")
+
+    class Meta:
+        ordering = ['order']
+
 
 class LeaveAccrualLog(BaseModel):
     """
@@ -139,7 +179,9 @@ class LeaveAccrualLog(BaseModel):
         ('ENCASHMENT', 'Leave Encashment'),
         ('COMP_OFF_CREDIT', 'Comp-off Credit'),
         ('LEAVE_CANCEL_CREDIT', 'Leave Cancellation Credit'),
+        ('LAPSED', 'Lapsed Leaves'),
     ])
+
 
     description = models.TextField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -180,3 +222,26 @@ class CompOffRequest(BaseModel):
 
     def __str__(self):
         return f"{self.employee.first_name} - Comp-off for {self.worked_date}"
+
+class RestrictedHolidayClaim(BaseModel):
+    """
+    Tracks which optional holidays an employee has chosen to take.
+    """
+    employee = models.ForeignKey(Employee, on_delete=models.CASCADE, related_name='rh_claims')
+    holiday = models.ForeignKey(Holiday, on_delete=models.CASCADE)
+    year = models.PositiveIntegerField()
+    claimed_at = models.DateTimeField(auto_now_add=True)
+    status = models.CharField(max_length=20, choices=(
+        ('PENDING', 'Pending Approval'),  
+        ('APPROVED', 'Approved'),
+        ('REJECTED', 'Rejected'),
+        ('CANCELLED', 'Cancelled'),
+    ), default='APPROVED') # Usually RH is auto-approved or pre-approved by policy
+
+    class Meta:
+        unique_together = ('employee', 'holiday')
+        ordering = ['holiday__date']
+
+    def __str__(self):
+        return f"{self.employee.first_name} - RH: {self.holiday.name}"
+

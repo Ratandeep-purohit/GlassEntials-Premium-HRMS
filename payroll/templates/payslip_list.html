@@ -1,0 +1,85 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Payslips - {{ payroll_run.get_month_display }} {{ payroll_run.year }} | GlassEntials</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Manrope:wght@600;700;800&display=swap">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link rel="stylesheet" href="{% static 'css/landing.css' %}?v=3.0">
+    <link rel="stylesheet" href="{% static 'css/home.css' %}?v=3.0">
+    <link rel="stylesheet" href="{% static 'css/dashboard.css' %}?v=3.0">
+</head>
+
+<body>
+    {% include 'includes/navbar.html' %}
+
+    <main class="workspace">
+        <div class="page-header flex-header">
+            <div class="header-main-content">
+                <a href="{% url 'payroll' %}" style="text-decoration: none; color: var(--accent-primary); font-size: 14px; font-weight: 600;">
+                    <i class="fas fa-arrow-left"></i> Back to Dashboard
+                </a>
+                <h1>Payslips: {{ payroll_run.get_month_display }} {{ payroll_run.year }}</h1>
+                <p>Status: <span style="font-weight: 700;">{{ payroll_run.get_status_display }}</span> | Total Employees: {{ payroll_run.total_employees }}</p>
+            </div>
+            <div class="header-actions">
+                <button class="btn-outline">
+                    <i class="fas fa-file-export"></i> Export All
+                </button>
+            </div>
+        </div>
+
+        <div class="card" style="margin-top: 30px; padding: 0;">
+            <table style="width: 100%; border-collapse: collapse;">
+                <thead>
+                    <tr style="text-align: left; background: rgba(0,0,0,0.02);">
+                        <th style="padding: 16px 24px;">Employee</th>
+                        <th style="padding: 16px 24px;">Paid Days</th>
+                        <th style="padding: 16px 24px;">Gross Earnings</th>
+                        <th style="padding: 16px 24px;">Net Salary</th>
+                        <th style="padding: 16px 24px; text-align: right;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for payslip in payslips %}
+                    <tr style="border-bottom: 1px solid rgba(0,0,0,0.05);">
+                        <td style="padding: 16px 24px;">
+                            <div style="display: flex; align-items: center; gap: 12px;">
+                                <div style="width: 40px; height: 40px; background: #f1f5f9; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; color: #64748b;">
+                                    {{ payslip.employee.first_name|first }}{{ payslip.employee.last_name|first }}
+                                </div>
+                                <div>
+                                    <div style="font-weight: 600;">{{ payslip.employee.first_name }} {{ payslip.employee.last_name }}</div>
+                                    <div style="font-size: 12px; color: #64748b;">ID: {{ payslip.employee.employee_id }}</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td style="padding: 16px 24px;">{{ payslip.paid_days }} / {{ payslip.total_working_days }}</td>
+                        <td style="padding: 16px 24px;">₹{{ payslip.gross_earnings }}</td>
+                        <td style="padding: 16px 24px; font-weight: 700; color: var(--accent-primary);">₹{{ payslip.net_salary }}</td>
+                        <td style="padding: 16px 24px;">
+                            <div style="display: flex; justify-content: flex-end;">
+                                <a href="{% url 'payslip_detail' payslip.id %}" class="btn-outline" style="padding: 6px 12px; font-size: 13px;">
+                                    <i class="fas fa-eye"></i> View Detail
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="5" style="padding: 40px; text-align: center; color: #64748b;">
+                            No payslips generated for this run yet.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </main>
+</body>
+</html>

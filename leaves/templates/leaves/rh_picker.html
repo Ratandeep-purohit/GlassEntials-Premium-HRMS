@@ -1,0 +1,190 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/leaves.css' %}?v=3.0">
+<style>
+    .rh-container {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+        gap: 24px;
+        margin-top: 32px;
+    }
+
+    .rh-card {
+        background: rgba(255, 255, 255, 0.7);
+        backdrop-filter: blur(12px);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        border-radius: 24px;
+        padding: 24px;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .rh-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 12px 40px rgba(0, 0, 0, 0.05);
+        border-color: var(--accent);
+    }
+
+    .rh-card.claimed {
+        border-color: #10b981;
+        background: rgba(16, 185, 129, 0.05);
+    }
+
+    .rh-date {
+        font-size: 14px;
+        font-weight: 800;
+        color: var(--accent);
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        margin-bottom: 8px;
+    }
+
+    .rh-name {
+        font-size: 18px;
+        font-weight: 800;
+        color: var(--text-main);
+        margin-bottom: 16px;
+    }
+
+    .rh-status-tag {
+        position: absolute;
+        top: 20px;
+        right: 20px;
+        padding: 4px 12px;
+        border-radius: 99px;
+        font-size: 10px;
+        font-weight: 800;
+        text-transform: uppercase;
+    }
+
+    .tag-claimed { background: #10b981; color: #fff; }
+    .tag-available { background: var(--accent-muted); color: var(--accent); }
+
+    .claim-btn {
+        width: 100%;
+        padding: 12px;
+        border-radius: 12px;
+        font-weight: 700;
+        font-size: 13px;
+        cursor: pointer;
+        transition: all 0.2s;
+        border: 1px solid transparent;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+    }
+
+    .btn-claim {
+        background: var(--accent);
+        color: #fff;
+    }
+
+    .btn-unclaim {
+        background: rgba(239, 68, 68, 0.1);
+        color: #ef4444;
+        border-color: rgba(239, 68, 68, 0.2);
+    }
+
+    .limit-banner {
+        background: linear-gradient(135deg, #2563eb, #7c3aed);
+        color: #fff;
+        padding: 32px;
+        border-radius: 24px;
+        margin-bottom: 40px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .limit-info h2 { font-size: 28px; font-weight: 900; margin: 0; }
+    .limit-info p { opacity: 0.9; margin: 8px 0 0; font-size: 15px; }
+
+    .limit-count {
+        background: rgba(255, 255, 255, 0.2);
+        padding: 20px 40px;
+        border-radius: 20px;
+        text-align: center;
+        backdrop-filter: blur(8px);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+    }
+
+    .count-val { font-size: 32px; font-weight: 900; display: block; }
+    .count-label { font-size: 11px; font-weight: 700; text-transform: uppercase; opacity: 0.8; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="workspace">
+    <div class="hero-banner" style="margin-bottom: 24px;">
+        <div class="hero-text">
+            <h1>Restricted Holidays</h1>
+            <p>Select and claim your optional holidays for the current year.</p>
+        </div>
+        <div class="header-actions">
+            <a href="{% url 'leaves:dashboard' %}" class="punch-btn" style="background: rgba(255,255,255,0.1); color: var(--text-main); border: 1px solid var(--border-light);">
+                <i class="fas fa-arrow-left"></i> Back to Dashboard
+            </a>
+        </div>
+    </div>
+
+    <div class="limit-banner">
+        <div class="limit-info">
+            <h2>Claim Your Optional Days</h2>
+            <p>According to company policy, you can select up to <strong>{{ rh_limit }}</strong> restricted holidays per year.</p>
+        </div>
+        <div style="display: flex; gap: 16px;">
+            <div class="limit-count">
+                <span class="count-val">{{ claims_count }}</span>
+                <span class="count-label">Claimed</span>
+            </div>
+            <div class="limit-count" style="background: rgba(255, 255, 255, 0.1);">
+                <span class="count-val">{{ remaining }}</span>
+                <span class="count-label">Remaining</span>
+            </div>
+        </div>
+    </div>
+
+    <h2 style="font-weight: 800; font-size: 20px; margin-bottom: 24px;">Available Optional Holidays (2026)</h2>
+
+    <div class="rh-container">
+        {% for holiday in optional_holidays %}
+        <div class="rh-card {% if holiday.id in claimed_holiday_ids %}claimed{% endif %}">
+            <div>
+                {% if holiday.id in claimed_holiday_ids %}
+                    <span class="rh-status-tag tag-claimed">Claimed</span>
+                {% else %}
+                    <span class="rh-status-tag tag-available">Available</span>
+                {% endif %}
+                <div class="rh-date">{{ holiday.date|date:"l, F d" }}</div>
+                <div class="rh-name">{{ holiday.name }}</div>
+            </div>
+            
+            <form method="POST" action="{% url 'leaves:claim_rh' holiday.id %}">
+                {% csrf_token %}
+                {% if holiday.id in claimed_holiday_ids %}
+                    <button type="submit" class="claim-btn btn-unclaim">
+                        <i class="fas fa-undo"></i> Cancel Claim
+                    </button>
+                {% else %}
+                    <button type="submit" class="claim-btn btn-claim" {% if remaining <= 0 %}disabled style="opacity: 0.5; cursor: not-allowed;"{% endif %}>
+                        <i class="fas fa-calendar-check"></i> 
+                        {% if remaining <= 0 %}Limit Reached{% else %}Claim Holiday{% endif %}
+                    </button>
+                {% endif %}
+            </form>
+        </div>
+        {% empty %}
+        <div style="grid-column: 1/-1; text-align: center; padding: 60px; color: var(--text-secondary);">
+            No optional holidays found for this year.
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}
