@@ -106,6 +106,30 @@
                 <a href="{% url 'admin_arrears' %}" class="dropdown-item">
                     <i class="fas fa-money-bill-transfer"></i> Arrears &amp; Adjustments
                 </a>
+                <a href="{% url 'admin_tax_review' %}" class="dropdown-item">
+                    <i class="fas fa-file-invoice-dollar"></i> Tax Declaration Review
+                </a>
+            </div>
+        </div>
+        <!-- Assets Dropdown -->
+        <div class="nav-item-dropdown">
+            <a href="#" class="nav-pill {% if request.resolver_match.app_name == 'assets' %}active{% endif %}">
+                <i class="fas fa-laptop"></i> Assets
+                <i class="fas fa-chevron-down"></i>
+            </a>
+            <div class="dropdown-content">
+                <a href="{% url 'assets:dashboard' %}" class="dropdown-item">
+                    <i class="fas fa-chart-pie"></i> Asset Dashboard
+                </a>
+                <a href="{% url 'assets:inventory' %}" class="dropdown-item">
+                    <i class="fas fa-boxes"></i> Inventory
+                </a>
+                <a href="{% url 'assets:manage_requests' %}" class="dropdown-item">
+                    <i class="fas fa-clipboard-list"></i> Requests
+                </a>
+                <a href="{% url 'assets:manage_categories' %}" class="dropdown-item">
+                    <i class="fas fa-tags"></i> Categories
+                </a>
             </div>
         </div>
         {% else %}
@@ -163,7 +187,7 @@
 
         <!-- Payroll Dropdown for Employee -->
         <div class="nav-item-dropdown">
-            <a href="#" class="nav-pill {% if request.resolver_match.url_name == 'my_payslips' or request.resolver_match.url_name == 'my_salary_structure' or request.resolver_match.url_name == 'my_loans' or request.resolver_match.url_name == 'my_arrears' %}active{% endif %}">
+            <a href="#" class="nav-pill {% if request.resolver_match.url_name == 'my_payslips' or request.resolver_match.url_name == 'my_salary_structure' or request.resolver_match.url_name == 'my_loans' or request.resolver_match.url_name == 'my_arrears' or request.resolver_match.url_name == 'my_tax_declarations' %}active{% endif %}">
                 <i class="fas fa-receipt"></i> Payroll
                 <i class="fas fa-chevron-down"></i>
             </a>
@@ -180,11 +204,28 @@
                 <a href="{% url 'my_arrears' %}" class="dropdown-item">
                     <i class="fas fa-money-bill-transfer"></i> My Arrears &amp; Adjustments
                 </a>
+                <a href="{% url 'my_tax_declarations' %}" class="dropdown-item">
+                    <i class="fas fa-file-invoice-dollar"></i> Tax Declarations
+                </a>
             </div>
         </div>
 
+        <!-- Assets Dropdown for Employee -->
+        <div class="nav-item-dropdown">
+            <a href="#" class="nav-pill {% if request.resolver_match.app_name == 'assets' %}active{% endif %}">
+                <i class="fas fa-laptop"></i> Assets
+                <i class="fas fa-chevron-down"></i>
+            </a>
+            <div class="dropdown-content">
+                <a href="{% url 'assets:my_assets' %}" class="dropdown-item">
+                    <i class="fas fa-laptop-house"></i> My Assets
+                </a>
+                <a href="{% url 'assets:request_asset' %}" class="dropdown-item">
+                    <i class="fas fa-plus-circle"></i> Request Asset
+                </a>
+            </div>
+        </div>
         {% endif %}
-        <a href="#" class="nav-pill"><i class="fas fa-briefcase"></i> More</a>
     </nav>
 
     <div class="header-right">

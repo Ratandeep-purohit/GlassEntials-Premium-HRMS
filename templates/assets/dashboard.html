@@ -1,0 +1,268 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Asset Dashboard | GlassEntials HRMS</title>
+    <meta name="description" content="Manage company assets, track assignments, and handle employee requests.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Manrope:wght@700;800&display=swap">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link rel="stylesheet" href="{% static 'css/landing.css' %}?v=3.0">
+    <link rel="stylesheet" href="{% static 'css/home.css' %}?v=3.0">
+    <link rel="stylesheet" href="{% static 'css/dashboard.css' %}?v=3.0">
+    <style>
+        .as-page { font-family: 'Inter', sans-serif; }
+        .as-bg { position: fixed; inset: 0; z-index: -1; background: #f0f4ff; overflow: hidden; }
+        .as-bg-blob { position: absolute; border-radius: 50%; filter: blur(100px); opacity: .4; }
+        .as-bg-blob-1 { width: 700px; height: 700px; background: radial-gradient(circle, #dbeafe, #ede9fe 50%, transparent 80%); top: -200px; left: -200px; animation: blobDrift 20s ease-in-out infinite alternate; }
+        .as-bg-blob-2 { width: 500px; height: 500px; background: radial-gradient(circle, #e0e7ff, transparent 70%); bottom: -100px; right: -100px; animation: blobDrift 26s ease-in-out infinite alternate-reverse; }
+        @keyframes blobDrift { 0% { transform: translate(0,0) scale(1); } 100% { transform: translate(60px,40px) scale(1.08); } }
+
+        .as-workspace { padding: 40px 4% 80px; max-width: 1540px; margin: 84px auto 0; }
+
+        .as-top { display: flex; align-items: flex-end; justify-content: space-between; gap: 24px; margin-bottom: 40px; }
+        .as-breadcrumb { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; color: #94a3b8; margin-bottom: 12px; }
+        .as-breadcrumb a { color: #94a3b8; text-decoration: none; transition: color .2s; }
+        .as-breadcrumb a:hover { color: #2563eb; }
+        .as-breadcrumb i { font-size: 10px; }
+        .as-breadcrumb span { color: #2563eb; font-weight: 700; }
+        .as-page-title { font-family: 'Manrope', sans-serif; font-size: 34px; font-weight: 800; color: #0f172a; letter-spacing: -1px; margin: 0 0 6px; line-height: 1.1; }
+        .as-page-sub { font-size: 15px; color: #64748b; font-weight: 500; margin: 0; }
+
+        .as-cta-btn { display: inline-flex; align-items: center; gap: 10px; padding: 14px 28px; border-radius: 14px; background: linear-gradient(135deg, #2563eb 0%, #7c3aed 100%); color: #fff; font-size: 15px; font-weight: 700; border: none; cursor: pointer; text-decoration: none; box-shadow: 0 8px 24px rgba(37,99,235,.30); transition: transform .25s cubic-bezier(.16,1,.3,1), box-shadow .25s; position: relative; overflow: hidden; white-space: nowrap; flex-shrink: 0; }
+        .as-cta-btn::after { content: ''; position: absolute; inset: 0; background: linear-gradient(135deg, rgba(255,255,255,.18), transparent 60%); opacity: 0; transition: opacity .25s; }
+        .as-cta-btn:hover { transform: translateY(-3px); box-shadow: 0 14px 32px rgba(37,99,235,.4); color: #fff; }
+        .as-cta-btn:hover::after { opacity: 1; }
+        .as-cta-btn .btn-icon { width: 28px; height: 28px; border-radius: 8px; background: rgba(255,255,255,.2); display: flex; align-items: center; justify-content: center; font-size: 13px; }
+        .as-ghost-btn { display: inline-flex; align-items: center; gap: 8px; padding: 12px 22px; border-radius: 12px; background: #fff; color: #0f172a; font-size: 14px; font-weight: 600; border: 1px solid #e2e8f0; cursor: pointer; text-decoration: none; transition: all .2s; box-shadow: 0 2px 6px rgba(0,0,0,.04); }
+        .as-ghost-btn:hover { border-color: #cbd5e1; box-shadow: 0 4px 12px rgba(0,0,0,.08); color: #0f172a; }
+
+        /* KPI Grid */
+        .as-kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 24px; margin-bottom: 36px; }
+        @media (max-width: 1100px) { .as-kpi-grid { grid-template-columns: repeat(2, 1fr); } }
+        .as-kpi-card { background: #fff; border-radius: 20px; border: 1px solid rgba(226,232,240,.9); padding: 28px; box-shadow: 0 2px 8px rgba(15,23,42,.04); transition: transform .3s cubic-bezier(.16,1,.3,1), box-shadow .3s; position: relative; overflow: hidden; }
+        .as-kpi-card::after { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 4px; border-radius: 20px 20px 0 0; background: linear-gradient(90deg, #2563eb, #7c3aed); transform: scaleX(0); transform-origin: left; transition: transform .4s cubic-bezier(.16,1,.3,1); }
+        .as-kpi-card:nth-child(2)::after { background: linear-gradient(90deg, #059669, #10b981); }
+        .as-kpi-card:nth-child(3)::after { background: linear-gradient(90deg, #0ea5e9, #06b6d4); }
+        .as-kpi-card:nth-child(4)::after { background: linear-gradient(90deg, #f59e0b, #ef4444); }
+        .as-kpi-card:hover::after { transform: scaleX(1); }
+        .as-kpi-card:hover { transform: translateY(-6px); box-shadow: 0 16px 40px rgba(15,23,42,.09); }
+        .as-kpi-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+        .as-kpi-label { font-size: 12px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 1px; }
+        .as-kpi-icon { width: 48px; height: 48px; border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 20px; color: #fff; background: linear-gradient(135deg, #2563eb, #7c3aed); box-shadow: 0 6px 16px rgba(37,99,235,.25); flex-shrink: 0; }
+        .as-kpi-card:nth-child(2) .as-kpi-icon { background: linear-gradient(135deg, #059669, #10b981); box-shadow: 0 6px 16px rgba(5,150,105,.25); }
+        .as-kpi-card:nth-child(3) .as-kpi-icon { background: linear-gradient(135deg, #0ea5e9, #06b6d4); box-shadow: 0 6px 16px rgba(14,165,233,.25); }
+        .as-kpi-card:nth-child(4) .as-kpi-icon { background: linear-gradient(135deg, #f59e0b, #ef4444); box-shadow: 0 6px 16px rgba(245,158,11,.25); }
+        .as-kpi-value { font-family: 'Manrope', sans-serif; font-size: 36px; font-weight: 800; color: #0f172a; line-height: 1; margin-bottom: 8px; letter-spacing: -1px; }
+        .as-kpi-desc { font-size: 13px; color: #94a3b8; font-weight: 500; }
+
+        /* Panels */
+        .as-grid-2 { display: grid; grid-template-columns: 3fr 2fr; gap: 24px; margin-top: 24px; }
+        @media (max-width: 1000px) { .as-grid-2 { grid-template-columns: 1fr; } }
+        .as-section { background: #fff; border-radius: 20px; border: 1px solid rgba(226,232,240,.9); box-shadow: 0 2px 8px rgba(15,23,42,.04); overflow: hidden; }
+        .as-section-head { display: flex; align-items: center; justify-content: space-between; padding: 24px 28px; border-bottom: 1px solid #f1f5f9; }
+        .as-section-title { display: flex; align-items: center; gap: 12px; font-family: 'Manrope', sans-serif; font-size: 17px; font-weight: 800; color: #0f172a; margin: 0; }
+        .as-section-icon { width: 38px; height: 38px; border-radius: 10px; background: #eff6ff; color: #2563eb; display: flex; align-items: center; justify-content: center; font-size: 15px; }
+        .as-view-all { font-size: 13px; font-weight: 600; color: #2563eb; text-decoration: none; transition: opacity .2s; }
+        .as-view-all:hover { opacity: .7; }
+
+        /* List */
+        .as-list { list-style: none; padding: 0; margin: 0; }
+        .as-list-item { display: flex; align-items: center; justify-content: space-between; padding: 18px 28px; border-bottom: 1px solid #f8fafc; transition: background .15s; }
+        .as-list-item:last-child { border-bottom: none; }
+        .as-list-item:hover { background: #fafbff; }
+        .as-item-left { display: flex; align-items: center; gap: 14px; }
+        .as-avatar { width: 42px; height: 42px; border-radius: 12px; background: linear-gradient(135deg, #eff6ff, #ede9fe); color: #4f46e5; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 14px; flex-shrink: 0; }
+        .as-item-title { font-size: 14px; font-weight: 600; color: #1e293b; margin: 0 0 3px; }
+        .as-item-sub { font-size: 12px; color: #94a3b8; margin: 0; }
+
+        /* Badges */
+        .as-badge { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 99px; font-size: 12px; font-weight: 700; letter-spacing: .3px; white-space: nowrap; }
+        .as-badge-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+        .as-badge-assigned { background: #dbeafe; color: #1d4ed8; }
+        .as-badge-assigned .as-badge-dot { background: #3b82f6; box-shadow: 0 0 5px #3b82f699; }
+        .as-badge-available { background: #dcfce7; color: #15803d; }
+        .as-badge-available .as-badge-dot { background: #22c55e; box-shadow: 0 0 5px #22c55e99; }
+        .as-badge-pending { background: #fef9c3; color: #a16207; }
+        .as-badge-pending .as-badge-dot { background: #eab308; }
+        .as-badge-maintenance { background: #ffedd5; color: #c2410c; }
+        .as-badge-maintenance .as-badge-dot { background: #f97316; }
+
+        /* Action btn inline */
+        .as-action-btn { display: inline-flex; align-items: center; gap: 6px; padding: 7px 14px; border-radius: 8px; font-size: 12px; font-weight: 700; background: #eff6ff; color: #2563eb; border: 1px solid #dbeafe; text-decoration: none; transition: all .2s; }
+        .as-action-btn:hover { background: #2563eb; color: #fff; border-color: #2563eb; }
+
+        /* Category grid */
+        .as-cat-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 16px; padding: 20px 28px; }
+        .as-cat-card { padding: 20px; border-radius: 14px; border: 1px solid #e2e8f0; display: flex; align-items: center; gap: 14px; background: #fafafa; transition: all .2s; }
+        .as-cat-card:hover { border-color: #bfdbfe; background: #eff6ff; transform: translateY(-2px); box-shadow: 0 4px 12px rgba(37,99,235,.08); }
+        .as-cat-icon { width: 44px; height: 44px; border-radius: 12px; background: linear-gradient(135deg, #2563eb, #7c3aed); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; }
+        .as-cat-name { font-weight: 700; color: #1e293b; font-size: 14px; margin: 0 0 2px; }
+        .as-cat-count { font-size: 12px; color: #94a3b8; }
+
+        /* Empty */
+        .as-empty { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 60px 40px; text-align: center; }
+        .as-empty-icon { width: 80px; height: 80px; background: linear-gradient(135deg, #eff6ff, #ede9fe); border-radius: 24px; display: flex; align-items: center; justify-content: center; font-size: 32px; color: #3b82f6; margin-bottom: 20px; box-shadow: 0 8px 24px rgba(37,99,235,.1); }
+        .as-empty h3 { font-family: 'Manrope', sans-serif; font-size: 18px; font-weight: 800; color: #0f172a; margin: 0 0 8px; }
+        .as-empty p { font-size: 14px; color: #64748b; margin: 0; }
+    </style>
+</head>
+<body class="as-page">
+    <div class="as-bg">
+        <div class="as-bg-blob as-bg-blob-1"></div>
+        <div class="as-bg-blob as-bg-blob-2"></div>
+    </div>
+    {% include 'includes/navbar.html' %}
+    {% include 'includes/_messages.html' %}
+
+    <div class="as-workspace">
+        <!-- Page Header -->
+        <div class="as-top">
+            <div>
+                <div class="as-breadcrumb">
+                    <a href="{% url 'home' %}"><i class="fas fa-home"></i> Home</a>
+                    <i class="fas fa-chevron-right"></i>
+                    <span>Asset Management</span>
+                </div>
+                <h1 class="as-page-title">Asset Dashboard</h1>
+                <p class="as-page-sub">Track company equipment, assignments, and employee requests.</p>
+            </div>
+            <div style="display: flex; gap: 12px; flex-shrink: 0;">
+                <a href="{% url 'assets:inventory' %}" class="as-ghost-btn"><i class="fas fa-boxes"></i> Inventory</a>
+                <a href="{% url 'assets:add_asset' %}" class="as-cta-btn">
+                    <span class="btn-icon"><i class="fas fa-plus"></i></span> New Asset
+                </a>
+            </div>
+        </div>
+
+        <!-- KPI Grid -->
+        <div class="as-kpi-grid">
+            <div class="as-kpi-card">
+                <div class="as-kpi-top">
+                    <div class="as-kpi-label">Total Assets</div>
+                    <div class="as-kpi-icon"><i class="fas fa-laptop"></i></div>
+                </div>
+                <div class="as-kpi-value">{{ total_assets }}</div>
+                <div class="as-kpi-desc">Across all categories</div>
+            </div>
+            <div class="as-kpi-card">
+                <div class="as-kpi-top">
+                    <div class="as-kpi-label">Available</div>
+                    <div class="as-kpi-icon"><i class="fas fa-check-circle"></i></div>
+                </div>
+                <div class="as-kpi-value">{{ available_assets }}</div>
+                <div class="as-kpi-desc">Ready for assignment</div>
+            </div>
+            <div class="as-kpi-card">
+                <div class="as-kpi-top">
+                    <div class="as-kpi-label">Assigned</div>
+                    <div class="as-kpi-icon"><i class="fas fa-user-check"></i></div>
+                </div>
+                <div class="as-kpi-value">{{ assigned_assets }}</div>
+                <div class="as-kpi-desc">Currently in use</div>
+            </div>
+            <div class="as-kpi-card">
+                <div class="as-kpi-top">
+                    <div class="as-kpi-label">Pending Requests</div>
+                    <div class="as-kpi-icon"><i class="fas fa-clipboard-list"></i></div>
+                </div>
+                <div class="as-kpi-value">{{ pending_requests|length }}</div>
+                <div class="as-kpi-desc">Awaiting action</div>
+            </div>
+        </div>
+
+        <!-- Categories Row -->
+        {% if categories %}
+        <div class="as-section" style="margin-bottom: 24px;">
+            <div class="as-section-head">
+                <h3 class="as-section-title">
+                    <span class="as-section-icon"><i class="fas fa-tags"></i></span>
+                    Asset Categories
+                </h3>
+                <a href="{% url 'assets:manage_categories' %}" class="as-view-all">Manage <i class="fas fa-arrow-right" style="font-size: 10px;"></i></a>
+            </div>
+            <div class="as-cat-grid">
+                {% for cat in categories %}
+                <div class="as-cat-card">
+                    <div class="as-cat-icon"><i class="fas {{ cat.icon }}"></i></div>
+                    <div>
+                        <p class="as-cat-name">{{ cat.name }}</p>
+                        <span class="as-cat-count">{{ cat.total }} total &bull; {{ cat.assigned }} assigned</span>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Recent Assignments + Pending Requests -->
+        <div class="as-grid-2">
+            <div class="as-section">
+                <div class="as-section-head">
+                    <h3 class="as-section-title">
+                        <span class="as-section-icon"><i class="fas fa-history"></i></span>
+                        Recent Assignments
+                    </h3>
+                    <a href="{% url 'assets:inventory' %}" class="as-view-all">View All <i class="fas fa-arrow-right" style="font-size: 10px;"></i></a>
+                </div>
+                <ul class="as-list">
+                    {% for assign in recent_assignments %}
+                    <li class="as-list-item">
+                        <div class="as-item-left">
+                            <div class="as-avatar">{{ assign.employee.first_name|slice:":1" }}{{ assign.employee.last_name|slice:":1" }}</div>
+                            <div>
+                                <p class="as-item-title">{{ assign.asset.name }}</p>
+                                <p class="as-item-sub"><i class="fas fa-tag" style="font-size: 10px;"></i> {{ assign.asset.asset_code }} &bull; {{ assign.employee.first_name }} {{ assign.employee.last_name }} &bull; {{ assign.assigned_date }}</p>
+                            </div>
+                        </div>
+                        <span class="as-badge as-badge-assigned"><span class="as-badge-dot"></span>Active</span>
+                    </li>
+                    {% empty %}
+                    <li>
+                        <div class="as-empty">
+                            <div class="as-empty-icon"><i class="fas fa-link-slash"></i></div>
+                            <h3>No Assignments Yet</h3>
+                            <p>Start assigning assets to employees from the Inventory.</p>
+                        </div>
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+
+            <div class="as-section">
+                <div class="as-section-head">
+                    <h3 class="as-section-title">
+                        <span class="as-section-icon" style="background: #fff9ec; color: #d97706;"><i class="fas fa-bell"></i></span>
+                        Action Required
+                    </h3>
+                    <a href="{% url 'assets:manage_requests' %}" class="as-view-all">View All <i class="fas fa-arrow-right" style="font-size: 10px;"></i></a>
+                </div>
+                <ul class="as-list">
+                    {% for req in pending_requests %}
+                    <li class="as-list-item">
+                        <div class="as-item-left">
+                            <div class="as-avatar" style="background: linear-gradient(135deg, #fff9ec, #fde68a); color: #b45309;">{{ req.employee.first_name|slice:":1" }}</div>
+                            <div>
+                                <p class="as-item-title">{{ req.employee.first_name }} requests a <strong>{{ req.category.name }}</strong></p>
+                                <p class="as-item-sub">Priority: {{ req.priority }}</p>
+                            </div>
+                        </div>
+                        <a href="{% url 'assets:manage_requests' %}" class="as-action-btn">Review</a>
+                    </li>
+                    {% empty %}
+                    <li>
+                        <div class="as-empty">
+                            <div class="as-empty-icon" style="background: linear-gradient(135deg, #f0fdf4, #dcfce7); color: #22c55e;"><i class="fas fa-check-double"></i></div>
+                            <h3>All Clear!</h3>
+                            <p>No pending requests at this time.</p>
+                        </div>
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

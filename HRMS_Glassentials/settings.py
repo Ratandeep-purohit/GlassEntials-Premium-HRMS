@@ -45,6 +45,7 @@ INSTALLED_APPS = [
     'payroll',
     'attendance',
     'leaves',
+    'assets',
 ]
 
 

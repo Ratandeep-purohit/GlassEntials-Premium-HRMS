@@ -21,4 +21,10 @@ urlpatterns = [
     path('admin-arrears/', views.admin_arrears, name='admin_arrears'),
     path('admin-arrears/cancel/<int:arrear_id>/', views.admin_cancel_arrear, name='admin_cancel_arrear'),
     path('my-arrears/', views.my_arrears, name='my_arrears'),
+    path('my-tax-declarations/', views.my_tax_declarations, name='my_tax_declarations'),
+    path('api/tax/preview/', views.api_tax_preview, name='api_tax_preview'),
+    path('admin-tax-review/', views.admin_tax_review, name='admin_tax_review'),
+    path('admin-tax-review/verify/<int:proof_id>/', views.admin_verify_proof, name='admin_verify_proof'),
+    path('admin-tax-review/lock/<int:profile_id>/', views.admin_lock_profile, name='admin_lock_profile'),
+    path('admin-tax-review/audit/<int:profile_id>/', views.admin_tax_audit_log, name='admin_tax_audit_log'),
 ]

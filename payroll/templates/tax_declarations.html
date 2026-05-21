@@ -1,0 +1,931 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tax & Investment Center | GlassEntials HRMS</title>
+<meta name="description" content="Manage your tax declarations, investment proofs, and live tax projections.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<!-- Global Core CSS -->
+<link rel="stylesheet" href="{% static 'css/landing.css' %}?v=3.0">
+<link rel="stylesheet" href="{% static 'css/home.css' %}?v=3.0">
+<link rel="stylesheet" href="{% static 'css/dashboard.css' %}?v=3.0">
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = {
+    prefix: 'tw-',
+    corePlugins: {
+      preflight: false,
+    }
+  }
+</script>
+<style>
+:root {
+  --font-sans: 'Plus Jakarta Sans', system-ui, sans-serif;
+  --font-mono: 'IBM Plex Mono', monospace;
+  --primary: #0f172a;
+  --primary-hover: #1e293b;
+  --accent: #2563eb;
+  --accent-light: #eff6ff;
+  --success: #10b981;
+  --success-light: #ecfdf5;
+  --warning: #f59e0b;
+  --warning-light: #fffbeb;
+  --danger: #ef4444;
+  --danger-light: #fef2f2;
+  --info: #8b5cf6;
+  --info-light: #f5f3ff;
+  --bg-gradient: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  --card-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.04), 0 1px 3px rgba(0, 0, 0, 0.02);
+  --hover-shadow: 0 20px 40px -15px rgba(37, 99, 235, 0.1), 0 1px 8px rgba(0, 0, 0, 0.04);
+}
+
+body {
+  background: var(--bg-gradient);
+  font-family: var(--font-sans);
+  color: #334155;
+  -webkit-font-smoothing: antialiased;
+}
+
+.workspace {
+  padding: 40px 24px;
+}
+
+.tax-container {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+/* HEADER STRIP */
+.loans-header-strip {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 32px;
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(12px);
+  padding: 24px 32px;
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  box-shadow: var(--card-shadow);
+  flex-wrap: wrap;
+  gap: 20px;
+}
+
+.header-meta h1 {
+  font-size: 26px;
+  font-weight: 800;
+  color: #0f172a;
+  letter-spacing: -0.75px;
+  margin: 0 0 4px;
+}
+
+.header-meta p {
+  font-size: 14px;
+  color: #64748b;
+  margin: 0;
+}
+
+.header-badges {
+  display: flex;
+  gap: 12px;
+}
+
+.premium-status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 8px 16px;
+  border-radius: 20px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.status-ctc { background: var(--info-light); color: var(--info); border: 1px solid rgba(139, 92, 246, 0.2); }
+.status-active-p { background: var(--success-light); color: var(--success); border: 1px solid rgba(16, 185, 129, 0.2); }
+.status-rejected-p { background: var(--danger-light); color: var(--danger); border: 1px solid rgba(239, 68, 68, 0.2); }
+.status-pending-p { background: var(--warning-light); color: var(--warning); border: 1px solid rgba(245, 158, 11, 0.2); }
+
+/* GRID LAYOUT */
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 32px;
+}
+@media(min-width: 1024px) {
+  .dashboard-grid { grid-template-columns: 2fr 1fr; }
+}
+
+/* CARDS */
+.loan-card-premium {
+  background: #fff;
+  border-radius: 24px;
+  border: 1px solid #e2e8f0;
+  box-shadow: var(--card-shadow);
+  margin-bottom: 32px;
+  overflow: hidden;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.loan-banner {
+  background: linear-gradient(90deg, #1e293b 0%, #0f172a 100%);
+  padding: 24px 32px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.loan-banner h3 {
+  color: #fff;
+  font-size: 18px;
+  font-weight: 700;
+  margin: 0;
+}
+.loan-banner i {
+  color: var(--accent);
+  font-size: 20px;
+}
+
+.card-body {
+  padding: 32px;
+}
+
+/* REGIME SELECTOR */
+.regime-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 20px;
+}
+@media(min-width: 640px) {
+  .regime-grid { grid-template-columns: 1fr 1fr; }
+}
+
+.regime-tile {
+  border: 2px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 24px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+  background: #f8fafc;
+}
+.regime-tile:hover {
+  border-color: #cbd5e1;
+  background: #fff;
+}
+.regime-tile.selected {
+  border-color: var(--accent);
+  background: var(--accent-light);
+}
+.regime-tile input[type="radio"] { display: none; }
+.regime-tile-icon { font-size: 24px; color: var(--accent); margin-bottom: 16px; }
+.regime-tile h4 { font-size: 16px; font-weight: 700; color: #0f172a; margin: 0 0 8px; }
+.regime-tile p { font-size: 13px; color: #64748b; margin: 0 0 16px; line-height: 1.5; }
+.regime-tile-amount { font-family: var(--font-mono); font-size: 24px; font-weight: 700; color: #0f172a; }
+.rec-badge {
+  position: absolute; top: 16px; right: 16px;
+  background: var(--accent); color: #fff; font-size: 10px; font-weight: 800; text-transform: uppercase; padding: 4px 10px; border-radius: 12px;
+}
+
+/* INPUTS */
+.premium-input-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 24px;
+}
+@media(min-width: 640px) {
+  .premium-input-grid { grid-template-columns: 1fr 1fr; }
+}
+.premium-input-group {
+  margin-bottom: 24px;
+}
+.premium-input-group label {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11.5px;
+  font-weight: 700;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.75px;
+  margin-bottom: 8px;
+}
+.premium-select, .premium-input {
+  width: 100%;
+  padding: 12px 16px;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 12px;
+  font-family: inherit;
+  font-size: 14px;
+  color: #0f172a;
+  background: #f8fafc;
+  transition: all 0.2s;
+  font-weight: 600;
+}
+.premium-select:focus, .premium-input:focus {
+  outline: none;
+  border-color: var(--accent);
+  background: #fff;
+  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.15);
+}
+.premium-input-icon-wrapper {
+  position: relative;
+}
+.premium-input-icon-wrapper i {
+  position: absolute; left: 16px; top: 50%; transform: translateY(-50%);
+  color: #94a3b8;
+}
+.premium-input-icon-wrapper .premium-input {
+  padding-left: 42px;
+}
+
+/* BUTTONS */
+.btn-trigger-request {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--accent);
+  color: #fff;
+  font-weight: 600;
+  font-size: 14px;
+  padding: 12px 24px;
+  border-radius: 12px;
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(37, 99, 235, 0.3);
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.btn-trigger-request:hover {
+  background: #1d4ed8;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(37, 99, 235, 0.4);
+}
+.btn-premium-secondary {
+  background: #fff;
+  border: 1.5px solid #e2e8f0;
+  color: #475569;
+  font-weight: 600;
+  padding: 12px 24px;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.btn-premium-secondary:hover {
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+}
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 16px;
+  margin-top: 32px;
+  padding-top: 24px;
+  border-top: 1px solid #f1f5f9;
+}
+
+/* UPLOAD ZONE */
+.upload-zone {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+  border: 2px dashed #cbd5e1;
+  border-radius: 16px;
+  background: #f8fafc;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-align: center;
+  margin-top: 16px;
+}
+.upload-zone:hover {
+  border-color: var(--accent);
+  background: #eff6ff;
+}
+.upload-zone i {
+  font-size: 32px;
+  color: #94a3b8;
+  margin-bottom: 12px;
+  transition: color 0.2s;
+}
+.upload-zone:hover i {
+  color: var(--accent);
+}
+.upload-zone h4 {
+  font-size: 15px;
+  font-weight: 700;
+  color: #334155;
+  margin: 0 0 4px;
+}
+.upload-zone p {
+  font-size: 12px;
+  color: #64748b;
+  margin: 0;
+}
+
+/* PROJECTION SIDEBAR */
+.sticky-sidebar {
+  position: sticky;
+  top: 40px;
+}
+.loan-metrics-strip-vertical {
+  display: flex;
+  flex-direction: column;
+}
+.metric-box-v {
+  padding: 16px 32px;
+  border-bottom: 1px solid #f1f5f9;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.metric-box-v:last-child {
+  border-bottom: none;
+}
+.metric-lbl {
+  font-size: 12px;
+  font-weight: 700;
+  color: #64748b;
+}
+.metric-val {
+  font-family: var(--font-mono);
+  font-size: 16px;
+  font-weight: 700;
+  color: #0f172a;
+}
+.metric-val.total { font-size: 20px; color: var(--accent); }
+.metric-val.deduct { color: var(--success); }
+.metric-val.tax { font-size: 32px; color: var(--primary); letter-spacing: -1px; }
+
+/* AI WIDGET */
+.msg-alert-info {
+  background: var(--info-light);
+  border: 1px solid rgba(139, 92, 246, 0.2);
+  padding: 20px;
+  border-radius: 16px;
+}
+.msg-alert-info h4 {
+  color: var(--info);
+  font-weight: 800;
+  font-size: 14px;
+  margin: 0 0 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.msg-alert-info p {
+  color: #4c1d95;
+  font-size: 13px;
+  margin: 0;
+  line-height: 1.5;
+}
+
+/* ALERTS */
+.msg-alert-success { background: var(--success-light); border: 1px solid rgba(16, 185, 129, 0.2); color: var(--success); }
+.msg-alert-danger { background: var(--danger-light); border: 1px solid rgba(239, 68, 68, 0.2); color: var(--danger); }
+.msg-alert-warning { background: var(--warning-light); border: 1px solid rgba(245, 158, 11, 0.2); color: var(--warning); padding: 16px; border-radius: 12px; font-size: 13px; font-weight: 600; margin-bottom: 24px; }
+
+/* FILE UPLOAD */
+.upload-zone {
+  border: 2px dashed #cbd5e1;
+  background: #f8fafc;
+  border-radius: 16px;
+  padding: 40px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.upload-zone:hover {
+  border-color: var(--accent);
+  background: var(--accent-light);
+}
+.upload-zone i { font-size: 32px; color: #94a3b8; margin-bottom: 16px; }
+.upload-zone h4 { font-size: 14px; font-weight: 700; color: #475569; margin: 0 0 4px; }
+.upload-zone p { font-size: 12px; color: #64748b; margin: 0; }
+
+/* TABLE */
+.premium-table-wrap {
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  overflow: hidden;
+  margin-top: 24px;
+}
+.premium-table { width: 100%; border-collapse: separate; border-spacing: 0; }
+.premium-table th { background: #f8fafc; padding: 16px 24px; font-size: 11.5px; font-weight: 700; color: #64748b; text-transform: uppercase; border-bottom: 1px solid #e2e8f0; text-align: left; }
+.premium-table td { padding: 16px 24px; font-size: 14px; color: #475569; border-bottom: 1px solid #f1f5f9; }
+
+/* LOADER */
+.loading-overlay {
+  position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+  background: rgba(255, 255, 255, 0.6);
+  backdrop-filter: blur(4px);
+  display: flex; justify-content: center; align-items: center;
+  z-index: 50; opacity: 0; pointer-events: none; transition: 0.3s;
+  border-radius: 24px;
+}
+.loading-overlay.active { opacity: 1; pointer-events: all; }
+.spinner {
+  width: 40px; height: 40px;
+  border: 4px solid #e2e8f0;
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+@keyframes spin { 100% { transform: rotate(360deg); } }
+
+</style>
+</head>
+<body>
+
+{% include 'includes/navbar.html' %}
+
+<main class="workspace">
+<div class="tax-container">
+
+  <!-- MESSAGES -->
+  {% if messages %}
+    {% for message in messages %}
+      <div class="{% if message.tags == 'success' %}msg-alert-success{% else %}msg-alert-danger{% endif %}" style="padding: 16px 24px; border-radius: 16px; margin-bottom: 24px; font-weight: 600; font-size: 14px; display: flex; align-items: center; gap: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.02);">
+        {% if message.tags == 'success' %}<i class="fas fa-circle-check" style="font-size: 16px;"></i>{% else %}<i class="fas fa-circle-xmark" style="font-size: 16px;"></i>{% endif %}
+        <span>{{ message }}</span>
+      </div>
+    {% endfor %}
+  {% endif %}
+
+  <!-- GORGEOUS HEADER STRIP -->
+  <div class="loans-header-strip">
+    <div class="header-meta">
+      <h1>Tax &amp; Investment Center</h1>
+      <p>Manage tax compliance, submit proofs, and project liability for FY {{ profile.financial_year.name }}</p>
+    </div>
+    <div class="header-badges">
+      <span class="premium-status-pill status-ctc">
+        <i class="fas fa-wallet"></i> CTC: ₹{{ profile.annual_ctc|floatformat:0 }}
+      </span>
+      <span class="premium-status-pill {% if is_locked %}status-rejected-p{% else %}status-active-p{% endif %}">
+        <i class="fas {% if is_locked %}fa-lock{% else %}fa-lock-open{% endif %}"></i>
+        {% if is_locked %}Cycle Locked{% else %}Submission Open{% endif %}
+      </span>
+      {% if cutoff_policy %}
+      <span class="premium-status-pill status-pending-p">
+        <i class="fas fa-calendar-xmark"></i> Cutoff: {{ cutoff_policy.cutoff_date|date:"M d, Y" }}
+      </span>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="dashboard-grid">
+    
+    <!-- LEFT: WIZARD & FORMS -->
+    <div>
+      <form id="taxDeclarationForm" action="{% url 'my_tax_declarations' %}" method="POST" style="position: relative;">
+        {% csrf_token %}
+        <input type="hidden" name="action_type" id="actionTypeField" value="save_draft">
+        <div class="loading-overlay" id="formLoadingOverlay"><div class="spinner"></div></div>
+
+        <!-- 1. REGIME SELECTION CARD -->
+        <div class="loan-card-premium">
+          <div class="loan-banner">
+            <i class="fas fa-scale-balanced"></i>
+            <h3>1. Tax Regime Selection</h3>
+          </div>
+          <div class="card-body">
+            <div class="regime-grid">
+              
+              <!-- New Regime Tile -->
+              <label class="regime-tile {% if profile.selected_regime.regime_type == 'NEW' %}selected{% endif %}" id="regimeCardNew">
+                <input type="radio" name="regime_type" value="NEW" {% if profile.selected_regime.regime_type == 'NEW' %}checked{% endif %} {% if is_locked %}disabled{% endif %}>
+                {% if recommended_regime == 'NEW' %}<div class="rec-badge"><i class="fas fa-star"></i> Recommended</div>{% endif %}
+                <div class="regime-tile-icon"><i class="fas fa-bolt"></i></div>
+                <h4>New Tax Regime</h4>
+                <p>Reduced slab rates but standard exemptions (HRA, 80C) are unavailable.</p>
+                <div class="regime-tile-amount" id="taxPreviewNew">₹{{ new_calc.total_tax_liability|floatformat:0 }}</div>
+              </label>
+
+              <!-- Old Regime Tile -->
+              <label class="regime-tile {% if profile.selected_regime.regime_type == 'OLD' %}selected{% endif %}" id="regimeCardOld">
+                <input type="radio" name="regime_type" value="OLD" {% if profile.selected_regime.regime_type == 'OLD' %}checked{% endif %} {% if is_locked %}disabled{% endif %}>
+                {% if recommended_regime == 'OLD' %}<div class="rec-badge"><i class="fas fa-star"></i> Recommended</div>{% endif %}
+                <div class="regime-tile-icon"><i class="fas fa-landmark"></i></div>
+                <h4>Old Tax Regime</h4>
+                <p>Standard slabs. Allows maximum deductions via 80C, 80D, and HRA.</p>
+                <div class="regime-tile-amount" id="taxPreviewOld">₹{{ old_calc.total_tax_liability|floatformat:0 }}</div>
+              </label>
+
+            </div>
+          </div>
+        </div>
+
+        <!-- 2. ACCOMMODATION PROFILE CARD -->
+        <div class="loan-card-premium">
+          <div class="loan-banner">
+            <i class="fas fa-house-user"></i>
+            <h3>2. Accommodation &amp; Base Details</h3>
+          </div>
+          <div class="card-body">
+            <div class="premium-input-grid">
+              
+              <div class="premium-input-group">
+                <label>Annual Rent Paid (₹)</label>
+                <div class="premium-input-icon-wrapper">
+                  <i class="fas fa-indian-rupee-sign"></i>
+                  <input type="number" name="rent_paid" id="rentPaidField" value="{{ profile.rent_paid|floatformat:0 }}" class="premium-input" placeholder="0" {% if is_locked %}disabled{% endif %}>
+                </div>
+              </div>
+              
+              <div class="premium-input-group">
+                <label>City Classification (HRA)</label>
+                <select name="city_type" id="cityTypeField" class="premium-select" {% if is_locked %}disabled{% endif %}>
+                  <option value="METRO" {% if profile.city_type == 'METRO' %}selected{% endif %}>Metro City (50% HRA limit)</option>
+                  <option value="NON_METRO" {% if profile.city_type == 'NON_METRO' %}selected{% endif %}>Non-Metro (40% HRA limit)</option>
+                </select>
+              </div>
+
+              <div class="premium-input-group" id="landlordPanWrapper" style="{% if profile.rent_paid <= 100000 %}display: none;{% endif %}">
+                <label style="color: var(--danger);">Landlord PAN (Required > ₹1L)</label>
+                <div class="premium-input-icon-wrapper">
+                  <i class="fas fa-id-card" style="color: var(--danger);"></i>
+                  <input type="text" name="landlord_pan" id="landlordPanField" value="{{ profile.landlord_pan|default:'' }}" class="premium-input" placeholder="ABCDE1234F" maxlength="10" {% if is_locked %}disabled{% endif %}>
+                </div>
+              </div>
+
+              <div class="premium-input-group">
+                <label>Other Income Sources (₹)</label>
+                <div class="premium-input-icon-wrapper">
+                  <i class="fas fa-chart-line"></i>
+                  <input type="number" name="other_income" id="otherIncomeField" value="{{ profile.other_income|floatformat:0 }}" class="premium-input" placeholder="0" {% if is_locked %}disabled{% endif %}>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </div>
+
+        <!-- 3. DEDUCTIONS CARD -->
+        <div class="loan-card-premium" id="deductionsFormGrid" style="{% if profile.selected_regime.regime_type == 'NEW' %}opacity: 0.5; pointer-events: none;{% endif %} transition: opacity 0.3s;">
+          <div class="loan-banner">
+            <i class="fas fa-shield-halved"></i>
+            <h3>3. Standard Deductions (Old Regime)</h3>
+          </div>
+          <div class="card-body">
+            
+            <div class="msg-alert-warning" id="deductionsWarning" style="{% if profile.selected_regime.regime_type == 'NEW' %}display: block;{% else %}display: none;{% endif %}">
+              <i class="fas fa-circle-info tw-mr-2"></i> These declarations are ignored under the New Regime.
+            </div>
+
+            <div class="premium-input-grid">
+              {% for decl in declarations %}
+                {% if decl.category.code != 'PREV_EMPLOYER' and decl.category.code != 'OTHER_INCOME' %}
+                  <div class="premium-input-group">
+                    <label>
+                      <span>{{ decl.category.name }}</span>
+                      {% if decl.category.max_limit %}<span>Max: ₹{{ decl.category.max_limit|floatformat:0 }}</span>{% endif %}
+                    </label>
+                    <div class="premium-input-icon-wrapper">
+                      <i class="fas fa-indian-rupee-sign"></i>
+                      <input type="number" name="declared_{{ decl.category.code }}" id="decl_{{ decl.category.code }}" value="{{ decl.declared_amount|floatformat:0 }}" class="premium-input decl-field" placeholder="0" {% if is_locked %}disabled{% endif %}>
+                    </div>
+                    <span style="font-size: 11px; color: #94a3b8; display: block; margin-top: 6px;">{{ decl.category.description }}</span>
+                  </div>
+                {% endif %}
+              {% endfor %}
+            </div>
+          </div>
+        </div>
+
+        <!-- FORM ACTIONS -->
+        {% if not is_locked %}
+        <div class="form-actions">
+          <button type="submit" onclick="document.getElementById('actionTypeField').value='save_draft'" class="btn-premium-secondary">
+            <i class="fas fa-bookmark tw-mr-2"></i> Save Draft
+          </button>
+          <button type="submit" onclick="document.getElementById('actionTypeField').value='submit'" class="btn-trigger-request">
+            <i class="fas fa-paper-plane tw-mr-2"></i> Submit Declarations
+          </button>
+        </div>
+        {% endif %}
+      </form>
+
+      <!-- 4. PROOF UPLOADS -->
+      <div class="loan-card-premium tw-mt-8">
+        <div class="loan-banner">
+          <i class="fas fa-cloud-arrow-up"></i>
+          <h3>4. Proof Submissions</h3>
+        </div>
+        <div class="card-body">
+          {% if is_locked %}
+            <div class="msg-alert-danger" style="padding: 16px; border-radius: 12px; font-size: 13px; font-weight: 600;">
+              <i class="fas fa-lock tw-mr-2"></i> Proof uploads disabled (cycle locked).
+            </div>
+          {% else %}
+            <form action="{% url 'my_tax_declarations' %}" method="POST" enctype="multipart/form-data">
+              {% csrf_token %}
+              <input type="hidden" name="action_type" value="upload_proof">
+              
+              <div class="premium-input-grid">
+                <div class="premium-input-group">
+                  <label>Investment Category</label>
+                  <select name="upload_category" class="premium-select" required>
+                    {% for decl in declarations %}
+                      {% if decl.category.is_proof_required %}
+                        <option value="{{ decl.category.code }}">{{ decl.category.name }}</option>
+                      {% endif %}
+                    {% endfor %}
+                  </select>
+                </div>
+                <div class="premium-input-group">
+                  <label>Claimed Amount (₹)</label>
+                  <div class="premium-input-icon-wrapper">
+                    <i class="fas fa-indian-rupee-sign"></i>
+                    <input type="number" name="claimed_amount" class="premium-input" required>
+                  </div>
+                </div>
+              </div>
+              
+              <label class="upload-zone" for="proofFileField">
+                <input type="file" name="proof_file" id="proofFileField" class="tw-hidden" required onchange="document.getElementById('fileNameSpan').innerText = this.files[0].name;">
+                <i class="fas fa-file-arrow-up"></i>
+                <h4 id="fileNameSpan">Drop document here or browse</h4>
+                <p>PDF, JPG, PNG (Max 5MB)</p>
+              </label>
+
+              <div class="tw-text-right tw-mt-6">
+                <button type="submit" class="btn-trigger-request"><i class="fas fa-upload tw-mr-2"></i> Upload Document</button>
+              </div>
+            </form>
+          {% endif %}
+
+          <!-- UPLOADED PROOFS TABLE -->
+          {% if proofs %}
+            <div class="premium-table-wrap">
+              <table class="premium-table">
+                <thead>
+                  <tr>
+                    <th>Category</th>
+                    <th>File</th>
+                    <th>Claimed Amount</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for proof in proofs %}
+                    <tr>
+                      <td style="font-weight: 600;">{{ proof.declaration.category.name }}</td>
+                      <td>
+                        <a href="{{ proof.file.url }}" target="_blank" style="color: var(--accent); text-decoration: none; font-weight: 600;">
+                          <i class="fas fa-link tw-mr-1"></i> View
+                        </a>
+                      </td>
+                      <td style="font-family: var(--font-mono); font-weight: 600;">₹{{ proof.amount_claimed|floatformat:0 }}</td>
+                      <td>
+                        <span class="timeline-badge 
+                          {% if proof.verification_status == 'VERIFIED' %}tb-deducted
+                          {% elif proof.verification_status == 'PENDING' %}tb-pending
+                          {% else %}tb-missed{% endif %}">
+                          {{ proof.get_verification_status_display }}
+                        </span>
+                      </td>
+                    </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT: PROJECTION SIDEBAR -->
+    <div>
+      <div class="sticky-sidebar">
+        
+        <div class="loan-card-premium">
+          <div class="loan-banner">
+            <i class="fas fa-chart-pie"></i>
+            <h3>Live Tax Projection</h3>
+          </div>
+          
+          <div style="padding: 40px 32px; text-align: center; border-bottom: 1px solid #f1f5f9;">
+            <div class="metric-lbl" style="margin-bottom: 12px;">ANNUAL TAX LIABILITY</div>
+            <div class="metric-val tax" id="calcAnnualTax">₹{{ calc_result.total_tax_liability|floatformat:0 }}</div>
+          </div>
+          
+          <div class="loan-metrics-strip-vertical">
+            <div class="metric-box-v">
+              <span class="metric-lbl">Monthly TDS Deducted</span>
+              <span class="metric-val" id="calcMonthlyTds">₹{{ calc_result.monthly_tds|floatformat:0 }}</span>
+            </div>
+            <div class="metric-box-v">
+              <span class="metric-lbl">Gross Income</span>
+              <span class="metric-val">₹<span id="calcGrossIncome">{{ calc_result.gross_income|floatformat:0 }}</span></span>
+            </div>
+            <div class="metric-box-v">
+              <span class="metric-lbl">Standard Deduction</span>
+              <span class="metric-val deduct">-₹<span id="calcStandardDeduction">{{ calc_result.standard_deduction|floatformat:0 }}</span></span>
+            </div>
+            <div class="metric-box-v">
+              <span class="metric-lbl">HRA Exemption</span>
+              <span class="metric-val deduct">-₹<span id="calcHraExemption">{{ calc_result.hra_exemption|floatformat:0 }}</span></span>
+            </div>
+            <div class="metric-box-v">
+              <span class="metric-lbl">Section 80 Deductions</span>
+              <span class="metric-val deduct">-₹<span id="calcTotalDeductions">{{ calc_result.total_deductions|floatformat:0 }}</span></span>
+            </div>
+            <div class="metric-box-v" style="background: #f8fafc;">
+              <span class="metric-lbl" style="color: #0f172a;">Net Taxable Base</span>
+              <span class="metric-val total">₹<span id="calcTaxableIncome">{{ calc_result.taxable_income|floatformat:0 }}</span></span>
+            </div>
+          </div>
+        </div>
+
+        <div class="msg-alert-info">
+          <h4><i class="fas fa-wand-magic-sparkles"></i> AI TDS Optimizer</h4>
+          <div id="optimizerInsights">
+            {% if recommended_regime == 'NEW' %}
+              <p>The <strong>New Tax Regime</strong> is mathematically optimal for your base salary structure.</p>
+            {% else %}
+              <p>You are on the <strong>Old Tax Regime</strong>. Maximize your 80C declarations to push your tax liability lower.</p>
+            {% endif %}
+          </div>
+        </div>
+        
+      </div>
+    </div>
+    
+  </div>
+</div>
+</main>
+
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    const regimeCardNew = document.getElementById("regimeCardNew");
+    const regimeCardOld = document.getElementById("regimeCardOld");
+    const regimeRadios = document.getElementsByName("regime_type");
+    
+    const rentInput = document.getElementById("rentPaidField");
+    const landlordPanWrapper = document.getElementById("landlordPanWrapper");
+    const landlordPanInput = document.getElementById("landlordPanField");
+    
+    const deductionsFormGrid = document.getElementById("deductionsFormGrid");
+    const deductionsWarning = document.getElementById("deductionsWarning");
+    const declFields = document.querySelectorAll(".decl-field");
+    
+    const calcAnnualTax = document.getElementById("calcAnnualTax");
+    const calcMonthlyTds = document.getElementById("calcMonthlyTds");
+    const calcGrossIncome = document.getElementById("calcGrossIncome");
+    const calcStandardDeduction = document.getElementById("calcStandardDeduction");
+    const calcHraExemption = document.getElementById("calcHraExemption");
+    const calcTotalDeductions = document.getElementById("calcTotalDeductions");
+    const calcTaxableIncome = document.getElementById("calcTaxableIncome");
+    const optimizerInsights = document.getElementById("optimizerInsights");
+    
+    const formLoadingOverlay = document.getElementById("formLoadingOverlay");
+    const taxPreviewNew = document.getElementById("taxPreviewNew");
+    const taxPreviewOld = document.getElementById("taxPreviewOld");
+    
+    // Landlord PAN logic
+    if (rentInput) {
+        rentInput.addEventListener("input", function() {
+            const rentVal = parseFloat(rentInput.value) || 0;
+            if (rentVal > 100000) {
+                landlordPanWrapper.style.display = "block";
+                landlordPanInput.setAttribute("required", "required");
+            } else {
+                landlordPanWrapper.style.display = "none";
+                landlordPanInput.removeAttribute("required");
+            }
+        });
+    }
+
+    // Regime toggle
+    regimeRadios.forEach(radio => {
+        radio.addEventListener("change", function() {
+            if (radio.value === "NEW") {
+                regimeCardNew.classList.add("selected");
+                regimeCardOld.classList.remove("selected");
+                if (deductionsFormGrid) {
+                    deductionsFormGrid.style.opacity = "0.5";
+                    deductionsFormGrid.style.pointerEvents = "none";
+                }
+                if (deductionsWarning) deductionsWarning.style.display = "block";
+            } else {
+                regimeCardNew.classList.remove("selected");
+                regimeCardOld.classList.add("selected");
+                if (deductionsFormGrid) {
+                    deductionsFormGrid.style.opacity = "1";
+                    deductionsFormGrid.style.pointerEvents = "all";
+                }
+                if (deductionsWarning) deductionsWarning.style.display = "none";
+            }
+            triggerRecalculation();
+        });
+    });
+
+    // Animation function
+    function animateValue(obj, start, end, duration) {
+        let startTimestamp = null;
+        const step = (timestamp) => {
+            if (!startTimestamp) startTimestamp = timestamp;
+            const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+            const easeOut = 1 - Math.pow(1 - progress, 3);
+            const currentVal = Math.floor(start + (end - start) * easeOut);
+            
+            if(obj.id === 'calcAnnualTax' || obj.id === 'calcMonthlyTds') {
+                 obj.innerText = '₹' + currentVal.toLocaleString('en-IN');
+            } else {
+                 obj.innerText = currentVal.toLocaleString('en-IN');
+            }
+            
+            if (progress < 1) {
+                window.requestAnimationFrame(step);
+            } else {
+                if(obj.id === 'calcAnnualTax' || obj.id === 'calcMonthlyTds') {
+                     obj.innerText = '₹' + end.toLocaleString('en-IN');
+                } else {
+                     obj.innerText = end.toLocaleString('en-IN');
+                }
+            }
+        };
+        window.requestAnimationFrame(step);
+    }
+    
+    function parseCurrency(element) {
+        if(!element) return 0;
+        return parseInt(element.innerText.replace(/[^0-9]/g, ''), 10) || 0;
+    }
+
+    // AJAX Trigger
+    const allInteractiveInputs = document.querySelectorAll("#taxDeclarationForm input, #taxDeclarationForm select");
+    let debounceTimer;
+
+    allInteractiveInputs.forEach(input => {
+        input.addEventListener("input", function() {
+            clearTimeout(debounceTimer);
+            debounceTimer = setTimeout(triggerRecalculation, 300);
+        });
+        input.addEventListener("change", triggerRecalculation);
+    });
+
+    function triggerRecalculation() {
+        const selectedRegime = document.querySelector('input[name="regime_type"]:checked').value;
+        const citySelect = document.getElementById("cityTypeField");
+        const otherIncomeInput = document.getElementById("otherIncomeField");
+        
+        let queryParams = new URLSearchParams({
+            regime_type: selectedRegime,
+            rent_paid: rentInput ? rentInput.value : 0,
+            city_type: citySelect ? citySelect.value : "NON_METRO",
+            other_income: otherIncomeInput ? otherIncomeInput.value : 0
+        });
+
+        declFields.forEach(field => {
+            const name = field.getAttribute("name").replace("declared_", "");
+            queryParams.append(`declared_${name}`, field.value || 0);
+        });
+
+        formLoadingOverlay.classList.add("active");
+
+        fetch(`/payroll/api/tax/preview/?${queryParams.toString()}`)
+            .then(res => res.json())
+            .then(data => {
+                formLoadingOverlay.classList.remove("active");
+                if (data.error) return;
+
+                const activeResult = selectedRegime === "NEW" ? data.new_regime : data.old_regime;
+                
+                // Animate Numbers
+                if (calcAnnualTax) animateValue(calcAnnualTax, parseCurrency(calcAnnualTax), activeResult.total_tax_liability, 600);
+                if (calcMonthlyTds) animateValue(calcMonthlyTds, parseCurrency(calcMonthlyTds), activeResult.monthly_tds, 600);
+                if (calcGrossIncome) animateValue(calcGrossIncome, parseCurrency(calcGrossIncome), activeResult.gross_income, 600);
+                if (calcStandardDeduction) animateValue(calcStandardDeduction, parseCurrency(calcStandardDeduction), activeResult.standard_deduction, 600);
+                if (calcHraExemption) animateValue(calcHraExemption, parseCurrency(calcHraExemption), activeResult.hra_exemption, 600);
+                if (calcTotalDeductions) animateValue(calcTotalDeductions, parseCurrency(calcTotalDeductions), activeResult.total_deductions, 600);
+                if (calcTaxableIncome) animateValue(calcTaxableIncome, parseCurrency(calcTaxableIncome), activeResult.taxable_income, 600);
+
+                if (taxPreviewNew) taxPreviewNew.innerText = `₹${data.new_regime.total_tax_liability.toLocaleString('en-IN')}`;
+                if (taxPreviewOld) taxPreviewOld.innerText = `₹${data.old_regime.total_tax_liability.toLocaleString('en-IN')}`;
+
+                if (optimizerInsights) {
+                    if (data.recommended_regime === activeResult.regime_type) {
+                        optimizerInsights.innerHTML = `
+                            <p>The <strong>${data.recommended_regime} Tax Regime</strong> is mathematically optimal for your base salary structure.</p>
+                        `;
+                    } else {
+                        const diff = Math.abs(data.new_regime.total_tax_liability - data.old_regime.total_tax_liability);
+                        optimizerInsights.innerHTML = `
+                            <p>💡 <strong>Optimization Alert:</strong> Switching to the <strong>${data.recommended_regime} Tax Regime</strong> could save you an estimated <strong>₹${diff.toLocaleString('en-IN')}</strong> per year!</p>
+                        `;
+                    }
+                }
+            })
+            .catch(err => {
+                formLoadingOverlay.classList.remove("active");
+                console.error(err);
+            });
+    }
+});
+</script>
+</body>
+</html>

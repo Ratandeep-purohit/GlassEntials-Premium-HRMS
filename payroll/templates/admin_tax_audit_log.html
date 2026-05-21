@@ -1,0 +1,403 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tax Audit History | GlassEntials Premium HRMS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<link rel="stylesheet" href="{% static 'css/landing.css' %}?v=3.0">
+<link rel="stylesheet" href="{% static 'css/home.css' %}?v=3.0">
+<link rel="stylesheet" href="{% static 'css/dashboard.css' %}?v=3.0">
+
+<style>
+    /* Premium Theme Variables - SaaS Enterprise look matching Employee Tax Portal */
+    :root {
+        --font-primary: 'Plus Jakarta Sans', sans-serif;
+        --font-mono: 'IBM Plex Mono', monospace;
+        
+        /* Bright Premium Light-Mode palette matching HRMS UI */
+        --bg-main: #f8fafc;
+        --bg-card: rgba(255, 255, 255, 0.75);
+        --bg-glass: rgba(255, 255, 255, 0.55);
+        --border-glass: rgba(0, 0, 0, 0.06);
+        --border-glass-hover: rgba(37, 99, 235, 0.15);
+        
+        --color-primary: #2563eb; /* Royal Blue */
+        --color-primary-glow: rgba(37, 99, 235, 0.08);
+        --color-secondary: #0891b2; /* Cyan/Teal */
+        --color-secondary-glow: rgba(8, 145, 178, 0.08);
+        
+        --color-success: #10b981; /* Emerald */
+        --color-warning: #f59e0b; /* Amber */
+        --color-danger: #ef4444; /* Rose */
+        
+        --text-main: #0f172a; /* Slate 900 */
+        --text-muted: #64748b; /* Slate 500 */
+        --text-inverse: #ffffff;
+        
+        --card-radius: 20px;
+        --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        --shadow-subtle: 0 10px 30px -10px rgba(0, 0, 0, 0.04), 0 1px 3px rgba(0, 0, 0, 0.02);
+        --shadow-soft: 0 20px 40px -15px rgba(37, 99, 235, 0.1), 0 1px 8px rgba(0, 0, 0, 0.04);
+    }
+
+    body {
+        background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%) !important;
+        background-attachment: fixed !important;
+        font-family: var(--font-primary) !important;
+        color: var(--text-main) !important;
+        margin: 0;
+        padding-bottom: 50px;
+    }
+
+    .premium-container {
+        max-width: 1000px;
+        margin: 0 auto;
+        padding: 110px 24px 20px 24px;
+    }
+
+    /* Glassmorphism Cards */
+    .glass-card {
+        background: var(--bg-card);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        border: 1px solid var(--border-glass);
+        border-radius: var(--card-radius);
+        padding: 30px;
+        transition: var(--transition-smooth);
+        box-shadow: var(--shadow-subtle);
+    }
+
+    /* Header Banner */
+    .premium-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 35px;
+        flex-wrap: wrap;
+        gap: 20px;
+    }
+
+    .back-link {
+        color: var(--color-primary);
+        text-decoration: none;
+        font-size: 0.85rem;
+        font-weight: 700;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        margin-bottom: 20px;
+        transition: var(--transition-smooth);
+    }
+
+    .back-link:hover {
+        color: var(--color-secondary);
+        transform: translateX(-2px);
+    }
+
+    .header-title h1 {
+        font-size: 2.2rem;
+        font-weight: 800;
+        background: linear-gradient(135deg, var(--text-main) 0%, var(--text-muted) 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        margin: 0 0 8px 0;
+        letter-spacing: -0.5px;
+    }
+
+    .header-title p {
+        color: var(--text-muted);
+        margin: 0;
+        font-size: 1rem;
+    }
+
+    /* Employee Card */
+    .employee-card {
+        background: rgba(255, 255, 255, 0.85);
+        border: 1px solid var(--border-glass);
+        border-radius: 16px;
+        padding: 20px;
+        margin-bottom: 40px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 15px;
+        box-shadow: var(--shadow-subtle);
+    }
+
+    .emp-meta {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+    }
+
+    .emp-avatar {
+        width: 48px;
+        height: 48px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-secondary) 100%);
+        color: #fff;
+        font-weight: 800;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.1rem;
+    }
+
+    .emp-name {
+        font-size: 1.15rem;
+        font-weight: 700;
+        color: var(--text-main);
+        display: block;
+    }
+
+    .emp-dept {
+        font-size: 0.8rem;
+        color: var(--text-muted);
+    }
+
+    /* Vertical Timeline */
+    .timeline-wrapper {
+        position: relative;
+        padding-left: 30px;
+        margin-top: 10px;
+    }
+
+    .timeline-wrapper::before {
+        content: '';
+        position: absolute;
+        top: 5px;
+        left: 9px;
+        width: 2px;
+        height: calc(100% - 20px);
+        background: rgba(0, 0, 0, 0.08);
+    }
+
+    .timeline-node {
+        position: relative;
+        margin-bottom: 40px;
+    }
+
+    .timeline-node:last-child {
+        margin-bottom: 0;
+    }
+
+    .timeline-marker {
+        position: absolute;
+        top: 6px;
+        left: -30px;
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        background: #ffffff;
+        border: 4px solid var(--color-primary);
+        box-shadow: 0 0 10px var(--color-primary-glow);
+        z-index: 2;
+        transition: var(--transition-smooth);
+    }
+
+    .timeline-node:hover .timeline-marker {
+        transform: scale(1.2);
+        border-color: var(--color-secondary);
+        box-shadow: 0 0 15px var(--color-secondary-glow);
+    }
+
+    .timeline-card {
+        background: rgba(255, 255, 255, 0.65);
+        border: 1px solid var(--border-glass);
+        border-radius: 16px;
+        padding: 24px;
+        transition: var(--transition-smooth);
+        box-shadow: var(--shadow-subtle);
+    }
+
+    .timeline-card:hover {
+        border-color: var(--border-glass-hover);
+        background: rgba(255, 255, 255, 0.95);
+        box-shadow: var(--shadow-soft);
+    }
+
+    .timeline-meta {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-bottom: 12px;
+        font-size: 0.8rem;
+    }
+
+    .meta-actor {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-weight: 700;
+        color: var(--text-main);
+    }
+
+    .meta-date {
+        color: var(--text-muted);
+        font-family: var(--font-mono);
+    }
+
+    .timeline-action {
+        font-size: 1.1rem;
+        font-weight: 800;
+        color: var(--text-main);
+        margin: 0 0 6px 0;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .timeline-cat-badge {
+        font-size: 0.65rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        padding: 4px 8px;
+        border-radius: 4px;
+        background: var(--color-secondary-glow);
+        color: var(--color-secondary);
+        border: 1px solid rgba(8, 145, 178, 0.2);
+    }
+
+    .value-diff-box {
+        display: grid;
+        grid-template-cols: 1fr;
+        gap: 15px;
+        background: rgba(0, 0, 0, 0.03);
+        border: 1px solid rgba(0, 0, 0, 0.04);
+        border-radius: 12px;
+        padding: 16px;
+        margin-top: 15px;
+    }
+
+    @media(min-width: 600px) {
+        .value-diff-box {
+            grid-template-cols: 1fr 1fr;
+        }
+    }
+
+    .val-block {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+    }
+
+    .val-lbl {
+        font-size: 0.65rem;
+        text-transform: uppercase;
+        font-weight: 800;
+        color: var(--text-muted);
+        letter-spacing: 0.5px;
+    }
+
+    .val-content {
+        font-family: var(--font-mono);
+        font-size: 0.9rem;
+        color: var(--text-main);
+        word-break: break-all;
+    }
+
+    .val-content.old {
+        color: var(--color-danger);
+    }
+
+    .val-content.new {
+        color: var(--color-success);
+    }
+
+</style>
+</head>
+<body>
+{% include 'includes/navbar.html' %}
+
+<main class="premium-container">
+
+    <a href="{% url 'admin_tax_review' %}" class="back-link">
+        <i class="fas fa-arrow-left"></i> Return to Tax Registers
+    </a>
+
+    <!-- HEADER -->
+    <div class="premium-header">
+        <div class="header-title">
+            <h1>Compliance Audit Trail</h1>
+            <p>Trace complete change history, regime decisions, and compliance proof approvals.</p>
+        </div>
+    </div>
+
+    <!-- EMPLOYEE INFO CARD -->
+    <div class="employee-card">
+        <div class="emp-meta">
+            <div class="emp-avatar">
+                {{ profile.employee.first_name|slice:":1" }}{{ profile.employee.last_name|slice:":1" }}
+            </div>
+            <div>
+                <span class="emp-name">{{ profile.employee.first_name }} {{ profile.employee.last_name }}</span>
+                <span class="emp-dept">{{ profile.employee.department.name|default:"General" }} · Employee ID: {{ profile.employee.employee_id }}</span>
+            </div>
+        </div>
+        <div style="text-align: right;">
+            <span class="emp-dept" style="display: block;">Financial Year</span>
+            <span style="font-weight: 800; color: var(--color-primary); font-size: 1.1rem; font-family: var(--font-mono);">FY {{ profile.financial_year.name }}</span>
+        </div>
+    </div>
+
+    <!-- TIMELINE LIST -->
+    <div class="glass-card">
+        {% if logs %}
+            <div class="timeline-wrapper">
+                {% for log in logs %}
+                    <div class="timeline-node">
+                        <div class="timeline-marker"></div>
+                        <div class="timeline-card">
+                            <div class="timeline-meta">
+                                <span class="meta-actor">
+                                    <i class="fas fa-user-shield" style="color: var(--color-primary);"></i>
+                                    Actor: {{ log.performed_by }}
+                                    {% if log.ip_address %}
+                                        <span style="font-size: 0.75rem; color: var(--text-muted); font-weight: normal;">(IP: {{ log.ip_address }})</span>
+                                    {% endif %}
+                                </span>
+                                <span class="meta-date">{{ log.created_at|date:"d M Y, h:i A" }}</span>
+                            </div>
+                            
+                            <h3 class="timeline-action">
+                                {{ log.action }}
+                                {% if log.declaration %}
+                                    <span class="timeline-cat-badge">{{ log.declaration.category.name }}</span>
+                                {% endif %}
+                            </h3>
+
+                            {% if log.old_value or log.new_value %}
+                                <div class="value-diff-box">
+                                    <div class="val-block">
+                                        <span class="val-lbl">Previous State</span>
+                                        <span class="val-content old">{{ log.old_value|default:"Empty" }}</span>
+                                    </div>
+                                    <div class="val-block">
+                                        <span class="val-lbl">Current State</span>
+                                        <span class="val-content new">{{ log.new_value|default:"Empty" }}</span>
+                                    </div>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div style="padding: 60px; text-align: center; color: var(--text-muted);">
+                <i class="fas fa-history" style="font-size: 40px; color: rgba(0, 0, 0, 0.05); margin-bottom: 16px; display: block;"></i>
+                No historical workflow logs registered for this profile yet.
+            </div>
+        {% endif %}
+    </div>
+
+</main>
+</body>
+</html>

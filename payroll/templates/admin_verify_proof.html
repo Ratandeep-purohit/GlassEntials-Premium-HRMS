@@ -1,0 +1,428 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Verify Compliance Proof | GlassEntials Premium HRMS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<link rel="stylesheet" href="{% static 'css/landing.css' %}?v=3.0">
+<link rel="stylesheet" href="{% static 'css/home.css' %}?v=3.0">
+<link rel="stylesheet" href="{% static 'css/dashboard.css' %}?v=3.0">
+
+<style>
+    /* Premium Theme Variables - SaaS Enterprise look matching Employee Tax Portal */
+    :root {
+        --font-primary: 'Plus Jakarta Sans', sans-serif;
+        --font-mono: 'IBM Plex Mono', monospace;
+        
+        /* Bright Premium Light-Mode palette matching HRMS UI */
+        --bg-main: #f8fafc;
+        --bg-card: rgba(255, 255, 255, 0.75);
+        --bg-glass: rgba(255, 255, 255, 0.55);
+        --border-glass: rgba(0, 0, 0, 0.06);
+        --border-glass-hover: rgba(37, 99, 235, 0.15);
+        
+        --color-primary: #2563eb; /* Royal Blue */
+        --color-primary-glow: rgba(37, 99, 235, 0.08);
+        --color-secondary: #0891b2; /* Cyan/Teal */
+        --color-secondary-glow: rgba(8, 145, 178, 0.08);
+        
+        --color-success: #10b981; /* Emerald */
+        --color-warning: #f59e0b; /* Amber */
+        --color-danger: #ef4444; /* Rose */
+        
+        --text-main: #0f172a; /* Slate 900 */
+        --text-muted: #64748b; /* Slate 500 */
+        --text-inverse: #ffffff;
+        
+        --card-radius: 20px;
+        --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        --shadow-subtle: 0 10px 30px -10px rgba(0, 0, 0, 0.04), 0 1px 3px rgba(0, 0, 0, 0.02);
+        --shadow-soft: 0 20px 40px -15px rgba(37, 99, 235, 0.1), 0 1px 8px rgba(0, 0, 0, 0.04);
+    }
+
+    body {
+        background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%) !important;
+        background-attachment: fixed !important;
+        font-family: var(--font-primary) !important;
+        color: var(--text-main) !important;
+        margin: 0;
+        height: 100vh;
+        overflow: hidden;
+    }
+
+    .split-layout {
+        display: grid;
+        grid-template-cols: 1fr;
+        height: calc(100vh - 75px);
+        margin-top: 75px;
+    }
+
+    @media(min-width: 1024px) {
+        .split-layout {
+            grid-template-cols: 1.2fr 1fr;
+        }
+    }
+
+    /* Left side document viewer pane */
+    .viewer-pane {
+        background: rgba(255, 255, 255, 0.4);
+        border-right: 1px solid var(--border-glass);
+        padding: 30px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+        height: 100%;
+        position: relative;
+    }
+
+    .viewer-wrapper {
+        width: 100%;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: var(--card-radius);
+        overflow: hidden;
+        background: rgba(255, 255, 255, 0.6);
+        border: 1px solid var(--border-glass);
+        padding: 10px;
+    }
+
+    /* Right side verification controls pane */
+    .controls-pane {
+        padding: 40px;
+        overflow-y: auto;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+    }
+
+    .pane-header {
+        margin-bottom: 30px;
+    }
+
+    .back-link {
+        color: var(--color-primary);
+        text-decoration: none;
+        font-size: 0.85rem;
+        font-weight: 700;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        margin-bottom: 20px;
+        transition: var(--transition-smooth);
+    }
+
+    .back-link:hover {
+        color: var(--color-secondary);
+        transform: translateX(-2px);
+    }
+
+    .pane-header h1 {
+        font-size: 1.8rem;
+        font-weight: 800;
+        color: var(--text-main);
+        margin: 0 0 8px 0;
+        letter-spacing: -0.5px;
+    }
+
+    .pane-header p {
+        color: var(--text-muted);
+        margin: 0;
+        font-size: 0.95rem;
+    }
+
+    .employee-card {
+        background: rgba(0, 0, 0, 0.02);
+        border: 1px solid var(--border-glass);
+        border-radius: 16px;
+        padding: 20px;
+        margin-bottom: 30px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .emp-meta-box {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+    }
+
+    .emp-name {
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: var(--text-main);
+    }
+
+    .emp-details {
+        font-size: 0.8rem;
+        color: var(--text-muted);
+    }
+
+    /* Form Styles */
+    .form-group {
+        margin-bottom: 24px;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .form-group label {
+        font-size: 0.85rem;
+        font-weight: 700;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .form-select, .form-input, .form-textarea {
+        width: 100%;
+        padding: 14px 18px;
+        background: rgba(255, 255, 255, 0.9);
+        border: 1px solid var(--border-glass);
+        border-radius: 12px;
+        font-family: var(--font-primary);
+        font-size: 0.95rem;
+        color: var(--text-main);
+        box-sizing: border-box;
+        transition: var(--transition-smooth);
+    }
+
+    .form-select:focus, .form-input:focus, .form-textarea:focus {
+        outline: none;
+        border-color: var(--color-primary);
+        box-shadow: 0 0 15px var(--color-primary-glow);
+        background: #ffffff;
+    }
+
+    .form-textarea {
+        resize: none;
+        height: 100px;
+    }
+
+    .decision-buttons {
+        display: grid;
+        grid-template-cols: 1fr 1fr;
+        gap: 15px;
+        margin-bottom: 24px;
+    }
+
+    .decision-btn {
+        padding: 16px;
+        border-radius: 12px;
+        font-weight: 700;
+        text-align: center;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        font-size: 0.95rem;
+        border: 2px solid var(--border-glass);
+        background: rgba(255, 255, 255, 0.7);
+        color: var(--text-muted);
+        transition: var(--transition-smooth);
+    }
+
+    .decision-btn input[type="radio"] {
+        display: none;
+    }
+
+    .decision-btn:hover {
+        border-color: var(--text-muted);
+        color: var(--text-main);
+    }
+
+    .decision-btn.verify-choice.selected {
+        border-color: var(--color-success);
+        background: rgba(16, 185, 129, 0.08);
+        color: var(--color-success);
+        box-shadow: 0 0 20px rgba(16, 185, 129, 0.15);
+    }
+
+    .decision-btn.reject-choice.selected {
+        border-color: var(--color-danger);
+        background: rgba(239, 68, 68, 0.08);
+        color: var(--color-danger);
+        box-shadow: 0 0 20px rgba(239, 68, 68, 0.15);
+    }
+
+    .btn-submit {
+        width: 100%;
+        padding: 16px;
+        background: linear-gradient(135deg, var(--color-primary) 0%, #1d4ed8 100%);
+        color: #fff;
+        border: none;
+        border-radius: 12px;
+        font-weight: 700;
+        font-size: 1rem;
+        cursor: pointer;
+        transition: var(--transition-smooth);
+        box-shadow: 0 4px 15px rgba(37, 99, 235, 0.3);
+        margin-top: 10px;
+    }
+
+    .btn-submit:hover {
+        opacity: 0.9;
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(37, 99, 235, 0.4);
+    }
+
+    .amount-badge-strip {
+        display: flex;
+        gap: 15px;
+        margin-bottom: 25px;
+        flex-wrap: wrap;
+    }
+
+    .amt-badge {
+        flex: 1;
+        min-width: 150px;
+        padding: 16px;
+        border-radius: 12px;
+        background: rgba(255, 255, 255, 0.7);
+        border: 1px solid var(--border-glass);
+    }
+
+    .amt-badge-lbl {
+        font-size: 0.7rem;
+        text-transform: uppercase;
+        color: var(--text-muted);
+        font-weight: 800;
+        letter-spacing: 0.5px;
+        margin-bottom: 4px;
+    }
+
+    .amt-badge-val {
+        font-size: 1.3rem;
+        font-family: var(--font-mono);
+        font-weight: 800;
+        color: var(--text-main);
+    }
+</style>
+</style>
+</head>
+<body>
+{% include 'includes/navbar.html' %}
+
+<div class="split-layout">
+    
+    <!-- LEFT PANEL: DOCUMENT VIEWER -->
+    <div class="viewer-pane">
+        <div class="viewer-wrapper">
+            {% if ".pdf" in proof.file.name|lower %}
+                <iframe src="{{ proof.file.url }}" width="100%" height="100%" style="border:none; border-radius: 12px;"></iframe>
+            {% else %}
+                <img src="{{ proof.file.url }}" alt="Proof Document" style="max-width: 100%; border-radius: 12px; max-height: 100%; object-fit: contain;">
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- RIGHT PANEL: VERIFICATION CONTROLS -->
+    <div class="controls-pane">
+        <div>
+            <div class="pane-header">
+                <a href="{% url 'admin_tax_review' %}" class="back-link">
+                    <i class="fas fa-arrow-left"></i> Return to Queue
+                </a>
+                <h1>Verify Compliance Proof</h1>
+                <p>Validate employee upload vs Income Tax FY 24-25 limits and compliance parameters.</p>
+            </div>
+
+            <!-- Employee Info Header Card -->
+            <div class="employee-card">
+                <div class="emp-meta-box">
+                    <span class="emp-name">{{ profile.employee.first_name }} {{ profile.employee.last_name }}</span>
+                    <span class="emp-details">{{ profile.employee.department.name|default:"General" }} · ID: {{ profile.employee.employee_id }}</span>
+                </div>
+                <div style="text-align: right;">
+                    <span class="emp-details" style="display: block;">Category</span>
+                    <span style="font-weight: 800; color: var(--color-secondary); font-size: 0.9rem; text-transform: uppercase;">{{ decl.category.name }}</span>
+                </div>
+            </div>
+
+            <!-- Claim Stats -->
+            <div class="amount-badge-strip">
+                <div class="amt-badge">
+                    <div class="amt-badge-lbl">Max Allowed Limit</div>
+                    <div class="amt-badge-val">₹{{ decl.category.max_limit|default:"No Limit" }}</div>
+                </div>
+                <div class="amt-badge" style="border-color: rgba(6, 182, 212, 0.2);">
+                    <div class="amt-badge-lbl" style="color: var(--color-secondary);">Claimed Amount</div>
+                    <div class="amt-badge-val" style="color: var(--color-secondary);">₹{{ proof.amount_claimed }}</div>
+                </div>
+            </div>
+
+            <!-- FORM START -->
+            <form action="{% url 'admin_verify_proof' proof.id %}" method="POST">
+                {% csrf_token %}
+
+                <!-- Verification Action choice -->
+                <div class="form-group">
+                    <label>Verification Decision</label>
+                    <div class="decision-buttons">
+                        <label class="decision-btn verify-choice selected" id="verifyBtnLabel">
+                            <input type="radio" name="status" value="VERIFIED" checked onchange="toggleDecision('VERIFIED')">
+                            <i class="fas fa-circle-check"></i> Approve & Verify
+                        </label>
+                        <label class="decision-btn reject-choice" id="rejectBtnLabel">
+                            <input type="radio" name="status" value="REJECTED" onchange="toggleDecision('REJECTED')">
+                            <i class="fas fa-circle-xmark"></i> Reject Document
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Approved Amount -->
+                <div class="form-group" id="approvedAmountGroup">
+                    <label for="approved_amount">Approved Amount (₹)</label>
+                    <input type="number" name="approved_amount" id="approved_amount" class="form-input" 
+                           min="0" max="{{ decl.category.max_limit|default:9999999 }}" 
+                           step="0.01" value="{{ proof.amount_claimed }}" required>
+                </div>
+
+                <!-- Reviewer Remarks -->
+                <div class="form-group">
+                    <label for="remarks">Compliance Auditor Remarks</label>
+                    <textarea name="remarks" id="remarks" class="form-textarea" placeholder="Explain the verification cause, or reason for rejection..." required></textarea>
+                </div>
+
+                <button type="submit" class="btn-submit">
+                    <i class="fas fa-floppy-disk"></i> Submit Compliance Action
+                </button>
+            </form>
+        </div>
+    </div>
+
+</div>
+
+<script>
+    function toggleDecision(status) {
+        const verifyBtn = document.getElementById('verifyBtnLabel');
+        const rejectBtn = document.getElementById('rejectBtnLabel');
+        const approvedAmtInput = document.getElementById('approved_amount');
+        const approvedAmtGroup = document.getElementById('approvedAmountGroup');
+
+        if (status === 'VERIFIED') {
+            verifyBtn.classList.add('selected');
+            rejectBtn.classList.remove('selected');
+            approvedAmtGroup.style.display = 'flex';
+            approvedAmtInput.setAttribute('required', 'true');
+            approvedAmtInput.value = "{{ proof.amount_claimed }}";
+        } else {
+            rejectBtn.classList.add('selected');
+            verifyBtn.classList.remove('selected');
+            approvedAmtGroup.style.display = 'none';
+            approvedAmtInput.removeAttribute('required');
+            approvedAmtInput.value = "0.00";
+        }
+    }
+</script>
+</body>
+</html>

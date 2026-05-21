@@ -12,6 +12,15 @@
 <link rel="stylesheet" href="{% static 'css/landing.css' %}?v=3.0">
 <link rel="stylesheet" href="{% static 'css/home.css' %}?v=3.0">
 <link rel="stylesheet" href="{% static 'css/dashboard.css' %}?v=3.0">
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = {
+    prefix: 'tw-',
+    corePlugins: {
+      preflight: false,
+    }
+  }
+</script>
 <style>
 :root {
   --font-sans: 'Plus Jakarta Sans', system-ui, sans-serif;
@@ -503,6 +512,18 @@ body {
   margin: 8px auto 28px;
   line-height: 1.6;
 }
+
+.msg-alert-success {
+  background: var(--success-light);
+  border: 1px solid rgba(16, 185, 129, 0.2);
+  color: var(--success);
+}
+
+.msg-alert-danger {
+  background: var(--danger-light);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  color: var(--danger);
+}
 </style>
 </head>
 <body>
@@ -513,9 +534,7 @@ body {
   <!-- MESSAGES -->
   {% if messages %}
     {% for message in messages %}
-      <div style="padding: 16px 24px; border-radius: 16px; margin-bottom: 24px; font-weight: 600; font-size: 14px; display: flex; align-items: center; gap: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.02);
-        {% if message.tags == 'success' %} background: var(--success-light); border: 1px solid rgba(16, 185, 129, 0.2); color: var(--success);
-        {% else %} background: var(--danger-light); border: 1px solid rgba(239, 68, 68, 0.2); color: var(--danger); {% endif %}">
+      <div class="{% if message.tags == 'success' %}msg-alert-success{% else %}msg-alert-danger{% endif %}" style="padding: 16px 24px; border-radius: 16px; margin-bottom: 24px; font-weight: 600; font-size: 14px; display: flex; align-items: center; gap: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.02);">
         {% if message.tags == 'success' %}<i class="fas fa-circle-check" style="font-size: 16px;"></i>{% else %}<i class="fas fa-circle-xmark" style="font-size: 16px;"></i>{% endif %}
         <span>{{ message }}</span>
       </div>
@@ -649,68 +668,369 @@ body {
 </div>
 </main>
 
-<!-- REQUEST MODAL -->
-<div class="glass-modal" id="requestModal">
-  <div class="modal-card-premium">
-    <div class="modal-header-premium">
-      <h3>Submit Loan / Advance Request</h3>
-      <button class="close-btn" onclick="closeRequestModal()">&times;</button>
+<!-- PREMIUM REQUEST MODAL -->
+<div class="glass-modal tw-wrapper" id="requestModal" style="display:none;"></div>
+
+<!-- TW MODAL -->
+<div class="tw-fixed tw-inset-0 tw-bg-slate-900/60 tw-backdrop-blur-md tw-z-[1000] tw-flex tw-items-center tw-justify-center tw-p-4 tw-overflow-y-auto tw-opacity-0 tw-pointer-events-none tw-transition-opacity tw-duration-300" id="twModalOverlay">
+  <div class="tw-bg-white tw-w-full tw-max-w-5xl tw-rounded-[28px] tw-shadow-[0_25px_50px_-12px_rgba(0,0,0,0.3)] tw-border tw-border-white/50 tw-relative tw-overflow-hidden tw-scale-95 tw-transition-transform tw-duration-300 tw-flex tw-flex-col md:tw-flex-row" id="twModalContent">
+    
+    <!-- LEFT COLUMN: FORM -->
+    <div class="tw-flex-1 tw-p-8 md:tw-p-10 tw-border-r tw-border-slate-100 tw-bg-slate-50/50 tw-max-h-[90vh] tw-overflow-y-auto">
+      
+      <!-- Header -->
+      <div class="tw-flex tw-justify-between tw-items-start tw-mb-8">
+        <div class="tw-flex tw-items-center tw-gap-4">
+          <div class="tw-w-14 tw-h-14 tw-rounded-2xl tw-bg-indigo-600 tw-text-white tw-flex tw-items-center tw-justify-center tw-shadow-lg tw-shadow-indigo-600/30">
+            <i class="fas fa-money-bill-transfer tw-text-2xl"></i>
+          </div>
+          <div>
+            <h2 class="tw-text-2xl tw-font-bold tw-text-slate-900 tw-tracking-tight">Salary Advance Request</h2>
+            <p class="tw-text-sm tw-text-slate-500 tw-mt-1">Submit a secure financial assistance request</p>
+          </div>
+        </div>
+        <button type="button" onclick="closeRequestModal()" class="tw-w-10 tw-h-10 tw-rounded-full tw-bg-slate-100 tw-text-slate-500 hover:tw-bg-slate-200 hover:tw-text-slate-900 tw-transition-colors tw-flex tw-items-center tw-justify-center">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+
+      <!-- Employee Snapshot Card -->
+      <div class="tw-mb-8 tw-rounded-2xl tw-bg-gradient-to-br tw-from-slate-900 tw-to-slate-800 tw-p-6 tw-text-white tw-shadow-xl tw-relative tw-overflow-hidden">
+        <div class="tw-absolute tw-top-0 tw-right-0 tw-w-64 tw-h-64 tw-bg-indigo-500/20 tw-rounded-full tw-blur-3xl tw--translate-y-1/2 tw-translate-x-1/3"></div>
+        
+        <div class="tw-flex tw-justify-between tw-items-center tw-mb-6 tw-relative tw-z-10">
+          <h3 class="tw-text-sm tw-font-semibold tw-text-slate-300 tw-uppercase tw-tracking-wider">Financial Snapshot</h3>
+          <span class="tw-px-3 tw-py-1 tw-rounded-full tw-bg-emerald-500/20 tw-text-emerald-400 tw-text-xs tw-font-bold tw-border tw-border-emerald-500/30 tw-flex tw-items-center tw-gap-1.5">
+            <span class="tw-w-1.5 tw-h-1.5 tw-rounded-full tw-bg-emerald-400 tw-animate-pulse"></span>
+            AI Eligibility Passed
+          </span>
+        </div>
+        
+        <div class="tw-grid tw-grid-cols-2 lg:tw-grid-cols-4 tw-gap-4 tw-relative tw-z-10">
+          <div>
+            <p class="tw-text-xs tw-text-slate-400 tw-mb-1">Net Salary</p>
+            <p class="tw-text-lg tw-font-mono tw-font-bold">₹58,000</p>
+          </div>
+          <div>
+            <p class="tw-text-xs tw-text-slate-400 tw-mb-1">Eligible Advance</p>
+            <p class="tw-text-lg tw-font-mono tw-font-bold tw-text-indigo-400">₹30,000</p>
+          </div>
+          <div>
+            <p class="tw-text-xs tw-text-slate-400 tw-mb-1">Current EMI</p>
+            <p class="tw-text-lg tw-font-mono tw-font-bold">₹0</p>
+          </div>
+          <div>
+            <p class="tw-text-xs tw-text-slate-400 tw-mb-1">Last Request</p>
+            <p class="tw-text-lg tw-font-semibold tw-text-slate-200">None</p>
+          </div>
+        </div>
+      </div>
+
+      <form action="{% url 'request_loan' %}" method="POST" id="premiumLoanForm">
+        {% csrf_token %}
+        <input type="hidden" name="loan_type" id="hidden_loan_type" value="SALARY_ADVANCE">
+        <input type="hidden" name="tenure_months" id="hidden_tenure" value="3">
+        
+        <!-- Loan Type -->
+        <div class="tw-mb-8">
+          <label class="tw-block tw-text-sm tw-font-bold tw-text-slate-700 tw-mb-4">Select Loan Type</label>
+          <div class="tw-grid tw-grid-cols-2 tw-gap-4">
+            
+            <div class="loan-type-card tw-relative tw-p-4 tw-rounded-xl tw-border-2 tw-border-indigo-600 tw-bg-indigo-50/50 tw-cursor-pointer tw-transition-all tw-duration-200" data-value="SALARY_ADVANCE" onclick="selectLoanType(this)">
+              <div class="tw-absolute tw-top-3 tw-right-3 tw-w-5 tw-h-5 tw-rounded-full tw-bg-indigo-600 tw-text-white tw-flex tw-items-center tw-justify-center check-indicator">
+                <i class="fas fa-check tw-text-xs"></i>
+              </div>
+              <div class="tw-w-10 tw-h-10 tw-rounded-lg tw-bg-indigo-100 tw-text-indigo-600 tw-flex tw-items-center tw-justify-center tw-mb-3 icon-box">
+                <i class="fas fa-wallet"></i>
+              </div>
+              <h4 class="tw-font-bold tw-text-slate-900 tw-text-sm">Salary Advance</h4>
+              <p class="tw-text-xs tw-text-slate-500 tw-mt-1">0% interest short-term</p>
+            </div>
+
+            <div class="loan-type-card tw-relative tw-p-4 tw-rounded-xl tw-border-2 tw-border-slate-200 hover:tw-border-slate-300 tw-bg-white tw-cursor-pointer tw-transition-all tw-duration-200" data-value="EMERGENCY_LOAN" onclick="selectLoanType(this)">
+              <div class="tw-absolute tw-top-3 tw-right-3 tw-w-5 tw-h-5 tw-rounded-full tw-border-2 tw-border-slate-200 check-indicator"></div>
+              <div class="tw-w-10 tw-h-10 tw-rounded-lg tw-bg-rose-100 tw-text-rose-600 tw-flex tw-items-center tw-justify-center tw-mb-3 icon-box">
+                <i class="fas fa-briefcase-medical"></i>
+              </div>
+              <h4 class="tw-font-bold tw-text-slate-900 tw-text-sm">Emergency Loan</h4>
+              <p class="tw-text-xs tw-text-slate-500 tw-mt-1">Fast-track medical/family</p>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- Loan Amount -->
+        <div class="tw-mb-8">
+          <div class="tw-flex tw-justify-between tw-items-end tw-mb-4">
+            <label class="tw-block tw-text-sm tw-font-bold tw-text-slate-700">Requested Amount</label>
+            <span class="tw-text-xs tw-font-medium tw-text-slate-500">Max eligible: ₹30,000</span>
+          </div>
+          
+          <div class="tw-relative tw-group">
+            <span class="tw-absolute tw-left-4 tw-top-1/2 tw--translate-y-1/2 tw-text-xl tw-font-mono tw-font-medium tw-text-slate-400 group-focus-within:tw-text-indigo-600 tw-transition-colors">₹</span>
+            <input type="number" name="principal_amount" id="premium_amount" min="1000" max="30000" step="500" value="10000" class="tw-w-full tw-pl-10 tw-pr-4 tw-py-4 tw-text-2xl tw-font-mono tw-font-bold tw-text-slate-900 tw-bg-white tw-border-2 tw-border-slate-200 tw-rounded-xl focus:tw-border-indigo-600 focus:tw-ring-4 focus:tw-ring-indigo-600/10 tw-transition-all tw-outline-none" required oninput="calculateEMI()">
+          </div>
+          
+          <!-- Quick Chips -->
+          <div class="tw-flex tw-gap-2 tw-mt-4">
+            <button type="button" class="tw-px-4 tw-py-2 tw-rounded-lg tw-bg-slate-100 tw-text-slate-600 tw-text-sm tw-font-bold hover:tw-bg-indigo-50 hover:tw-text-indigo-600 tw-transition-colors" onclick="setAmount(10000)">₹10K</button>
+            <button type="button" class="tw-px-4 tw-py-2 tw-rounded-lg tw-bg-slate-100 tw-text-slate-600 tw-text-sm tw-font-bold hover:tw-bg-indigo-50 hover:tw-text-indigo-600 tw-transition-colors" onclick="setAmount(25000)">₹25K</button>
+            <button type="button" class="tw-px-4 tw-py-2 tw-rounded-lg tw-bg-slate-100 tw-text-slate-600 tw-text-sm tw-font-bold hover:tw-bg-indigo-50 hover:tw-text-indigo-600 tw-transition-colors" onclick="setAmount(30000)">Max</button>
+          </div>
+        </div>
+
+        <!-- Tenure -->
+        <div class="tw-mb-8">
+          <label class="tw-block tw-text-sm tw-font-bold tw-text-slate-700 tw-mb-4">Repayment Tenure</label>
+          <div class="tw-flex tw-gap-3">
+            <button type="button" class="tenure-pill tw-flex-1 tw-py-3 tw-rounded-xl tw-border-2 tw-border-slate-200 tw-bg-white tw-text-slate-600 tw-font-bold hover:tw-border-slate-300 tw-transition-all" data-value="1" onclick="selectTenure(this)">1M</button>
+            <button type="button" class="tenure-pill tw-flex-1 tw-py-3 tw-rounded-xl tw-border-2 tw-border-indigo-600 tw-bg-indigo-50/50 tw-text-indigo-600 tw-font-bold tw-shadow-[0_4px_14px_rgba(79,70,229,0.15)] tw-transition-all" data-value="3" onclick="selectTenure(this)">3M</button>
+            <button type="button" class="tenure-pill tw-flex-1 tw-py-3 tw-rounded-xl tw-border-2 tw-border-slate-200 tw-bg-white tw-text-slate-600 tw-font-bold hover:tw-border-slate-300 tw-transition-all" data-value="6" onclick="selectTenure(this)">6M</button>
+            <button type="button" class="tenure-pill tw-flex-1 tw-py-3 tw-rounded-xl tw-border-2 tw-border-slate-200 tw-bg-white tw-text-slate-600 tw-font-bold hover:tw-border-slate-300 tw-transition-all" data-value="12" onclick="selectTenure(this)">12M</button>
+          </div>
+        </div>
+
+        <!-- Reason -->
+        <div class="tw-mb-8">
+          <label class="tw-block tw-text-sm tw-font-bold tw-text-slate-700 tw-mb-2">Statement of Need</label>
+          <!-- AI Suggestion Tags -->
+          <div class="tw-flex tw-flex-wrap tw-gap-2 tw-mb-3">
+            <span class="tw-px-3 tw-py-1.5 tw-rounded-lg tw-bg-indigo-50 tw-text-indigo-600 tw-text-xs tw-font-bold tw-cursor-pointer hover:tw-bg-indigo-100 tw-transition-colors" onclick="appendReason('Medical Emergency')"><i class="fas fa-sparkles tw-mr-1"></i> Medical</span>
+            <span class="tw-px-3 tw-py-1.5 tw-rounded-lg tw-bg-indigo-50 tw-text-indigo-600 tw-text-xs tw-font-bold tw-cursor-pointer hover:tw-bg-indigo-100 tw-transition-colors" onclick="appendReason('Family Support')"><i class="fas fa-sparkles tw-mr-1"></i> Family Support</span>
+            <span class="tw-px-3 tw-py-1.5 tw-rounded-lg tw-bg-indigo-50 tw-text-indigo-600 tw-text-xs tw-font-bold tw-cursor-pointer hover:tw-bg-indigo-100 tw-transition-colors" onclick="appendReason('Relocation Expenses')"><i class="fas fa-sparkles tw-mr-1"></i> Relocation</span>
+          </div>
+          <textarea name="reason" id="premium_reason" rows="3" class="tw-w-full tw-p-4 tw-bg-white tw-border-2 tw-border-slate-200 tw-rounded-xl focus:tw-border-indigo-600 focus:tw-ring-4 focus:tw-ring-indigo-600/10 tw-transition-all tw-outline-none tw-text-slate-700 tw-resize-none" placeholder="Briefly explain your requirement for faster approval..." required oninput="updateCharCount()"></textarea>
+          <div class="tw-text-right tw-text-xs tw-text-slate-400 tw-mt-1"><span id="charCount">0</span> / 250</div>
+        </div>
+
+      </form>
     </div>
-    <form action="{% url 'request_loan' %}" method="POST">
-      {% csrf_token %}
-      <div class="modal-body-premium">
-        <div class="premium-input-group">
-          <label for="loan_type">Loan Type</label>
-          <select name="loan_type" id="loan_type" class="premium-select" required>
-            {% for code, label in loan_types %}
-              <option value="{{ code }}">{{ label }}</option>
-            {% endfor %}
-          </select>
-        </div>
 
-        <div class="premium-input-group">
-          <label for="principal_amount">Requested Principal Amount (₹)</label>
-          <input type="number" name="principal_amount" id="principal_amount" min="1000" step="100" class="premium-input" placeholder="e.g. 50000" required>
+    <!-- RIGHT COLUMN: AI INSIGHTS & EMI PREVIEW -->
+    <div class="tw-w-full md:tw-w-80 tw-bg-slate-900 tw-text-white tw-p-8 md:tw-p-10 tw-flex tw-flex-col tw-relative tw-overflow-hidden">
+      <!-- Decoration -->
+      <div class="tw-absolute tw-bottom-0 tw-left-0 tw-w-full tw-h-64 tw-bg-gradient-to-t tw-from-indigo-600/20 tw-to-transparent tw-pointer-events-none"></div>
+      
+      <h3 class="tw-text-sm tw-font-bold tw-text-slate-400 tw-uppercase tw-tracking-wider tw-mb-6">AI Insights</h3>
+      
+      <!-- Probabilities -->
+      <div class="tw-space-y-6 tw-mb-10 tw-relative tw-z-10">
+        <div>
+          <div class="tw-flex tw-justify-between tw-text-sm tw-mb-2">
+            <span class="tw-text-slate-300">Approval Probability</span>
+            <span class="tw-font-mono tw-font-bold tw-text-emerald-400">92%</span>
+          </div>
+          <div class="tw-w-full tw-h-2 tw-bg-slate-800 tw-rounded-full tw-overflow-hidden">
+            <div class="tw-h-full tw-bg-gradient-to-r tw-from-emerald-500 tw-to-emerald-400 tw-w-[92%] tw-rounded-full"></div>
+          </div>
         </div>
-
-        <div class="premium-input-group">
-          <label for="tenure_months">Desired Repayment Tenure</label>
-          <select name="tenure_months" id="tenure_months" class="premium-select" required>
-            <option value="1">1 Month</option>
-            <option value="3">3 Months</option>
-            <option value="6">6 Months</option>
-            <option value="12">12 Months</option>
-            <option value="18">18 Months</option>
-            <option value="24">24 Months</option>
-          </select>
+        <div>
+          <div class="tw-flex tw-justify-between tw-text-sm tw-mb-2">
+            <span class="tw-text-slate-300">Financial Health Score</span>
+            <span class="tw-font-mono tw-font-bold tw-text-indigo-400">850</span>
+          </div>
+          <div class="tw-w-full tw-h-2 tw-bg-slate-800 tw-rounded-full tw-overflow-hidden">
+            <div class="tw-h-full tw-bg-gradient-to-r tw-from-indigo-500 tw-to-indigo-400 tw-w-[85%] tw-rounded-full"></div>
+          </div>
         </div>
-
-        <div class="premium-input-group" style="margin-bottom: 0;">
-          <label for="reason">Reason / Statement of Need</label>
-          <textarea name="reason" id="reason" class="premium-textarea" placeholder="Please specify details for fast approval..." required></textarea>
+        <div>
+          <div class="tw-flex tw-justify-between tw-text-sm tw-mb-2">
+            <span class="tw-text-slate-300">Attendance Reliability</span>
+            <span class="tw-font-mono tw-font-bold tw-text-amber-400">Excellent</span>
+          </div>
         </div>
       </div>
-      <div class="modal-footer-premium">
-        <button type="button" class="btn-premium-secondary" onclick="closeRequestModal()">Cancel</button>
-        <button type="submit" class="btn-trigger-request">Submit Request</button>
+
+      <!-- EMI Preview Box -->
+      <div class="tw-mt-auto tw-bg-white/5 tw-border tw-border-white/10 tw-rounded-2xl tw-p-6 tw-backdrop-blur-sm tw-relative tw-z-10">
+        <div class="tw-flex tw-items-center tw-gap-2 tw-mb-4">
+          <i class="fas fa-calculator tw-text-indigo-400"></i>
+          <h4 class="tw-text-sm tw-font-bold tw-text-white">Live Repayment Preview</h4>
+        </div>
+        
+        <div class="tw-mb-4">
+          <p class="tw-text-xs tw-text-slate-400">Estimated Monthly EMI</p>
+          <p class="tw-text-3xl tw-font-mono tw-font-bold tw-text-white tw-my-1" id="previewEmi">₹3,333</p>
+          <p class="tw-text-xs tw-text-emerald-400 tw-flex tw-items-center tw-gap-1">
+            <i class="fas fa-shield-check"></i> Low Risk (5.7% of Salary)
+          </p>
+        </div>
+        
+        <div class="tw-border-t tw-border-white/10 tw-pt-4">
+          <p class="tw-text-xs tw-text-slate-400 tw-mb-2">Timeline</p>
+          <div class="tw-space-y-2" id="previewTimeline">
+            <div class="tw-flex tw-justify-between tw-text-xs tw-text-slate-300 tw-font-mono">
+              <span>Month 1</span>
+              <span>₹3,333</span>
+            </div>
+            <div class="tw-flex tw-justify-between tw-text-xs tw-text-slate-300 tw-font-mono">
+              <span>Month 2</span>
+              <span>₹3,333</span>
+            </div>
+            <div class="tw-flex tw-justify-between tw-text-xs tw-text-slate-300 tw-font-mono">
+              <span>Month 3</span>
+              <span>₹3,334</span>
+            </div>
+          </div>
+        </div>
       </div>
-    </form>
+      
+      <!-- CTA inside sidebar on desktop, or bottom on mobile -->
+      <div class="tw-mt-8 tw-relative tw-z-10">
+        <button type="button" onclick="document.getElementById('premiumLoanForm').submit()" class="tw-w-full tw-py-4 tw-rounded-xl tw-bg-indigo-600 hover:tw-bg-indigo-500 tw-text-white tw-font-bold tw-shadow-[0_0_20px_rgba(79,70,229,0.4)] hover:tw-shadow-[0_0_30px_rgba(79,70,229,0.6)] tw-transition-all tw-flex tw-items-center tw-justify-center tw-gap-2 tw-group">
+          Submit Request
+          <i class="fas fa-arrow-right tw-transition-transform group-hover:tw-translate-x-1"></i>
+        </button>
+        <p class="tw-text-center tw-text-[10px] tw-text-slate-500 tw-mt-3 tw-flex tw-items-center tw-justify-center tw-gap-1">
+          <i class="fas fa-lock"></i> 256-bit encrypted & secure
+        </p>
+      </div>
+
+    </div>
+
   </div>
 </div>
 
 <script>
 function openRequestModal() {
-  document.getElementById('requestModal').classList.add('active');
+  const overlay = document.getElementById('twModalOverlay');
+  const content = document.getElementById('twModalContent');
+  
+  overlay.classList.remove('tw-opacity-0', 'tw-pointer-events-none');
+  overlay.classList.add('tw-opacity-100', 'tw-pointer-events-auto');
+  
+  content.classList.remove('tw-scale-95');
+  content.classList.add('tw-scale-100');
+  
+  calculateEMI();
 }
+
 function closeRequestModal() {
-  document.getElementById('requestModal').classList.remove('active');
+  const overlay = document.getElementById('twModalOverlay');
+  const content = document.getElementById('twModalContent');
+  
+  overlay.classList.remove('tw-opacity-100', 'tw-pointer-events-auto');
+  overlay.classList.add('tw-opacity-0', 'tw-pointer-events-none');
+  
+  content.classList.remove('tw-scale-100');
+  content.classList.add('tw-scale-95');
 }
-window.onclick = function(event) {
-  var modal = document.getElementById('requestModal');
-  if (event.target == modal) {
+
+// Select Loan Type
+function selectLoanType(card) {
+  // Reset all
+  document.querySelectorAll('.loan-type-card').forEach(c => {
+    c.classList.remove('tw-border-indigo-600', 'tw-bg-indigo-50/50');
+    c.classList.add('tw-border-slate-200', 'tw-bg-white');
+    
+    const iconBox = c.querySelector('.icon-box');
+    iconBox.classList.remove('tw-bg-indigo-100', 'tw-text-indigo-600');
+    if(c.dataset.value === 'EMERGENCY_LOAN') {
+        iconBox.classList.add('tw-bg-rose-100', 'tw-text-rose-600');
+    } else {
+        iconBox.classList.add('tw-bg-slate-100', 'tw-text-slate-600');
+    }
+    
+    const indicator = c.querySelector('.check-indicator');
+    indicator.innerHTML = '';
+    indicator.classList.remove('tw-bg-indigo-600', 'tw-text-white', 'tw-border-none');
+    indicator.classList.add('tw-border-2', 'tw-border-slate-200');
+  });
+  
+  // Set active
+  card.classList.remove('tw-border-slate-200', 'tw-bg-white');
+  card.classList.add('tw-border-indigo-600', 'tw-bg-indigo-50/50');
+  
+  const iconBox = card.querySelector('.icon-box');
+  iconBox.className = 'tw-w-10 tw-h-10 tw-rounded-lg tw-bg-indigo-100 tw-text-indigo-600 tw-flex tw-items-center tw-justify-center tw-mb-3 icon-box';
+  
+  const indicator = card.querySelector('.check-indicator');
+  indicator.classList.remove('tw-border-2', 'tw-border-slate-200');
+  indicator.classList.add('tw-bg-indigo-600', 'tw-text-white');
+  indicator.innerHTML = '<i class="fas fa-check tw-text-xs"></i>';
+  
+  document.getElementById('hidden_loan_type').value = card.dataset.value;
+}
+
+// Quick amount chips
+function setAmount(val) {
+  document.getElementById('premium_amount').value = val;
+  calculateEMI();
+}
+
+// Select Tenure
+function selectTenure(pill) {
+  document.querySelectorAll('.tenure-pill').forEach(p => {
+    p.classList.remove('tw-border-indigo-600', 'tw-bg-indigo-50/50', 'tw-text-indigo-600', 'tw-shadow-[0_4px_14px_rgba(79,70,229,0.15)]');
+    p.classList.add('tw-border-slate-200', 'tw-bg-white', 'tw-text-slate-600');
+  });
+  
+  pill.classList.remove('tw-border-slate-200', 'tw-bg-white', 'tw-text-slate-600');
+  pill.classList.add('tw-border-indigo-600', 'tw-bg-indigo-50/50', 'tw-text-indigo-600', 'tw-shadow-[0_4px_14px_rgba(79,70,229,0.15)]');
+  
+  document.getElementById('hidden_tenure').value = pill.dataset.value;
+  calculateEMI();
+}
+
+// AI Suggestions
+function appendReason(text) {
+  const textarea = document.getElementById('premium_reason');
+  if(textarea.value.length > 0 && !textarea.value.endsWith(' ')) {
+    textarea.value += ', ';
+  }
+  textarea.value += text + ' ';
+  updateCharCount();
+  textarea.focus();
+}
+
+function updateCharCount() {
+  const val = document.getElementById('premium_reason').value;
+  document.getElementById('charCount').textContent = val.length;
+}
+
+// Live EMI calculation
+function calculateEMI() {
+  let amount = parseInt(document.getElementById('premium_amount').value) || 0;
+  if(amount > 30000) {
+      amount = 30000;
+      document.getElementById('premium_amount').value = 30000;
+  }
+  
+  const tenure = parseInt(document.getElementById('hidden_tenure').value) || 1;
+  const emi = Math.floor(amount / tenure);
+  
+  document.getElementById('previewEmi').textContent = '₹' + emi.toLocaleString('en-IN');
+  
+  // Generate timeline
+  let timelineHTML = '';
+  let remaining = amount;
+  for(let i=1; i<=Math.min(3, tenure); i++) {
+    let currentEmi = (i === tenure) ? remaining : emi;
+    timelineHTML += `
+      <div class="tw-flex tw-justify-between tw-text-xs tw-text-slate-300 tw-font-mono">
+        <span>Month ${i}</span>
+        <span>₹${currentEmi.toLocaleString('en-IN')}</span>
+      </div>
+    `;
+    remaining -= currentEmi;
+  }
+  if(tenure > 3) {
+    timelineHTML += `
+      <div class="tw-flex tw-justify-between tw-text-xs tw-text-slate-400 tw-font-mono tw-mt-2 tw-pt-2 tw-border-t tw-border-white/5">
+        <span>...and ${tenure - 3} more months</span>
+      </div>
+    `;
+  }
+  
+  document.getElementById('previewTimeline').innerHTML = timelineHTML;
+}
+
+// Event Listeners for overlay click to close
+document.getElementById('twModalOverlay').addEventListener('click', function(e) {
+  if (e.target === this) {
     closeRequestModal();
   }
-}
+});
 </script>
 </body>
 </html>

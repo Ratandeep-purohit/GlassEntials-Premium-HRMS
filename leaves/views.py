@@ -570,31 +570,15 @@ def cancel_approval_action_view(request, leave_id):
         
         if action == 'approve':
             # Credit back the balance if it was already deducted
-            # It's deducted only when it reaches APPROVED state
+            # It's deducted only when it reaches APPROVED state (i.e. all steps are approved)
             if leave_req.status == 'CANCEL_REQUESTED':
-                # Important: only credit back if it was previously APPROVED
-                # If it was PENDING/MANAGER_APPROVED, it wasn't deducted yet.
-                # Actually, in our current logic in approve_reject_action_view, 
-                # deduction happens at APPROVED.
                 
-                # We should check if it was 'APPROVED' before being moved to 'CANCEL_REQUESTED'
-                # For simplicity, let's look at the workflow or just check total_days.
-                # Since we don't have a 'previous_status' field, we can infer from the status.
-                # Actually, let's credit back regardless IF deduction logic is consistent.
-                
-                # In our system, deduction happens only when status becomes 'APPROVED'.
-                # But once it's 'CANCEL_REQUESTED', how do we know if it WAS 'APPROVED'?
-                # Usually, cancellation is only for approved leaves. 
-                # If a user cancels a PENDING leave, it's just 'REJECTED' or 'CANCELLED' without credit.
-                
-                # Let's assume for now that if it was approved, we credit.
-                # A better way: check if status was APPROVED. 
-                # Let's add a log check.
-                was_approved = ApprovalWorkflow.objects.filter(leave_request=leave_req, status='APPROVED').exists()
+                # A leave request was fully approved (and balance deducted) ONLY if there are no pending or rejected steps left.
+                was_fully_approved = not leave_req.workflow_steps.filter(status__in=['PENDING', 'REJECTED']).exists()
                 
                 leave_req.status = 'CANCELLED'
                 
-                if was_approved:
+                if was_fully_approved:
                     balance = LeaveBalance.objects.get(
                         employee=leave_req.employee,
                         leave_type=leave_req.leave_type,

@@ -7,7 +7,7 @@ from employees.models import Employee
 
 from django.db.models import Q
 from django.contrib.auth.decorators import login_required
-from datetime import datetime, date, timedelta
+from datetime import datetime, date, timedelta, time
 import calendar
 from django.utils import timezone
 from .models import Attendance
@@ -282,14 +282,24 @@ def clock_in_out_view(request):
         
         shift = shift_assignment.shift if shift_assignment else None
         
-        attendance, created = Attendance.objects.get_or_create(
-            employee=employee,
-            date=today,
-            defaults={
-                'organization': employee.organization,
-                'shift': shift
-            }
-        )
+        attendance = None
+        created = False
+        
+        if action == 'clock_out':
+            attendance = Attendance.objects.filter(employee=employee, date=today, clock_out__isnull=True).first()
+            if not attendance:
+                yesterday = today - timedelta(days=1)
+                attendance = Attendance.objects.filter(employee=employee, date=yesterday, clock_out__isnull=True, shift__is_night_shift=True).first()
+                
+        if not attendance:
+            attendance, created = Attendance.objects.get_or_create(
+                employee=employee,
+                date=today,
+                defaults={
+                    'organization': employee.organization,
+                    'shift': shift
+                }
+            )
         
         # If record already existed but shift was missing, update it
         if not attendance.shift and shift:
@@ -303,15 +313,14 @@ def clock_in_out_view(request):
                 attendance.clock_in = current_time
                 
                 # Calculate Late Minutes
-                if shift:
-                    # Combine today with times to calculate delta
-                    shift_start = datetime.combine(today, shift.start_time)
+                if attendance.shift:
+                    shift_start = datetime.combine(attendance.date, attendance.shift.start_time)
                     actual_in = datetime.combine(today, current_time)
                     
                     if actual_in > shift_start:
                         diff = actual_in - shift_start
                         late_mins = int(diff.total_seconds() / 60)
-                        if late_mins > shift.grace_minutes:
+                        if late_mins > attendance.shift.grace_minutes:
                             attendance.late_minutes = late_mins
                 
                 attendance.save()
@@ -325,8 +334,11 @@ def clock_in_out_view(request):
                 attendance.clock_out = current_time
                 
                 # Calculate Early Out Minutes
-                if shift:
-                    shift_end = datetime.combine(today, shift.end_time)
+                if attendance.shift:
+                    shift_end = datetime.combine(attendance.date, attendance.shift.end_time)
+                    if attendance.shift.is_night_shift:
+                        shift_end += timedelta(days=1)
+                        
                     actual_out = datetime.combine(today, current_time)
                     
                     if actual_out < shift_end:
@@ -334,8 +346,16 @@ def clock_in_out_view(request):
                         attendance.early_out_minutes = int(diff.total_seconds() / 60)
                 
                 # Calculate Total Work Hours
-                t1 = datetime.combine(today, attendance.clock_in)
+                t1 = datetime.combine(attendance.date, attendance.clock_in)
+                # if clocked in late night and now it's next day
+                if today > attendance.date and attendance.clock_in < current_time:
+                    # Actually, we know t1's true date is today - 1 (or attendance.date)
+                    pass
                 t2 = datetime.combine(today, current_time)
+                
+                if t2 < t1:
+                    t2 += timedelta(days=1)
+                    
                 delta = t2 - t1
                 attendance.total_work_hours = delta.total_seconds() / 3600.0
                 
@@ -420,6 +440,10 @@ def resolve_correction_view(request, correction_id):
             if att.shift and att.clock_in:
                 shift_start = datetime.combine(att.date, att.shift.start_time)
                 actual_in = datetime.combine(att.date, att.clock_in)
+                # If night shift and clock in is early morning
+                if att.shift.is_night_shift and att.clock_in < att.shift.start_time and att.clock_in < time(12,0):
+                    actual_in += timedelta(days=1)
+                    
                 if actual_in > shift_start:
                     diff = actual_in - shift_start
                     late_mins = int(diff.total_seconds() / 60)
@@ -432,7 +456,13 @@ def resolve_correction_view(request, correction_id):
                     
             if att.shift and att.clock_out:
                 shift_end = datetime.combine(att.date, att.shift.end_time)
+                if att.shift.is_night_shift:
+                    shift_end += timedelta(days=1)
+                    
                 actual_out = datetime.combine(att.date, att.clock_out)
+                if att.shift.is_night_shift and att.clock_out < att.shift.start_time:
+                    actual_out += timedelta(days=1)
+                    
                 if actual_out < shift_end:
                     diff = shift_end - actual_out
                     att.early_out_minutes = int(diff.total_seconds() / 60)
@@ -441,7 +471,13 @@ def resolve_correction_view(request, correction_id):
                     
             if att.clock_in and att.clock_out:
                 t1 = datetime.combine(att.date, att.clock_in)
+                if att.shift and att.shift.is_night_shift and att.clock_in < att.shift.start_time and att.clock_in < time(12,0):
+                    t1 += timedelta(days=1)
+                    
                 t2 = datetime.combine(att.date, att.clock_out)
+                if t2 < t1:
+                    t2 += timedelta(days=1)
+                    
                 delta = t2 - t1
                 att.total_work_hours = delta.total_seconds() / 3600.0
                 

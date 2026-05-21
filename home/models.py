@@ -7,6 +7,7 @@ class Notification(models.Model):
         ('LEAVE', 'Leave Update'),
         ('ATTENDANCE', 'Attendance Update'),
         ('SYSTEM', 'System Alert'),
+        ('LOAN', 'Loan Update'),
     )
 
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='notifications')

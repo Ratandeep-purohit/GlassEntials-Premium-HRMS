@@ -1,0 +1,223 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Asset Inventory | GlassEntials HRMS</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Manrope:wght@700;800&display=swap">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link rel="stylesheet" href="{% static 'css/landing.css' %}?v=3.0">
+    <link rel="stylesheet" href="{% static 'css/home.css' %}?v=3.0">
+    <link rel="stylesheet" href="{% static 'css/dashboard.css' %}?v=3.0">
+    <style>
+        .as-page { font-family: 'Inter', sans-serif; }
+        .as-bg { position: fixed; inset: 0; z-index: -1; background: #f0f4ff; overflow: hidden; }
+        .as-bg-blob { position: absolute; border-radius: 50%; filter: blur(100px); opacity: .4; }
+        .as-bg-blob-1 { width: 700px; height: 700px; background: radial-gradient(circle, #dbeafe, #ede9fe 50%, transparent 80%); top: -200px; left: -200px; animation: blobDrift 20s ease-in-out infinite alternate; }
+        .as-bg-blob-2 { width: 500px; height: 500px; background: radial-gradient(circle, #e0e7ff, transparent 70%); bottom: -100px; right: -100px; animation: blobDrift 26s ease-in-out infinite alternate-reverse; }
+        @keyframes blobDrift { 0% { transform: translate(0,0) scale(1); } 100% { transform: translate(60px,40px) scale(1.08); } }
+        .as-workspace { padding: 40px 4% 80px; max-width: 1540px; margin: 84px auto 0; }
+        .as-top { display: flex; align-items: flex-end; justify-content: space-between; gap: 24px; margin-bottom: 32px; }
+        .as-breadcrumb { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; color: #94a3b8; margin-bottom: 12px; }
+        .as-breadcrumb a { color: #94a3b8; text-decoration: none; transition: color .2s; }
+        .as-breadcrumb a:hover { color: #2563eb; }
+        .as-breadcrumb i { font-size: 10px; }
+        .as-breadcrumb span { color: #2563eb; font-weight: 700; }
+        .as-page-title { font-family: 'Manrope', sans-serif; font-size: 34px; font-weight: 800; color: #0f172a; letter-spacing: -1px; margin: 0 0 6px; }
+        .as-page-sub { font-size: 15px; color: #64748b; font-weight: 500; margin: 0; }
+        .as-cta-btn { display: inline-flex; align-items: center; gap: 10px; padding: 13px 24px; border-radius: 12px; background: linear-gradient(135deg, #2563eb 0%, #7c3aed 100%); color: #fff; font-size: 14px; font-weight: 700; border: none; cursor: pointer; text-decoration: none; box-shadow: 0 6px 20px rgba(37,99,235,.25); transition: all .25s; white-space: nowrap; }
+        .as-cta-btn:hover { transform: translateY(-2px); box-shadow: 0 10px 28px rgba(37,99,235,.35); color: #fff; }
+        
+        /* Filters */
+        .as-filter-bar { background: #fff; border: 1px solid #e2e8f0; border-radius: 16px; padding: 20px 24px; margin-bottom: 24px; display: flex; gap: 14px; align-items: center; flex-wrap: wrap; box-shadow: 0 2px 6px rgba(15,23,42,.04); }
+        .as-filter-input { padding: 10px 16px; border: 1px solid #e2e8f0; border-radius: 10px; font-family: 'Inter'; font-size: 14px; color: #1e293b; background: #f8fafc; outline: none; transition: border-color .2s, background .2s; }
+        .as-filter-input:focus { border-color: #2563eb; background: #fff; box-shadow: 0 0 0 3px rgba(37,99,235,.08); }
+        .as-search-wrap { position: relative; flex: 1; min-width: 200px; }
+        .as-search-wrap .as-filter-input { width: 100%; padding-left: 40px; box-sizing: border-box; }
+        .as-search-icon { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: #94a3b8; font-size: 14px; }
+        .as-filter-btn { padding: 10px 18px; border-radius: 10px; font-weight: 600; font-size: 14px; cursor: pointer; border: none; transition: all .2s; }
+        .as-filter-btn-primary { background: #2563eb; color: #fff; }
+        .as-filter-btn-primary:hover { background: #1d4ed8; }
+        .as-filter-btn-ghost { background: #f1f5f9; color: #64748b; }
+        .as-filter-btn-ghost:hover { background: #e2e8f0; color: #475569; }
+
+        /* Table */
+        .as-table-card { background: #fff; border-radius: 20px; border: 1px solid rgba(226,232,240,.9); box-shadow: 0 2px 8px rgba(15,23,42,.04); overflow: hidden; }
+        .as-table-head { display: flex; align-items: center; justify-content: space-between; padding: 24px 32px; border-bottom: 1px solid #f1f5f9; }
+        .as-table-title { font-family: 'Manrope', sans-serif; font-size: 17px; font-weight: 800; color: #0f172a; display: flex; align-items: center; gap: 12px; margin: 0; }
+        .as-table-icon { width: 38px; height: 38px; border-radius: 10px; background: #eff6ff; color: #2563eb; display: flex; align-items: center; justify-content: center; font-size: 15px; }
+        .as-count-badge { padding: 4px 12px; border-radius: 20px; background: #f1f5f9; font-size: 13px; font-weight: 700; color: #64748b; }
+        .as-table-wrap { overflow-x: auto; }
+        table.as-table { width: 100%; border-collapse: collapse; }
+        .as-table thead th { padding: 13px 24px; text-align: left; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 1.2px; color: #94a3b8; background: #fcfcfe; border-bottom: 1px solid #f1f5f9; white-space: nowrap; }
+        .as-table tbody td { padding: 18px 24px; border-bottom: 1px solid #f8fafc; vertical-align: middle; font-size: 14px; color: #1e293b; }
+        .as-table tbody tr:last-child td { border-bottom: none; }
+        .as-table tbody tr:hover td { background: #fafbff; }
+        .as-asset-name { font-weight: 700; color: #0f172a; margin: 0 0 3px; font-size: 14px; }
+        .as-asset-sub { font-size: 12px; color: #94a3b8; margin: 0; }
+        .as-code-badge { display: inline-block; padding: 4px 10px; background: #f1f5f9; border-radius: 6px; font-family: monospace; font-size: 13px; font-weight: 600; color: #2563eb; }
+
+        /* Status Badges */
+        .as-status { display: inline-flex; align-items: center; gap: 7px; padding: 6px 13px; border-radius: 99px; font-size: 12px; font-weight: 700; letter-spacing: .3px; white-space: nowrap; }
+        .as-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+        .as-s-available { background: #dcfce7; color: #15803d; }
+        .as-s-available .as-dot { background: #22c55e; box-shadow: 0 0 5px #22c55e99; }
+        .as-s-assigned { background: #dbeafe; color: #1d4ed8; }
+        .as-s-assigned .as-dot { background: #3b82f6; box-shadow: 0 0 5px #3b82f699; }
+        .as-s-maintenance { background: #ffedd5; color: #c2410c; }
+        .as-s-maintenance .as-dot { background: #f97316; }
+        .as-s-retired { background: #f1f5f9; color: #64748b; }
+        .as-s-retired .as-dot { background: #94a3b8; }
+
+        /* Action links in table */
+        .as-tbl-actions { display: flex; gap: 8px; align-items: center; }
+        .as-tbl-btn { display: inline-flex; align-items: center; gap: 5px; padding: 7px 13px; border-radius: 8px; font-size: 12px; font-weight: 700; text-decoration: none; transition: all .2s; border: 1px solid transparent; }
+        .as-tbl-btn-assign { background: #eff6ff; color: #2563eb; border-color: #dbeafe; }
+        .as-tbl-btn-assign:hover { background: #2563eb; color: #fff; }
+        .as-tbl-btn-return { background: #fff9ec; color: #d97706; border-color: #fde68a; }
+        .as-tbl-btn-return:hover { background: #d97706; color: #fff; }
+        .as-tbl-btn-edit { background: #f8fafc; color: #475569; border-color: #e2e8f0; }
+        .as-tbl-btn-edit:hover { background: #f1f5f9; color: #0f172a; }
+
+        /* Empty state */
+        .as-empty { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 80px 40px; text-align: center; }
+        .as-empty-icon { width: 88px; height: 88px; background: linear-gradient(135deg, #eff6ff, #ede9fe); border-radius: 24px; display: flex; align-items: center; justify-content: center; font-size: 36px; color: #3b82f6; margin-bottom: 24px; box-shadow: 0 8px 24px rgba(37,99,235,.1); }
+        .as-empty h3 { font-family: 'Manrope', sans-serif; font-size: 20px; font-weight: 800; color: #0f172a; margin: 0 0 8px; }
+        .as-empty p { font-size: 14px; color: #64748b; margin: 0 0 24px; }
+    </style>
+</head>
+<body class="as-page">
+    <div class="as-bg">
+        <div class="as-bg-blob as-bg-blob-1"></div>
+        <div class="as-bg-blob as-bg-blob-2"></div>
+    </div>
+    {% include 'includes/navbar.html' %}
+    {% include 'includes/_messages.html' %}
+
+    <div class="as-workspace">
+        <div class="as-top">
+            <div>
+                <div class="as-breadcrumb">
+                    <a href="{% url 'assets:dashboard' %}"><i class="fas fa-laptop"></i> Assets</a>
+                    <i class="fas fa-chevron-right"></i>
+                    <span>Inventory</span>
+                </div>
+                <h1 class="as-page-title">Asset Inventory</h1>
+                <p class="as-page-sub">View, search, and manage all company equipment.</p>
+            </div>
+            <a href="{% url 'assets:add_asset' %}" class="as-cta-btn"><i class="fas fa-plus"></i> Add Asset</a>
+        </div>
+
+        <form class="as-filter-bar" method="GET">
+            <div class="as-search-wrap">
+                <i class="fas fa-search as-search-icon"></i>
+                <input type="text" name="search" class="as-filter-input" placeholder="Search by name or code..." value="{{ search_query }}">
+            </div>
+            <select name="category" class="as-filter-input">
+                <option value="">All Categories</option>
+                {% for cat in categories %}
+                <option value="{{ cat.id }}" {% if category_filter == cat.id|stringformat:"s" %}selected{% endif %}>{{ cat.name }}</option>
+                {% endfor %}
+            </select>
+            <select name="status" class="as-filter-input">
+                <option value="">All Statuses</option>
+                <option value="AVAILABLE" {% if status_filter == 'AVAILABLE' %}selected{% endif %}>Available</option>
+                <option value="ASSIGNED" {% if status_filter == 'ASSIGNED' %}selected{% endif %}>Assigned</option>
+                <option value="MAINTENANCE" {% if status_filter == 'MAINTENANCE' %}selected{% endif %}>Maintenance</option>
+                <option value="RETIRED" {% if status_filter == 'RETIRED' %}selected{% endif %}>Retired</option>
+            </select>
+            <button type="submit" class="as-filter-btn as-filter-btn-primary"><i class="fas fa-filter"></i> Filter</button>
+            <a href="{% url 'assets:inventory' %}" class="as-filter-btn as-filter-btn-ghost">Reset</a>
+        </form>
+
+        <div class="as-table-card">
+            <div class="as-table-head">
+                <h3 class="as-table-title">
+                    <span class="as-table-icon"><i class="fas fa-boxes"></i></span>
+                    All Assets
+                    <span class="as-count-badge">{{ assets|length }}</span>
+                </h3>
+            </div>
+            <div class="as-table-wrap">
+                <table class="as-table">
+                    <thead>
+                        <tr>
+                            <th>Asset Code</th>
+                            <th>Asset Name</th>
+                            <th>Category</th>
+                            <th>Status</th>
+                            <th>Condition</th>
+                            <th>Assigned To</th>
+                            <th style="text-align: right;">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for asset in assets %}
+                        <tr>
+                            <td><span class="as-code-badge">{{ asset.asset_code }}</span></td>
+                            <td>
+                                <p class="as-asset-name">{{ asset.name }}</p>
+                                <p class="as-asset-sub">{{ asset.brand }} {{ asset.model_number }}</p>
+                            </td>
+                            <td>
+                                <div style="display: flex; align-items: center; gap: 8px;">
+                                    <div style="width: 30px; height: 30px; border-radius: 8px; background: #eff6ff; color: #3b82f6; display: flex; align-items: center; justify-content: center; font-size: 13px;">
+                                        <i class="fas {{ asset.category.icon }}"></i>
+                                    </div>
+                                    {{ asset.category.name }}
+                                </div>
+                            </td>
+                            <td>
+                                {% if asset.status == 'AVAILABLE' %}
+                                <span class="as-status as-s-available"><span class="as-dot"></span>Available</span>
+                                {% elif asset.status == 'ASSIGNED' %}
+                                <span class="as-status as-s-assigned"><span class="as-dot"></span>Assigned</span>
+                                {% elif asset.status == 'MAINTENANCE' %}
+                                <span class="as-status as-s-maintenance"><span class="as-dot"></span>Maintenance</span>
+                                {% else %}
+                                <span class="as-status as-s-retired"><span class="as-dot"></span>Retired</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ asset.get_condition_display }}</td>
+                            <td>
+                                {% if asset.status == 'ASSIGNED' and asset.current_assignment %}
+                                <div style="display: flex; align-items: center; gap: 8px;">
+                                    <div style="width: 28px; height: 28px; border-radius: 50%; background: linear-gradient(135deg, #eff6ff, #ede9fe); color: #4f46e5; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700;">
+                                        {{ asset.current_assignment.employee.first_name|slice:":1" }}
+                                    </div>
+                                    {{ asset.current_assignment.employee.first_name }}
+                                </div>
+                                {% else %}<span style="color: #94a3b8;">—</span>{% endif %}
+                            </td>
+                            <td>
+                                <div class="as-tbl-actions" style="justify-content: flex-end;">
+                                    {% if asset.status == 'AVAILABLE' %}
+                                    <a href="{% url 'assets:assign_asset' asset.id %}" class="as-tbl-btn as-tbl-btn-assign"><i class="fas fa-user-plus"></i> Assign</a>
+                                    {% elif asset.status == 'ASSIGNED' and asset.current_assignment %}
+                                    <a href="{% url 'assets:return_asset' asset.current_assignment.id %}" class="as-tbl-btn as-tbl-btn-return"><i class="fas fa-undo"></i> Return</a>
+                                    {% endif %}
+                                    <a href="{% url 'assets:edit_asset' asset.id %}" class="as-tbl-btn as-tbl-btn-edit"><i class="fas fa-edit"></i></a>
+                                </div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="7">
+                                <div class="as-empty">
+                                    <div class="as-empty-icon"><i class="fas fa-box-open"></i></div>
+                                    <h3>No Assets Found</h3>
+                                    <p>No assets match your search criteria. Try adjusting the filters or add a new asset.</p>
+                                    <a href="{% url 'assets:add_asset' %}" class="as-cta-btn" style="padding: 11px 22px; font-size: 14px;"><i class="fas fa-plus"></i> Add First Asset</a>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

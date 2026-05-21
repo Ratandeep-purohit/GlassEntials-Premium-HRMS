@@ -735,3 +735,187 @@ class Arrear(BaseModel):
     def save(self, *args, **kwargs):
         self.full_clean()
         super().save(*args, **kwargs)
+
+
+# ===========================================================================
+# 10. ENTERPRISE INCOME TAX & INVESTMENT DECLARATIONS
+# ===========================================================================
+
+class FinancialYear(BaseModel):
+    """Tracks active financial years (e.g., 2024-2025)."""
+    name = models.CharField(max_length=9, unique=True, help_text=_("e.g. 2024-2025"))
+    start_date = models.DateField()
+    end_date = models.DateField()
+    is_active = models.BooleanField(default=True)
+
+    def __str__(self):
+        return self.name
+
+class TaxRegime(BaseModel):
+    """Defines tax regimes (OLD/NEW)."""
+    class RegimeType(models.TextChoices):
+        OLD = "OLD", _("Old Regime")
+        NEW = "NEW", _("New Regime")
+
+    financial_year = models.ForeignKey(FinancialYear, on_delete=models.CASCADE, related_name="regimes")
+    regime_type = models.CharField(max_length=10, choices=RegimeType.choices)
+    standard_deduction = models.DecimalField(**MONEY, default=Decimal("50000.00"))
+    rebate_limit = models.DecimalField(**MONEY, default=Decimal("0.00"), help_text=_("e.g., 500000 or 700000 for 87A"))
+    rebate_max_amount = models.DecimalField(**MONEY, default=Decimal("0.00"))
+
+    class Meta:
+        unique_together = ('financial_year', 'regime_type')
+
+    def __str__(self):
+        return f"{self.get_regime_type_display()} ({self.financial_year.name})"
+
+class TaxSlab(BaseModel):
+    """Tax slabs linked to a regime."""
+    regime = models.ForeignKey(TaxRegime, on_delete=models.CASCADE, related_name="slabs")
+    min_income = models.DecimalField(**MONEY, default=Decimal("0.00"))
+    max_income = models.DecimalField(**MONEY, null=True, blank=True, help_text=_("Leave blank for infinity"))
+    tax_rate = models.DecimalField(max_digits=5, decimal_places=2, help_text=_("Percentage e.g., 5.00 for 5%"))
+
+    class Meta:
+        ordering = ['min_income']
+
+    def __str__(self):
+        max_inc = self.max_income if self.max_income else "Above"
+        return f"{self.regime} | {self.min_income} - {max_inc} @ {self.tax_rate}%"
+
+class TaxDeclarationCategory(BaseModel):
+    """Master table for deduction types (80C, 80D, HRA)."""
+    class ApplicableRegime(models.TextChoices):
+        OLD = "OLD", _("Old Regime Only")
+        BOTH = "BOTH", _("Both Regimes")
+
+    code = models.CharField(max_length=50, unique=True, help_text=_("e.g., SEC_80C, HRA, HOME_LOAN"))
+    name = models.CharField(max_length=100)
+    description = models.TextField(blank=True)
+    max_limit = models.DecimalField(**MONEY, null=True, blank=True, help_text=_("Leave blank if no strict limit"))
+    is_proof_required = models.BooleanField(default=True)
+    applicable_regime = models.CharField(max_length=10, choices=ApplicableRegime.choices, default=ApplicableRegime.OLD)
+    display_order = models.IntegerField(default=0)
+    is_active = models.BooleanField(default=True)
+
+    class Meta:
+        ordering = ['display_order']
+
+    def __str__(self):
+        return f"{self.code} - {self.name}"
+
+class DeclarationCutoffPolicy(BaseModel):
+    """Defines submission deadlines."""
+    financial_year = models.ForeignKey(FinancialYear, on_delete=models.CASCADE)
+    month = models.IntegerField(choices=[(i, str(i)) for i in range(1, 13)])
+    cutoff_date = models.DateTimeField()
+
+    class Meta:
+        unique_together = ('financial_year', 'month')
+
+class EmployeeTaxProfile(BaseModel):
+    """Employee-specific tax metadata for a given financial year."""
+    class CityType(models.TextChoices):
+        METRO = "METRO", _("Metro (50% HRA)")
+        NON_METRO = "NON_METRO", _("Non-Metro (40% HRA)")
+
+    employee = models.ForeignKey(Employee, on_delete=models.CASCADE, related_name="tax_profiles")
+    financial_year = models.ForeignKey(FinancialYear, on_delete=models.CASCADE)
+    selected_regime = models.ForeignKey(TaxRegime, on_delete=models.SET_NULL, null=True)
+    city_type = models.CharField(max_length=10, choices=CityType.choices, default=CityType.NON_METRO)
+    is_regime_locked = models.BooleanField(default=False)
+    
+    # Previous Employer details (for mid-year joiners)
+    prev_employer_income = models.DecimalField(**MONEY, default=Decimal("0.00"))
+    prev_employer_tds = models.DecimalField(**MONEY, default=Decimal("0.00"))
+
+    # Dynamic Salary Breakdown & Rent Info
+    annual_ctc = models.DecimalField(**MONEY, default=Decimal("0.00"))
+    basic_salary = models.DecimalField(**MONEY, default=Decimal("0.00"))
+    hra = models.DecimalField(**MONEY, default=Decimal("0.00"))
+    special_allowance = models.DecimalField(**MONEY, default=Decimal("0.00"))
+    variable_pay = models.DecimalField(**MONEY, default=Decimal("0.00"))
+    bonus = models.DecimalField(**MONEY, default=Decimal("0.00"))
+    rent_paid = models.DecimalField(**MONEY, default=Decimal("0.00"))
+    landlord_pan = models.CharField(max_length=10, blank=True, null=True, help_text=_("Required if annual rent > ₹1,00,000"))
+    other_income = models.DecimalField(**MONEY, default=Decimal("0.00"))
+
+    class Meta:
+        unique_together = ('employee', 'financial_year')
+
+    def __str__(self):
+        return f"{self.employee} | {self.financial_year}"
+
+class EmployeeTaxDeclaration(BaseModel):
+    """Individual line-item declarations mapped to categories."""
+    class WorkflowStatus(models.TextChoices):
+        DRAFT = "DRAFT", _("Draft")
+        SUBMITTED = "SUBMITTED", _("Submitted")
+        UNDER_REVIEW = "UNDER_REVIEW", _("Under Review")
+        APPROVED = "APPROVED", _("Approved")
+        REJECTED = "REJECTED", _("Rejected")
+
+    tax_profile = models.ForeignKey(EmployeeTaxProfile, on_delete=models.CASCADE, related_name="declarations")
+    category = models.ForeignKey(TaxDeclarationCategory, on_delete=models.PROTECT)
+    declared_amount = models.DecimalField(**MONEY, default=Decimal("0.00"))
+    approved_amount = models.DecimalField(**MONEY, default=Decimal("0.00"))
+    rejected_amount = models.DecimalField(**MONEY, default=Decimal("0.00"))
+    workflow_status = models.CharField(max_length=20, choices=WorkflowStatus.choices, default=WorkflowStatus.DRAFT)
+
+    class Meta:
+        unique_together = ('tax_profile', 'category')
+
+    def __str__(self):
+        return f"{self.tax_profile.employee} | {self.category.code} | {self.workflow_status}"
+
+class DeclarationProof(BaseModel):
+    """Documents uploaded against a specific declaration."""
+    class VerificationStatus(models.TextChoices):
+        PENDING = "PENDING", _("Pending Verification")
+        VERIFIED = "VERIFIED", _("Verified")
+        REJECTED = "REJECTED", _("Rejected")
+
+    declaration = models.ForeignKey(EmployeeTaxDeclaration, on_delete=models.CASCADE, related_name="proofs")
+    file = models.FileField(upload_to="tax_proofs/%Y/%m/")
+    document_type = models.CharField(max_length=100)
+    amount_claimed = models.DecimalField(**MONEY, default=Decimal("0.00"))
+    verification_status = models.CharField(max_length=20, choices=VerificationStatus.choices, default=VerificationStatus.PENDING)
+    reviewer_remarks = models.TextField(blank=True)
+    expiry_date = models.DateField(null=True, blank=True)
+
+class DeclarationWorkflowLog(BaseModel):
+    """Audit Trail for declarations."""
+    declaration = models.ForeignKey(EmployeeTaxDeclaration, on_delete=models.CASCADE, related_name="logs", null=True, blank=True)
+    action = models.CharField(max_length=255)
+    old_value = models.TextField(blank=True, null=True)
+    new_value = models.TextField(blank=True, null=True)
+    # Using generic string for performed_by as it could be system or user
+    performed_by = models.CharField(max_length=255)
+    ip_address = models.GenericIPAddressField(null=True, blank=True)
+
+class TaxCalculationSnapshot(BaseModel):
+    """Stores the output of the tax engine at specific points in time."""
+    tax_profile = models.ForeignKey(EmployeeTaxProfile, on_delete=models.CASCADE, related_name="snapshots")
+    snapshot_date = models.DateTimeField(auto_now_add=True)
+    calculated_gross = models.DecimalField(**MONEY, default=Decimal("0.00"))
+    total_exemptions = models.DecimalField(**MONEY, default=Decimal("0.00"))
+    taxable_income = models.DecimalField(**MONEY, default=Decimal("0.00"))
+    annual_tax = models.DecimalField(**MONEY, default=Decimal("0.00"))
+    monthly_tds = models.DecimalField(**MONEY, default=Decimal("0.00"))
+    is_active_for_payroll = models.BooleanField(default=True)
+
+class PayrollTDSSyncLog(BaseModel):
+    """Logs the exact TDS amount synced to a specific payroll run."""
+    tax_profile = models.ForeignKey(EmployeeTaxProfile, on_delete=models.CASCADE)
+    payroll_run = models.ForeignKey('PayrollRun', on_delete=models.CASCADE)
+    synced_tds_amount = models.DecimalField(**MONEY)
+    sync_date = models.DateTimeField(auto_now_add=True)
+
+class NotificationLog(BaseModel):
+    """Tracks alerts sent to users regarding proof deadlines or rejections."""
+    tax_profile = models.ForeignKey(EmployeeTaxProfile, on_delete=models.CASCADE)
+    notification_type = models.CharField(max_length=50)
+    message = models.TextField()
+    sent_at = models.DateTimeField(auto_now_add=True)
+
+

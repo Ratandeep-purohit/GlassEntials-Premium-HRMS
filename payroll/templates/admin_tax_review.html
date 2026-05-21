@@ -1,0 +1,641 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tax Declaration Review Portal | GlassEntials Premium HRMS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<link rel="stylesheet" href="{% static 'css/landing.css' %}?v=3.0">
+<link rel="stylesheet" href="{% static 'css/home.css' %}?v=3.0">
+<link rel="stylesheet" href="{% static 'css/dashboard.css' %}?v=3.0">
+
+<style>
+    /* Premium Theme Variables - SaaS Enterprise look matching Employee Tax Portal */
+    :root {
+        --font-primary: 'Plus Jakarta Sans', sans-serif;
+        --font-mono: 'IBM Plex Mono', monospace;
+        
+        /* Bright Premium Light-Mode palette matching HRMS UI */
+        --bg-main: #f8fafc;
+        --bg-card: rgba(255, 255, 255, 0.75);
+        --bg-glass: rgba(255, 255, 255, 0.55);
+        --border-glass: rgba(0, 0, 0, 0.06);
+        --border-glass-hover: rgba(37, 99, 235, 0.15);
+        
+        --color-primary: #2563eb; /* Royal Blue */
+        --color-primary-glow: rgba(37, 99, 235, 0.08);
+        --color-secondary: #0891b2; /* Cyan/Teal */
+        --color-secondary-glow: rgba(8, 145, 178, 0.08);
+        
+        --color-success: #10b981; /* Emerald */
+        --color-warning: #f59e0b; /* Amber */
+        --color-danger: #ef4444; /* Rose */
+        
+        --text-main: #0f172a; /* Slate 900 */
+        --text-muted: #64748b; /* Slate 500 */
+        --text-inverse: #ffffff;
+        
+        --card-radius: 20px;
+        --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        --shadow-subtle: 0 10px 30px -10px rgba(0, 0, 0, 0.04), 0 1px 3px rgba(0, 0, 0, 0.02);
+        --shadow-soft: 0 20px 40px -15px rgba(37, 99, 235, 0.1), 0 1px 8px rgba(0, 0, 0, 0.04);
+    }
+
+    body {
+        background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%) !important;
+        background-attachment: fixed !important;
+        font-family: var(--font-primary) !important;
+        color: var(--text-main) !important;
+        margin: 0;
+        padding-bottom: 50px;
+    }
+
+    .premium-container {
+        max-width: 1440px;
+        margin: 0 auto;
+        padding: 110px 24px 20px 24px;
+    }
+
+    /* Glassmorphism Cards */
+    .glass-card {
+        background: var(--bg-card);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        border: 1px solid var(--border-glass);
+        border-radius: var(--card-radius);
+        padding: 30px;
+        transition: var(--transition-smooth);
+        box-shadow: var(--shadow-subtle);
+    }
+
+    .glass-card:hover {
+        border-color: var(--border-glass-hover);
+        box-shadow: var(--shadow-soft);
+    }
+
+    /* Header Banner */
+    .premium-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 35px;
+        flex-wrap: wrap;
+        gap: 20px;
+    }
+
+    .header-title h1 {
+        font-size: 2.2rem;
+        font-weight: 800;
+        background: linear-gradient(135deg, var(--text-main) 0%, var(--text-muted) 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        margin: 0 0 8px 0;
+        letter-spacing: -0.5px;
+    }
+
+    .header-title p {
+        color: var(--text-muted);
+        margin: 0;
+        font-size: 1rem;
+    }
+
+    .header-stats {
+        display: flex;
+        gap: 15px;
+    }
+
+    .stat-badge {
+        padding: 12px 20px;
+        border-radius: 14px;
+        background: rgba(255, 255, 255, 0.85);
+        border: 1px solid var(--border-glass);
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        min-width: 120px;
+        box-shadow: var(--shadow-subtle);
+    }
+
+    .stat-badge span.label {
+        font-size: 0.75rem;
+        font-weight: 700;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .stat-badge span.value {
+        font-size: 1.4rem;
+        font-weight: 800;
+        font-family: var(--font-mono);
+        color: var(--text-main);
+    }
+
+    .stat-badge.pending {
+        border-color: rgba(245, 158, 11, 0.3);
+        background: rgba(245, 158, 11, 0.05);
+    }
+    
+    .stat-badge.pending span.value {
+        color: var(--color-warning);
+    }
+
+    /* Grid Layout */
+    .admin-grid {
+        display: grid;
+        grid-template-cols: 1fr;
+        gap: 30px;
+    }
+
+    @media(min-width: 1100px) {
+        .admin-grid {
+            grid-template-cols: 2.3fr 1fr;
+        }
+    }
+
+    /* Tabular Portal styling */
+    .table-container {
+        overflow-x: auto;
+        margin-top: 15px;
+    }
+
+    .premium-table {
+        width: 100%;
+        border-collapse: collapse;
+        text-align: left;
+    }
+
+    .premium-table th {
+        padding: 16px 20px;
+        font-size: 0.8rem;
+        font-weight: 800;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.75px;
+        border-bottom: 1px solid var(--border-glass);
+        background: rgba(37, 99, 235, 0.04);
+    }
+
+    .premium-table td {
+        padding: 18px 20px;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.04);
+        vertical-align: middle;
+        font-size: 0.9rem;
+        color: var(--text-main);
+    }
+
+    .premium-table tr:hover td {
+        background: rgba(37, 99, 235, 0.02);
+        border-bottom-color: rgba(37, 99, 235, 0.15);
+    }
+
+    .employee-profile-box {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .emp-avatar {
+        width: 42px;
+        height: 42px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-secondary) 100%);
+        color: #fff;
+        font-weight: 800;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.95rem;
+        box-shadow: 0 4px 10px rgba(37, 99, 235, 0.15);
+    }
+
+    .emp-info {
+        display: flex;
+        flex-direction: column;
+        gap: 3px;
+    }
+
+    .emp-name {
+        font-weight: 700;
+        color: var(--text-main);
+    }
+
+    .emp-code {
+        font-size: 0.75rem;
+        color: var(--text-muted);
+    }
+
+    .regime-badge {
+        padding: 6px 12px;
+        border-radius: 50px;
+        font-size: 0.75rem;
+        font-weight: 800;
+        letter-spacing: 0.5px;
+        text-transform: uppercase;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .regime-badge.new {
+        background: var(--color-secondary-glow);
+        color: var(--color-secondary);
+        border: 1px solid rgba(8, 145, 178, 0.2);
+    }
+
+    .regime-badge.old {
+        background: var(--color-primary-glow);
+        color: var(--color-primary);
+        border: 1px solid rgba(37, 99, 235, 0.2);
+    }
+
+    .currency-value {
+        font-family: var(--font-mono);
+        font-weight: 700;
+        color: var(--text-main);
+    }
+
+    .currency-muted {
+        font-family: var(--font-mono);
+        font-size: 0.8rem;
+        color: var(--text-muted);
+    }
+
+    .status-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 5px 12px;
+        border-radius: 50px;
+        font-size: 0.75rem;
+        font-weight: 700;
+        text-transform: uppercase;
+    }
+
+    .status-pill.unlocked {
+        background: rgba(16, 185, 129, 0.1);
+        color: var(--color-success);
+        border: 1px solid rgba(16, 185, 129, 0.2);
+    }
+
+    .status-pill.locked {
+        background: rgba(239, 68, 68, 0.1);
+        color: var(--color-danger);
+        border: 1px solid rgba(239, 68, 68, 0.2);
+    }
+
+    /* Actions buttons */
+    .btn-action-circle {
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.9);
+        border: 1px solid var(--border-glass);
+        color: var(--text-main);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: var(--transition-smooth);
+        text-decoration: none;
+        box-shadow: var(--shadow-subtle);
+    }
+
+    .btn-action-circle:hover {
+        background: var(--color-primary);
+        border-color: var(--color-primary);
+        color: #fff;
+        box-shadow: 0 0 12px rgba(37, 99, 235, 0.3);
+        transform: translateY(-2px);
+    }
+
+    .btn-action-circle.lock-btn:hover {
+        background: var(--color-danger);
+        border-color: var(--color-danger);
+        box-shadow: 0 0 12px rgba(239, 68, 68, 0.3);
+        color: #fff;
+    }
+
+    .btn-action-circle.unlock-btn:hover {
+        background: var(--color-success);
+        border-color: var(--color-success);
+        box-shadow: 0 0 12px rgba(16, 185, 129, 0.3);
+        color: #fff;
+    }
+
+    /* Verification Sidebar Queue */
+    .queue-title {
+        font-size: 1.15rem;
+        font-weight: 700;
+        color: var(--text-main);
+        margin-bottom: 20px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        border-bottom: 1px solid var(--border-glass);
+        padding-bottom: 12px;
+    }
+
+    .queue-title i {
+        color: var(--color-warning);
+    }
+
+    .queue-list {
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+        max-height: 600px;
+        overflow-y: auto;
+        padding-right: 5px;
+    }
+
+    .queue-item {
+        background: rgba(255, 255, 255, 0.85);
+        border: 1px solid var(--border-glass);
+        border-radius: 14px;
+        padding: 16px;
+        transition: var(--transition-smooth);
+        position: relative;
+        box-shadow: var(--shadow-subtle);
+    }
+
+    .queue-item:hover {
+        border-color: var(--color-warning);
+        background: rgba(255, 255, 255, 0.95);
+        box-shadow: 0 8px 24px -10px rgba(245, 158, 11, 0.15);
+        transform: translateX(2px);
+    }
+
+    .queue-meta {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 8px;
+        font-size: 0.75rem;
+    }
+
+    .queue-emp {
+        font-weight: 700;
+        color: var(--text-main);
+    }
+
+    .queue-cat {
+        font-weight: 800;
+        color: var(--color-secondary);
+        text-transform: uppercase;
+        font-size: 0.7rem;
+    }
+
+    .queue-amt {
+        font-family: var(--font-mono);
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: var(--text-main);
+        margin-bottom: 12px;
+    }
+
+    .btn-verify {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 16px;
+        background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-secondary) 100%);
+        color: #fff;
+        border: none;
+        border-radius: 8px;
+        font-size: 0.75rem;
+        font-weight: 700;
+        cursor: pointer;
+        transition: var(--transition-smooth);
+        text-decoration: none;
+        box-shadow: 0 4px 12px rgba(37, 99, 235, 0.15);
+    }
+
+    .btn-verify:hover {
+        opacity: 0.9;
+        transform: translateY(-1px);
+        box-shadow: 0 6px 15px rgba(37, 99, 235, 0.25);
+    }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar {
+        width: 6px;
+    }
+    ::-webkit-scrollbar-track {
+        background: transparent;
+    }
+    ::-webkit-scrollbar-thumb {
+        background: rgba(0, 0, 0, 0.1);
+        border-radius: 10px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+        background: rgba(0, 0, 0, 0.2);
+    }
+
+    .section-desc {
+        color: var(--text-muted);
+        font-size: 0.85rem;
+        margin-bottom: 25px;
+    }
+
+</style>
+</head>
+<body>
+{% include 'includes/navbar.html' %}
+
+<main class="premium-container">
+
+    <!-- MESSAGES -->
+    {% if messages %}
+      {% for message in messages %}
+        <div style="padding: 16px 24px; border-radius: 16px; margin-bottom: 24px; font-weight: 600; font-size: 14px; display: flex; align-items: center; gap: 12px; backdrop-filter: blur(10px);
+          {% if message.tags == 'success' %} background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.2); color: var(--color-success);
+          {% else %} background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.2); color: var(--color-danger); {% endif %}">
+          {% if message.tags == 'success' %}<i class="fas fa-circle-check" style="font-size: 18px;"></i>{% else %}<i class="fas fa-circle-xmark" style="font-size: 18px;"></i>{% endif %}
+          <span>{{ message }}</span>
+        </div>
+      {% endfor %}
+    {% endif %}
+
+    <!-- HEADER -->
+    <div class="premium-header">
+        <div class="header-title">
+            <h1>Tax Declaration Review Portal</h1>
+            <p>Verify compliance proofs, audit employee declarations, and lock regimes for monthly payroll runs.</p>
+        </div>
+        <div class="header-stats">
+            <div class="stat-badge">
+                <span class="label">Total Profiles</span>
+                <span class="value">{{ profiles|length }}</span>
+            </div>
+            <div class="stat-badge pending">
+                <span class="label">Pending Proofs</span>
+                <span class="value">{{ pending_proofs|length }}</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- MAIN GRID -->
+    <div class="admin-grid">
+
+        <!-- REGISTER portal (Left Column) -->
+        <div class="glass-card">
+            <div class="queue-title" style="border-bottom: none; margin-bottom: 5px;">
+                <i class="fas fa-address-book" style="color: var(--color-primary);"></i>
+                Employee Tax Registers
+            </div>
+            <p class="section-desc">List of employee tax configurations, active TDS calculation snapshots, and profiles status for FY {{ profiles.0.financial_year.name|default:"2024-2025" }}.</p>
+            
+            <div class="table-container">
+                <table class="premium-table">
+                    <thead>
+                        <tr>
+                            <th>Employee</th>
+                            <th>Regime</th>
+                            <th>Annual CTC</th>
+                            <th>Taxable Income</th>
+                            <th>Annual Tax Liability</th>
+                            <th>Monthly TDS</th>
+                            <th>Submission Status</th>
+                            <th style="text-align: right;">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% if profiles %}
+                            {% for p in profiles %}
+                                <tr>
+                                    <td>
+                                        <div class="employee-profile-box">
+                                            <div class="emp-avatar">
+                                                {{ p.employee.first_name|slice:":1" }}{{ p.employee.last_name|slice:":1" }}
+                                            </div>
+                                            <div class="emp-info">
+                                                <span class="emp-name">{{ p.employee.first_name }} {{ p.employee.last_name }}</span>
+                                                <span class="emp-code">{{ p.employee.department.name|default:"General" }} · {{ p.employee.employee_id }}</span>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        {% if p.selected_regime %}
+                                            <span class="regime-badge {{ p.selected_regime.regime_type|lower }}">
+                                                {{ p.selected_regime.regime_type }}
+                                            </span>
+                                        {% else %}
+                                            <span class="regime-badge new">NEW</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <div class="currency-value">₹{{ p.annual_ctc }}</div>
+                                    </td>
+                                    <td>
+                                        {% for snap in p.snapshots.all %}
+                                            {% if snap.is_active_for_payroll %}
+                                                <div class="currency-value">₹{{ snap.taxable_income }}</div>
+                                            {% endif %}
+                                        {% empty %}
+                                            <div class="currency-muted">₹0.00</div>
+                                        {% endfor %}
+                                    </td>
+                                    <td>
+                                        {% for snap in p.snapshots.all %}
+                                            {% if snap.is_active_for_payroll %}
+                                                <div class="currency-value" style="color: var(--color-danger);">₹{{ snap.annual_tax }}</div>
+                                            {% endif %}
+                                        {% empty %}
+                                            <div class="currency-muted">₹0.00</div>
+                                        {% endfor %}
+                                    </td>
+                                    <td>
+                                        {% for snap in p.snapshots.all %}
+                                            {% if snap.is_active_for_payroll %}
+                                                <div class="currency-value" style="color: var(--color-secondary);">₹{{ snap.monthly_tds }}</div>
+                                            {% endif %}
+                                        {% empty %}
+                                            <div class="currency-muted">₹0.00</div>
+                                        {% endfor %}
+                                    </td>
+                                    <td>
+                                        {% if p.is_regime_locked %}
+                                            <span class="status-pill locked"><i class="fas fa-lock"></i> Locked</span>
+                                        {% else %}
+                                            <span class="status-pill unlocked"><i class="fas fa-lock-open"></i> Unlocked</span>
+                                        {% endif %}
+                                    </td>
+                                    <td style="text-align: right;">
+                                        <div style="display: inline-flex; gap: 10px; align-items: center;">
+                                            <!-- Audit trail -->
+                                            <a href="{% url 'admin_tax_audit_log' p.id %}" class="btn-action-circle" title="View Audit Trail Logs">
+                                                <i class="fas fa-history"></i>
+                                            </a>
+                                            <!-- Toggle Lock/Unlock -->
+                                            {% if p.is_regime_locked %}
+                                                <a href="{% url 'admin_lock_profile' p.id %}" class="btn-action-circle unlock-btn" title="Unlock Profile edits">
+                                                    <i class="fas fa-unlock"></i>
+                                                </a>
+                                            {% else %}
+                                                <a href="{% url 'admin_lock_profile' p.id %}" class="btn-action-circle lock-btn" title="Lock Profile edits">
+                                                    <i class="fas fa-lock"></i>
+                                                </a>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        {% else %}
+                            <tr>
+                                <td colspan="8" style="padding: 60px; text-align: center; color: var(--text-muted);">
+                                    <i class="fas fa-file-invoice-dollar" style="font-size: 36px; color: rgba(0, 0, 0, 0.05); margin-bottom: 16px; display: block;"></i>
+                                    No employee tax profiles found.
+                                </td>
+                            </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- VERIFICATION QUEUE (Right Column) -->
+        <div class="glass-card">
+            <div class="queue-title">
+                <i class="fas fa-shield-halved"></i>
+                Proof Verification Queue
+            </div>
+            
+            <div class="queue-list">
+                {% if pending_proofs %}
+                    {% for proof in pending_proofs %}
+                        <div class="queue-item">
+                            <div class="queue-meta">
+                                <span class="queue-emp">{{ proof.declaration.tax_profile.employee.first_name }} {{ proof.declaration.tax_profile.employee.last_name }}</span>
+                                <span class="queue-cat">{{ proof.declaration.category.name }}</span>
+                            </div>
+                            <div style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 6px;">
+                                Claimed Amount:
+                            </div>
+                            <div class="queue-amt">₹{{ proof.amount_claimed }}</div>
+                            <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+                                <a href="{{ proof.file.url }}" target="_blank" class="btn-action-circle" title="Download Document" style="width: 32px; height: 32px; font-size: 0.75rem;">
+                                    <i class="fas fa-arrow-down"></i>
+                                </a>
+                                <a href="{% url 'admin_verify_proof' proof.id %}" class="btn-verify">
+                                    <i class="fas fa-circle-check"></i> Verify Proof
+                                </a>
+                            </div>
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    <div style="padding: 40px 20px; text-align: center; color: var(--text-muted); font-size: 0.85rem;">
+                        <i class="fas fa-circle-check" style="font-size: 28px; color: var(--color-success); margin-bottom: 12px; display: block;"></i>
+                        No pending proofs to verify. Excellent!
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+    </div>
+
+</main>
+</body>
+</html>

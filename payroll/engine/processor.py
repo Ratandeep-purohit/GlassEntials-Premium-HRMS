@@ -205,6 +205,53 @@ class PayrollProcessor:
             arr.processed_payslip = payslip
             arr.save()
 
+        # 8. Income Tax (TDS)
+        from ..models import EmployeeTaxProfile, TaxCalculationSnapshot, PayrollTDSSyncLog, FinancialYear
+        fy_name = self._get_financial_year()
+        fy = FinancialYear.objects.filter(name=fy_name).first()
+        
+        tax_profile = None
+        if fy:
+            tax_profile = EmployeeTaxProfile.objects.filter(
+                employee=employee,
+                financial_year=fy
+            ).first()
+            
+        snapshot = None
+        if tax_profile:
+            snapshot = TaxCalculationSnapshot.objects.filter(
+                tax_profile=tax_profile,
+                is_active_for_payroll=True
+            ).order_by('-snapshot_date').first()
+            
+        if snapshot and snapshot.monthly_tds > Decimal("0.00"):
+            comp = SalaryComponent.objects.filter(code="TDS").first()
+            if not comp:
+                comp = SalaryComponent.objects.get_or_create(
+                    code="TDS",
+                    name="Income Tax (TDS)",
+                    component_type=SalaryComponent.ComponentType.DEDUCTION,
+                    calculation_type=SalaryComponent.CalculationType.FIXED
+                )[0]
+            
+            tds_amount = snapshot.monthly_tds.quantize(Decimal("0.01"))
+            PayslipItem.objects.create(
+                payslip=payslip,
+                component=comp,
+                item_type=PayslipItem.ItemType.DEDUCTION,
+                amount=tds_amount,
+                calculation_note=f"TDS based on {tax_profile.selected_regime.regime_type if tax_profile.selected_regime else 'NEW'} Regime"
+            )
+            total_deductions += tds_amount
+            
+            # Log TDS Sync
+            PayrollTDSSyncLog.objects.create(
+                organization=self.payroll_run.organization,
+                tax_profile=tax_profile,
+                payroll_run=self.payroll_run,
+                synced_tds_amount=tds_amount
+            )
+
         # Finalize Payslip totals
         payslip.gross_earnings = gross_earnings.quantize(Decimal("0.01"))
         payslip.total_deductions = total_deductions.quantize(Decimal("0.01"))
@@ -231,3 +278,10 @@ class PayrollProcessor:
         
         # We can expand this with leave logic
         return Decimal(str(lop_from_attendance))
+
+    def _get_financial_year(self):
+        """Returns string like '2024-2025' based on payroll month and year."""
+        if self.month >= 4:
+            return f"{self.year}-{self.year + 1}"
+        else:
+            return f"{self.year - 1}-{self.year}"

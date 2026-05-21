@@ -1,0 +1,103 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Assign Asset | GlassEntials</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Manrope:wght@700;800&display=swap">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link rel="stylesheet" href="{% static 'css/landing.css' %}?v=3.0">
+    <link rel="stylesheet" href="{% static 'css/home.css' %}?v=3.0">
+    <style>
+        .as-page { font-family: 'Inter', sans-serif; }
+        .as-bg { position: fixed; inset: 0; z-index: -1; background: #f0f4ff; overflow: hidden; }
+        .as-bg-blob { position: absolute; border-radius: 50%; filter: blur(100px); opacity: .35; }
+        .as-bg-blob-1 { width: 700px; height: 700px; background: radial-gradient(circle, #dbeafe, #ede9fe 50%, transparent 80%); top: -200px; left: -200px; animation: blobDrift 20s ease-in-out infinite alternate; }
+        .as-bg-blob-2 { width: 500px; height: 500px; background: radial-gradient(circle, #e0e7ff, transparent 70%); bottom: -100px; right: -100px; animation: blobDrift 26s ease-in-out infinite alternate-reverse; }
+        @keyframes blobDrift { 0% { transform: translate(0,0) scale(1); } 100% { transform: translate(60px,40px) scale(1.08); } }
+        .as-workspace { padding: 40px 4% 80px; max-width: 700px; margin: 84px auto 0; }
+        .as-breadcrumb { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; color: #94a3b8; margin-bottom: 16px; }
+        .as-breadcrumb a { color: #94a3b8; text-decoration: none; } .as-breadcrumb a:hover { color: #2563eb; } .as-breadcrumb i { font-size: 10px; } .as-breadcrumb span { color: #2563eb; font-weight: 700; }
+        .as-card { background: #fff; border-radius: 24px; border: 1px solid rgba(226,232,240,.9); box-shadow: 0 8px 32px rgba(15,23,42,.07); overflow: hidden; }
+        .as-card-header { padding: 28px 36px; border-bottom: 1px solid #f1f5f9; background: linear-gradient(135deg, #fafbff, #fff); display: flex; align-items: center; gap: 16px; }
+        .as-card-icon { width: 52px; height: 52px; border-radius: 16px; background: linear-gradient(135deg, #2563eb, #7c3aed); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 22px; box-shadow: 0 6px 18px rgba(37,99,235,.3); flex-shrink: 0; }
+        .as-card-title { font-family: 'Manrope', sans-serif; font-size: 22px; font-weight: 800; color: #0f172a; margin: 0; }
+        .as-card-sub { font-size: 14px; color: #64748b; margin: 4px 0 0; }
+        .as-asset-info { margin: 0 36px 0; padding: 18px 20px; background: linear-gradient(135deg, #f8faff, #f5f3ff); border: 1px solid #e0e7ff; border-radius: 12px; display: flex; align-items: center; gap: 16px; }
+        .as-asset-info-icon { width: 44px; height: 44px; border-radius: 12px; background: linear-gradient(135deg, #eff6ff, #ede9fe); color: #4f46e5; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; }
+        .as-asset-info h4 { font-weight: 700; font-size: 15px; color: #1e293b; margin: 0 0 4px; }
+        .as-asset-info p { font-size: 13px; color: #64748b; margin: 0; }
+        .as-form-body { padding: 28px 36px; display: flex; flex-direction: column; gap: 20px; }
+        .as-field { display: flex; flex-direction: column; gap: 7px; }
+        .as-field label { font-size: 13px; font-weight: 700; color: #475569; text-transform: uppercase; letter-spacing: .5px; }
+        .as-input { padding: 13px 16px; border: 1px solid #e2e8f0; border-radius: 10px; font-family: 'Inter'; font-size: 14px; color: #1e293b; background: #f8fafc; outline: none; transition: all .2s; }
+        .as-input:focus { border-color: #2563eb; background: #fff; box-shadow: 0 0 0 4px rgba(37,99,235,.08); }
+        .as-card-footer { padding: 20px 36px; border-top: 1px solid #f1f5f9; background: #fafbff; display: flex; gap: 12px; justify-content: flex-end; }
+        .as-btn-primary { display: inline-flex; align-items: center; gap: 8px; padding: 13px 28px; border-radius: 12px; background: linear-gradient(135deg, #2563eb, #7c3aed); color: #fff; font-weight: 700; font-size: 14px; border: none; cursor: pointer; box-shadow: 0 6px 20px rgba(37,99,235,.25); transition: all .25s; }
+        .as-btn-primary:hover { transform: translateY(-2px); box-shadow: 0 10px 28px rgba(37,99,235,.35); }
+        .as-btn-ghost { display: inline-flex; align-items: center; gap: 8px; padding: 13px 24px; border-radius: 12px; background: #f1f5f9; color: #475569; font-weight: 600; font-size: 14px; border: none; cursor: pointer; transition: all .2s; text-decoration: none; }
+        .as-btn-ghost:hover { background: #e2e8f0; color: #0f172a; }
+    </style>
+</head>
+<body class="as-page">
+    <div class="as-bg"><div class="as-bg-blob as-bg-blob-1"></div><div class="as-bg-blob as-bg-blob-2"></div></div>
+    {% include 'includes/navbar.html' %}
+    {% include 'includes/_messages.html' %}
+    <div class="as-workspace">
+        <div class="as-breadcrumb">
+            <a href="{% url 'assets:dashboard' %}"><i class="fas fa-laptop"></i> Assets</a>
+            <i class="fas fa-chevron-right"></i>
+            <a href="{% url 'assets:inventory' %}">Inventory</a>
+            <i class="fas fa-chevron-right"></i>
+            <span>Assign Asset</span>
+        </div>
+        <form method="POST">
+            {% csrf_token %}
+            <div class="as-card">
+                <div class="as-card-header">
+                    <div class="as-card-icon"><i class="fas fa-user-plus"></i></div>
+                    <div>
+                        <h1 class="as-card-title">Assign Asset</h1>
+                        <p class="as-card-sub">Assign this asset to an employee and record its condition.</p>
+                    </div>
+                </div>
+                <div class="as-asset-info" style="margin-top: 24px;">
+                    <div class="as-asset-info-icon"><i class="fas {{ asset.category.icon }}"></i></div>
+                    <div>
+                        <h4>{{ asset.name }}</h4>
+                        <p>Code: <strong>{{ asset.asset_code }}</strong> &bull; Condition: <strong>{{ asset.get_condition_display }}</strong> &bull; {{ asset.brand }} {{ asset.model_number }}</p>
+                    </div>
+                </div>
+                <div class="as-form-body">
+                    <div class="as-field">
+                        <label>Assign to Employee *</label>
+                        <select name="employee_id" class="as-input" required>
+                            <option value="">Select an employee...</option>
+                            {% for emp in employees %}
+                            <option value="{{ emp.id }}">{{ emp.first_name }} {{ emp.last_name }} &mdash; {{ emp.employee_id }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="as-field">
+                        <label>Condition at Issue *</label>
+                        <select name="condition_at_issue" class="as-input">
+                            <option value="EXCELLENT" {% if asset.condition == 'EXCELLENT' %}selected{% endif %}>✨ Excellent</option>
+                            <option value="GOOD" {% if asset.condition == 'GOOD' %}selected{% endif %}>👍 Good</option>
+                            <option value="FAIR" {% if asset.condition == 'FAIR' %}selected{% endif %}>😐 Fair</option>
+                            <option value="POOR" {% if asset.condition == 'POOR' %}selected{% endif %}>⚠️ Poor</option>
+                        </select>
+                    </div>
+                    <div class="as-field">
+                        <label>Expected Return Date <span style="font-weight: 400; color: #94a3b8;">(Optional)</span></label>
+                        <input type="date" name="expected_return_date" class="as-input">
+                    </div>
+                </div>
+                <div class="as-card-footer">
+                    <a href="{% url 'assets:inventory' %}" class="as-btn-ghost"><i class="fas fa-times"></i> Cancel</a>
+                    <button type="submit" class="as-btn-primary"><i class="fas fa-user-plus"></i> Assign Asset</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</body>
+</html>

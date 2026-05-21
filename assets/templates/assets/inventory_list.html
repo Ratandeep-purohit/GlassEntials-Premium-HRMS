@@ -1,0 +1,115 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Asset Inventory | GlassEntials</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Manrope:wght@700;800&display=swap">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link rel="stylesheet" href="{% static 'css/landing.css' %}?v=3.0">
+    <link rel="stylesheet" href="{% static 'css/home.css' %}?v=3.0">
+    
+    <style>
+        body { font-family: 'Inter', sans-serif; background: #f8fafc; margin: 0; padding-top: 84px; }
+        .wrapper { max-width: 1540px; margin: 0 auto; padding: 40px 4%; }
+        .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
+        h1 { font-family: 'Manrope', sans-serif; font-size: 32px; color: #0f172a; margin: 0; }
+        .btn { padding: 10px 20px; border-radius: 8px; font-weight: 600; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; transition: .2s; }
+        .btn-primary { background: #2563eb; color: #fff; border: none; }
+        .btn-primary:hover { background: #1d4ed8; }
+        
+        .filters { background: #fff; padding: 20px; border-radius: 12px; margin-bottom: 24px; display: flex; gap: 16px; border: 1px solid #e2e8f0; }
+        .filter-input { padding: 10px 14px; border: 1px solid #cbd5e1; border-radius: 6px; font-family: 'Inter'; outline: none; }
+        
+        .table-card { background: #fff; border-radius: 12px; border: 1px solid #e2e8f0; overflow: hidden; }
+        table { width: 100%; border-collapse: collapse; text-align: left; }
+        th { background: #f8fafc; padding: 16px 20px; font-size: 13px; color: #64748b; font-weight: 600; text-transform: uppercase; border-bottom: 1px solid #e2e8f0; }
+        td { padding: 16px 20px; font-size: 14px; color: #1e293b; border-bottom: 1px solid #f1f5f9; vertical-align: middle; }
+        
+        .badge { padding: 4px 10px; border-radius: 6px; font-size: 12px; font-weight: 600; }
+        .badge-AVAILABLE { background: #d1fae5; color: #059669; }
+        .badge-ASSIGNED { background: #dbeafe; color: #2563eb; }
+        .badge-MAINTENANCE { background: #fef3c7; color: #d97706; }
+        .badge-RETIRED { background: #f1f5f9; color: #64748b; }
+        
+        .actions a { color: #64748b; margin-right: 12px; transition: .2s; }
+        .actions a:hover { color: #2563eb; }
+    </style>
+</head>
+<body>
+    {% include 'includes/navbar.html' %}
+    <div class="wrapper">
+        <div class="page-header">
+            <div>
+                <h1>Asset Inventory</h1>
+            </div>
+            <a href="{% url 'assets:add_asset' %}" class="btn btn-primary"><i class="fas fa-plus"></i> Add Asset</a>
+        </div>
+        
+        <form class="filters" method="GET">
+            <input type="text" name="search" class="filter-input" placeholder="Search code or name..." value="{{ search_query }}" style="flex: 1;">
+            <select name="category" class="filter-input">
+                <option value="">All Categories</option>
+                {% for cat in categories %}
+                <option value="{{ cat.id }}" {% if category_filter == cat.id|stringformat:"s" %}selected{% endif %}>{{ cat.name }}</option>
+                {% endfor %}
+            </select>
+            <select name="status" class="filter-input">
+                <option value="">All Statuses</option>
+                <option value="AVAILABLE" {% if status_filter == 'AVAILABLE' %}selected{% endif %}>Available</option>
+                <option value="ASSIGNED" {% if status_filter == 'ASSIGNED' %}selected{% endif %}>Assigned</option>
+                <option value="MAINTENANCE" {% if status_filter == 'MAINTENANCE' %}selected{% endif %}>Maintenance</option>
+                <option value="RETIRED" {% if status_filter == 'RETIRED' %}selected{% endif %}>Retired</option>
+            </select>
+            <button type="submit" class="btn btn-primary">Filter</button>
+            <a href="{% url 'assets:inventory' %}" class="btn" style="background: #e2e8f0; color: #475569;">Reset</a>
+        </form>
+
+        <div class="table-card">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Asset Code</th>
+                        <th>Name</th>
+                        <th>Category</th>
+                        <th>Status</th>
+                        <th>Condition</th>
+                        <th>Assigned To</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for asset in assets %}
+                    <tr>
+                        <td style="font-weight: 600;">{{ asset.asset_code }}</td>
+                        <td>{{ asset.name }}<br><small style="color: #64748b;">{{ asset.brand }} {{ asset.model_number }}</small></td>
+                        <td><i class="fas {{ asset.category.icon }}" style="color: #94a3b8; margin-right: 6px;"></i>{{ asset.category.name }}</td>
+                        <td><span class="badge badge-{{ asset.status }}">{{ asset.get_status_display }}</span></td>
+                        <td>{{ asset.get_condition_display }}</td>
+                        <td>
+                            {% if asset.status == 'ASSIGNED' and asset.current_assignment %}
+                                {{ asset.current_assignment.employee.first_name }}
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+                        <td class="actions">
+                            {% if asset.status == 'AVAILABLE' %}
+                            <a href="{% url 'assets:assign_asset' asset.id %}" title="Assign"><i class="fas fa-user-plus"></i></a>
+                            {% elif asset.status == 'ASSIGNED' and asset.current_assignment %}
+                            <a href="{% url 'assets:return_asset' asset.current_assignment.id %}" title="Return" style="color: #d97706;"><i class="fas fa-undo"></i></a>
+                            {% endif %}
+                            <a href="{% url 'assets:edit_asset' asset.id %}" title="Edit"><i class="fas fa-edit"></i></a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="7" style="text-align: center; padding: 40px; color: #64748b;">No assets found matching criteria.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</body>
+</html>

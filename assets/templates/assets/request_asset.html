@@ -1,0 +1,65 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Request Asset | GlassEntials</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Manrope:wght@700;800&display=swap">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link rel="stylesheet" href="{% static 'css/landing.css' %}?v=3.0">
+    <link rel="stylesheet" href="{% static 'css/home.css' %}?v=3.0">
+    <style>
+        body { font-family: 'Inter', sans-serif; background: #f8fafc; margin: 0; padding-top: 84px; }
+        .wrapper { max-width: 600px; margin: 40px auto; }
+        .card { background: #fff; padding: 40px; border-radius: 16px; border: 1px solid #e2e8f0; }
+        h1 { font-family: 'Manrope', sans-serif; font-size: 28px; margin: 0 0 30px; color: #0f172a; }
+        
+        .form-group { display: flex; flex-direction: column; gap: 6px; margin-bottom: 20px; }
+        .form-group label { font-size: 14px; font-weight: 600; color: #475569; }
+        .form-control { padding: 12px 16px; border: 1px solid #cbd5e1; border-radius: 8px; font-family: 'Inter'; font-size: 15px; outline: none; }
+        textarea.form-control { resize: vertical; min-height: 100px; }
+        
+        .btn-group { display: flex; gap: 12px; margin-top: 30px; }
+        .btn { padding: 12px 24px; border-radius: 8px; font-weight: 600; text-decoration: none; text-align: center; cursor: pointer; border: none; }
+        .btn-primary { background: #2563eb; color: #fff; flex: 1; }
+        .btn-secondary { background: #f1f5f9; color: #475569; }
+    </style>
+</head>
+<body>
+    {% include 'includes/navbar.html' %}
+    <div class="wrapper">
+        <div class="card">
+            <h1>Request Asset</h1>
+            <form method="POST">
+                {% csrf_token %}
+                <div class="form-group">
+                    <label>Asset Category</label>
+                    <select name="category_id" class="form-control" required>
+                        <option value="">Select what you need...</option>
+                        {% for cat in categories %}
+                        <option value="{{ cat.id }}">{{ cat.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Priority</label>
+                    <select name="priority" class="form-control">
+                        <option value="LOW">Low - No rush</option>
+                        <option value="MEDIUM" selected>Medium - Normal workflow</option>
+                        <option value="HIGH">High - Urgent / Blocking work</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Reason for Request</label>
+                    <textarea name="reason" class="form-control" required placeholder="Please explain why you need this asset..."></textarea>
+                </div>
+                
+                <div class="btn-group">
+                    <a href="{% url 'assets:my_assets' %}" class="btn btn-secondary">Cancel</a>
+                    <button type="submit" class="btn btn-primary">Submit Request</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</body>
+</html>

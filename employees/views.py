@@ -16,7 +16,7 @@ def employee_view(request):
         return redirect('employee_directory')
         
     # Base query
-    employees_list = Employee.objects.filter(is_deleted=False).order_by('-created_at')
+    employees_list = Employee.objects.filter(organization=request.user.organization, is_deleted=False).order_by('-created_at')
     
     # Get filter parameters
     search_query = request.GET.get('search', '')
@@ -44,10 +44,10 @@ def employee_view(request):
 
     # Stats for Dashboard
     stats = {
-        'total': Employee.objects.filter(is_deleted=False).count(),
-        'active': Employee.objects.filter(is_deleted=False, is_active=True).count(),
-        'inactive': Employee.objects.filter(is_deleted=False, is_active=False).count(),
-        'depts': Department.objects.filter(is_deleted=False).count()
+        'total': Employee.objects.filter(organization=request.user.organization, is_deleted=False).count(),
+        'active': Employee.objects.filter(organization=request.user.organization, is_deleted=False, is_active=True).count(),
+        'inactive': Employee.objects.filter(organization=request.user.organization, is_deleted=False, is_active=False).count(),
+        'depts': Department.objects.filter(organization=request.user.organization, is_deleted=False).count()
     }
 
     # Pagination
@@ -56,8 +56,8 @@ def employee_view(request):
     page_obj = paginator.get_page(page_number)
 
     # Fetch context for filters
-    departments = Department.objects.filter(is_deleted=False).order_by('name')
-    designations = Designation.objects.filter(is_deleted=False).order_by('name')
+    departments = Department.objects.filter(organization=request.user.organization, is_deleted=False).order_by('name')
+    designations = Designation.objects.filter(organization=request.user.organization, is_deleted=False).order_by('name')
     
     return render(request, 'employee.html', {
         'page_obj': page_obj,
@@ -133,7 +133,7 @@ def employee_directory(request):
 def department_view(request, pk=None):
     edit_dept = None
     if pk:
-        edit_dept = Department.objects.get(pk=pk, is_deleted=False)
+        edit_dept = Department.objects.get(pk=pk, organization=request.user.organization, is_deleted=False)
 
     if request.method == 'POST':
         name = request.POST.get('name', '').strip()
@@ -145,7 +145,7 @@ def department_view(request, pk=None):
 
         # Check across ALL records (including deleted) for uniqueness conflict
         # using iexact for case-insensitive protection
-        existing_dept = Department.objects.filter(name__iexact=name).first()
+        existing_dept = Department.objects.filter(organization=request.user.organization, name__iexact=name).first()
         
         if existing_dept:
             if edit_dept and existing_dept.pk == edit_dept.pk:
@@ -173,6 +173,7 @@ def department_view(request, pk=None):
             messages.success(request, f'Department "{name}" updated successfully!')
         else:
             Department.objects.create(
+                organization=request.user.organization,
                 name=name, 
                 description=description,
                 created_by=request.user
@@ -180,7 +181,7 @@ def department_view(request, pk=None):
             messages.success(request, f'Department "{name}" created successfully!')
         return redirect('department')
     
-    departments = Department.objects.filter(is_deleted=False).order_by('-created_at')
+    departments = Department.objects.filter(organization=request.user.organization, is_deleted=False).order_by('-created_at')
     return render(request, 'department.html', {
         'departments': departments,
         'edit_dept': edit_dept
@@ -188,7 +189,7 @@ def department_view(request, pk=None):
 
 def delete_department(request, pk):
     try:
-        dept = Department.objects.get(pk=pk)
+        dept = Department.objects.get(pk=pk, organization=request.user.organization)
         name = dept.name
         dept.is_deleted = True
         dept.is_active = False
@@ -200,7 +201,7 @@ def delete_department(request, pk):
     return redirect('department')
 def toggle_department_status(request, pk):
     try:
-        dept = Department.objects.get(pk=pk)
+        dept = Department.objects.get(pk=pk, organization=request.user.organization)
         dept.is_active = not dept.is_active
         dept.updated_by = request.user
         dept.save()
@@ -209,7 +210,7 @@ def toggle_department_status(request, pk):
     except Department.DoesNotExist:
         messages.error(request, 'Department not found.')
     #if department have designations, then designations should also be deactivated
-    designations = Designation.objects.filter(department=dept, is_deleted=False)
+    designations = Designation.objects.filter(organization=request.user.organization, department=dept, is_deleted=False)
     for designation in designations:
         designation.is_active = False
         designation.updated_by = request.user
@@ -220,7 +221,7 @@ def designation_view(request, pk=None):
     edit_desig = None
     if pk:
         try:
-            edit_desig = Designation.objects.get(pk=pk, is_deleted=False)
+            edit_desig = Designation.objects.get(pk=pk, organization=request.user.organization, is_deleted=False)
         except Designation.DoesNotExist:
             messages.error(request, 'Designation not found.')
             return redirect('designation')
@@ -236,7 +237,7 @@ def designation_view(request, pk=None):
             messages.error(request, "Designation name is required.")
             return redirect('designation')
         
-        existing_desig = Designation.objects.filter(name__iexact=name).first()
+        existing_desig = Designation.objects.filter(organization=request.user.organization, name__iexact=name).first()
         
         if existing_desig:
             if edit_desig and existing_desig.pk == edit_desig.pk:
@@ -263,6 +264,7 @@ def designation_view(request, pk=None):
             messages.success(request, f'Designation "{name}" updated successfully!')
         else:
             Designation.objects.create(
+                organization=request.user.organization,
                 name=name, 
                 description=description,
                 department_id=dept_id,
@@ -271,8 +273,8 @@ def designation_view(request, pk=None):
             messages.success(request, f'Designation "{name}" created successfully!')
         return redirect('designation')
 
-    designations = Designation.objects.filter(is_deleted=False).order_by('-created_at')
-    departments = Department.objects.filter(is_deleted=False).order_by('name')
+    designations = Designation.objects.filter(organization=request.user.organization, is_deleted=False).order_by('-created_at')
+    departments = Department.objects.filter(organization=request.user.organization, is_deleted=False).order_by('name')
     
     return render(request, 'designation.html', {
         'designations': designations,
@@ -281,7 +283,7 @@ def designation_view(request, pk=None):
     })
 def delete_designation(request, pk):
     try:
-        desig = Designation.objects.get(pk=pk)
+        desig = Designation.objects.get(pk=pk, organization=request.user.organization)
         name = desig.name
         desig.is_deleted = True
         desig.is_active = False
@@ -293,7 +295,7 @@ def delete_designation(request, pk):
     return redirect('designation')
 def toggle_designation_status(request, pk):
     try:
-        desig = Designation.objects.get(pk=pk)
+        desig = Designation.objects.get(pk=pk, organization=request.user.organization)
         desig.is_active = not desig.is_active
         desig.updated_by = request.user
         desig.save()
@@ -312,6 +314,7 @@ def add_employee(request):
         try:
             # Instantiate without saving yet to catch errors in a controlled way
             employee = Employee(
+                organization=request.user.organization,
                 employee_id=request.POST.get('employee_id'),
                 first_name=request.POST.get('first_name'),
                 last_name=request.POST.get('last_name'),
@@ -360,9 +363,9 @@ def add_employee(request):
         except Exception as e:
             messages.error(request, f'Failed to create employee: {str(e)}')
             # Re-fetch context for the template
-            departments = Department.objects.filter(is_deleted=False).order_by('name')
-            designations = Designation.objects.filter(is_deleted=False).order_by('name')
-            managers = Employee.objects.filter(is_deleted=False).order_by('first_name')
+            departments = Department.objects.filter(organization=request.user.organization, is_deleted=False).order_by('name')
+            designations = Designation.objects.filter(organization=request.user.organization, is_deleted=False).order_by('name')
+            managers = Employee.objects.filter(organization=request.user.organization, is_deleted=False).order_by('first_name')
             
             # Render the same page with current POST data and error messages
             return render(request, 'addemployee.html', {
@@ -372,9 +375,9 @@ def add_employee(request):
                 'form_data': request.POST # Pass back data to preserve it
             })
 
-    departments = Department.objects.filter(is_deleted=False).order_by('name')
-    designations = Designation.objects.filter(is_deleted=False).order_by('name')
-    managers = Employee.objects.filter(is_deleted=False).order_by('first_name')
+    departments = Department.objects.filter(organization=request.user.organization, is_deleted=False).order_by('name')
+    designations = Designation.objects.filter(organization=request.user.organization, is_deleted=False).order_by('name')
+    managers = Employee.objects.filter(organization=request.user.organization, is_deleted=False).order_by('first_name')
     
     return render(request, 'addemployee.html', {
         'departments': departments,
@@ -385,7 +388,7 @@ def add_employee(request):
 @login_required
 def toggle_employee_status(request, pk):
     try:
-        employee = Employee.objects.get(pk=pk, is_deleted=False)
+        employee = Employee.objects.get(pk=pk, organization=request.user.organization, is_deleted=False)
         employee.is_active = not employee.is_active
         employee.save()
         status_str = "activated" if employee.is_active else "deactivated"
@@ -397,7 +400,7 @@ def toggle_employee_status(request, pk):
 @login_required
 def delete_employee(request, pk):
     try:
-        employee = Employee.objects.get(pk=pk)
+        employee = Employee.objects.get(pk=pk, organization=request.user.organization)
         employee.is_deleted = True
         employee.deleted_by = request.user
         employee.save()
@@ -409,7 +412,7 @@ def delete_employee(request, pk):
 @login_required
 def view_employee(request, pk):
     try:
-        employee = Employee.objects.get(pk=pk, is_deleted=False)
+        employee = Employee.objects.get(pk=pk, organization=request.user.organization, is_deleted=False)
     except Employee.DoesNotExist:
         messages.error(request, 'Employee not found.')
         return redirect('employee')
@@ -421,7 +424,7 @@ def view_employee(request, pk):
 @login_required
 def edit_employee(request, pk):
     try:
-        employee = Employee.objects.get(pk=pk, is_deleted=False)
+        employee = Employee.objects.get(pk=pk, organization=request.user.organization, is_deleted=False)
     except Employee.DoesNotExist:
         messages.error(request, 'Employee not found.')
         return redirect('employee')
@@ -483,9 +486,9 @@ def edit_employee(request, pk):
         except Exception as e:
             messages.error(request, f'Failed to update employee: {str(e)}')
 
-    departments = Department.objects.filter(is_deleted=False).order_by('name')
-    designations = Designation.objects.filter(is_deleted=False).order_by('name')
-    managers = Employee.objects.filter(is_deleted=False).exclude(pk=employee.pk).order_by('first_name')
+    departments = Department.objects.filter(organization=request.user.organization, is_deleted=False).order_by('name')
+    designations = Designation.objects.filter(organization=request.user.organization, is_deleted=False).order_by('name')
+    managers = Employee.objects.filter(organization=request.user.organization, is_deleted=False).exclude(pk=employee.pk).order_by('first_name')
     
     return render(request, 'editemployee.html', {
         'employee': employee,
@@ -497,7 +500,7 @@ def edit_employee(request, pk):
 @login_required
 def export_employees_csv(request):
     # Base query
-    employees = Employee.objects.filter(is_deleted=False).order_by('-created_at')
+    employees = Employee.objects.filter(organization=request.user.organization, is_deleted=False).order_by('-created_at')
     
     # Get filter parameters
     search_query = request.GET.get('search', '')
@@ -553,7 +556,7 @@ def export_employees_csv(request):
 @login_required
 def export_employees_excel(request):
     # Base query
-    employees = Employee.objects.filter(is_deleted=False).order_by('-created_at')
+    employees = Employee.objects.filter(organization=request.user.organization, is_deleted=False).order_by('-created_at')
     
     # Same filtering logic
     search_query = request.GET.get('search', '')
@@ -721,12 +724,12 @@ def bulk_import(request):
                     error_count += 1
                     continue
 
-                if Employee.objects.filter(employee_id=emp_id).exists():
+                if Employee.objects.filter(organization=request.user.organization, employee_id=emp_id).exists():
                     errors.append(f"Row {row_idx}: Employee ID '{emp_id}' already exists.")
                     error_count += 1
                     continue
                 
-                if Employee.objects.filter(email=email).exists():
+                if Employee.objects.filter(organization=request.user.organization, email=email).exists():
                     errors.append(f"Row {row_idx}: Email '{email}' already exists.")
                     error_count += 1
                     continue
@@ -734,14 +737,15 @@ def bulk_import(request):
                 # Process Foreign Keys
                 dept = None
                 if dept_name:
-                    dept, _ = Department.objects.get_or_create(name=dept_name, defaults={'created_by': request.user})
+                    dept, _ = Department.objects.get_or_create(organization=request.user.organization, name=dept_name, defaults={'created_by': request.user})
                 
                 desig = None
                 if desig_name:
-                    desig, _ = Designation.objects.get_or_create(name=desig_name, defaults={'department': dept, 'created_by': request.user})
+                    desig, _ = Designation.objects.get_or_create(organization=request.user.organization, name=desig_name, defaults={'department': dept, 'created_by': request.user})
 
                 try:
                     Employee.objects.create(
+                        organization=request.user.organization,
                         employee_id=emp_id,
                         first_name=f_name,
                         last_name=l_name,
@@ -829,9 +833,9 @@ def approve_employee(request, pk):
         return redirect('home')
         
     # GET request
-    departments = Department.objects.filter(is_deleted=False)
-    designations = Designation.objects.filter(is_deleted=False)
-    shifts = Shift.objects.filter(is_deleted=False)
+    departments = Department.objects.filter(organization=request.user.organization, is_deleted=False)
+    designations = Designation.objects.filter(organization=request.user.organization, is_deleted=False)
+    shifts = Shift.objects.filter(organization=request.user.organization, is_deleted=False)
     
     return render(request, 'approve_employee.html', {
         'pending_user': pending_user,

@@ -1,0 +1,160 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Asset Dashboard | GlassEntials HRMS</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Manrope:wght@700;800&display=swap">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link rel="stylesheet" href="{% static 'css/landing.css' %}?v=3.0">
+    <link rel="stylesheet" href="{% static 'css/home.css' %}?v=3.0">
+    <link rel="stylesheet" href="{% static 'css/dashboard.css' %}?v=3.0">
+
+    <style>
+        .as-page { font-family: 'Inter', sans-serif; }
+        .as-bg {
+            position: fixed; inset: 0; z-index: -1;
+            background: #f8fafc;
+        }
+        .as-workspace {
+            padding: 40px 4% 80px;
+            max-width: 1540px;
+            margin: 84px auto 0;
+        }
+        .as-top { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 40px; }
+        .as-page-title { font-family: 'Manrope', sans-serif; font-size: 34px; font-weight: 800; color: #0f172a; margin: 0 0 6px; letter-spacing: -1px; }
+        .as-page-sub { font-size: 15px; color: #64748b; font-weight: 500; margin: 0; }
+        
+        .as-btn {
+            display: inline-flex; align-items: center; gap: 8px;
+            padding: 12px 24px; border-radius: 12px;
+            background: #2563eb; color: #fff; font-weight: 600;
+            text-decoration: none; border: none; cursor: pointer;
+            transition: all .2s;
+        }
+        .as-btn:hover { background: #1d4ed8; transform: translateY(-2px); box-shadow: 0 4px 12px rgba(37,99,235,.3); color: #fff; }
+
+        .as-kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 24px; margin-bottom: 40px; }
+        .as-kpi-card { background: #fff; border-radius: 16px; padding: 24px; border: 1px solid #e2e8f0; box-shadow: 0 2px 4px rgba(0,0,0,.02); display: flex; align-items: center; gap: 20px; }
+        .as-kpi-icon { width: 56px; height: 56px; border-radius: 14px; background: #eff6ff; color: #3b82f6; display: flex; align-items: center; justify-content: center; font-size: 24px; }
+        .as-kpi-info h4 { font-size: 13px; color: #64748b; margin: 0 0 4px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+        .as-kpi-info .as-kpi-val { font-size: 28px; font-weight: 800; color: #0f172a; font-family: 'Manrope', sans-serif; }
+
+        .as-grid-2 { display: grid; grid-template-columns: 2fr 1fr; gap: 24px; }
+        .as-panel { background: #fff; border-radius: 16px; border: 1px solid #e2e8f0; padding: 24px; }
+        .as-panel-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+        .as-panel-title { font-size: 18px; font-weight: 700; color: #0f172a; margin: 0; }
+        
+        .as-list { list-style: none; padding: 0; margin: 0; }
+        .as-list-item { display: flex; justify-content: space-between; align-items: center; padding: 16px 0; border-bottom: 1px solid #f1f5f9; }
+        .as-list-item:last-child { border-bottom: none; }
+        .as-item-main { display: flex; align-items: center; gap: 16px; }
+        .as-avatar { width: 40px; height: 40px; border-radius: 50%; background: #e2e8f0; display: flex; align-items: center; justify-content: center; font-weight: 600; color: #475569; }
+        .as-item-title { font-size: 14px; font-weight: 600; color: #1e293b; margin: 0; }
+        .as-item-sub { font-size: 13px; color: #64748b; margin: 4px 0 0; }
+        
+        .badge { padding: 4px 10px; border-radius: 6px; font-size: 12px; font-weight: 600; }
+        .badge-pending { background: #fef3c7; color: #d97706; }
+        .badge-assigned { background: #dbeafe; color: #2563eb; }
+        .badge-available { background: #d1fae5; color: #059669; }
+    </style>
+</head>
+<body class="as-page">
+    <div class="as-bg"></div>
+    {% include 'includes/navbar.html' %}
+
+    <div class="as-workspace">
+        <div class="as-top">
+            <div>
+                <h1 class="as-page-title">Asset Dashboard</h1>
+                <p class="as-page-sub">Manage company equipment, assignments, and requests.</p>
+            </div>
+            <div style="display: flex; gap: 12px;">
+                <a href="{% url 'assets:inventory' %}" class="as-btn" style="background: #fff; color: #0f172a; border: 1px solid #e2e8f0;"><i class="fas fa-boxes"></i> Inventory</a>
+                <a href="{% url 'assets:add_asset' %}" class="as-btn"><i class="fas fa-plus"></i> New Asset</a>
+            </div>
+        </div>
+
+        <div class="as-kpi-grid">
+            <div class="as-kpi-card">
+                <div class="as-kpi-icon"><i class="fas fa-laptop"></i></div>
+                <div class="as-kpi-info">
+                    <h4>Total Assets</h4>
+                    <div class="as-kpi-val">{{ total_assets }}</div>
+                </div>
+            </div>
+            <div class="as-kpi-card">
+                <div class="as-kpi-icon" style="background: #dbeafe; color: #2563eb;"><i class="fas fa-user-check"></i></div>
+                <div class="as-kpi-info">
+                    <h4>Assigned</h4>
+                    <div class="as-kpi-val">{{ assigned_assets }}</div>
+                </div>
+            </div>
+            <div class="as-kpi-card">
+                <div class="as-kpi-icon" style="background: #d1fae5; color: #059669;"><i class="fas fa-check-circle"></i></div>
+                <div class="as-kpi-info">
+                    <h4>Available</h4>
+                    <div class="as-kpi-val">{{ available_assets }}</div>
+                </div>
+            </div>
+            <div class="as-kpi-card">
+                <div class="as-kpi-icon" style="background: #fef3c7; color: #d97706;"><i class="fas fa-clipboard-list"></i></div>
+                <div class="as-kpi-info">
+                    <h4>Pending Requests</h4>
+                    <div class="as-kpi-val">{{ pending_requests|length }}</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="as-grid-2">
+            <!-- Recent Assignments -->
+            <div class="as-panel">
+                <div class="as-panel-header">
+                    <h3 class="as-panel-title">Recent Assignments</h3>
+                </div>
+                <ul class="as-list">
+                    {% for assign in recent_assignments %}
+                    <li class="as-list-item">
+                        <div class="as-item-main">
+                            <div class="as-avatar">{{ assign.employee.first_name|slice:":1" }}{{ assign.employee.last_name|slice:":1" }}</div>
+                            <div>
+                                <p class="as-item-title">{{ assign.asset.name }} ({{ assign.asset.asset_code }})</p>
+                                <p class="as-item-sub">Assigned to {{ assign.employee.first_name }} {{ assign.employee.last_name }} on {{ assign.assigned_date }}</p>
+                            </div>
+                        </div>
+                        <span class="badge badge-assigned">Active</span>
+                    </li>
+                    {% empty %}
+                    <li class="as-list-item" style="justify-content: center; color: #64748b;">No recent assignments.</li>
+                    {% endfor %}
+                </ul>
+            </div>
+
+            <!-- Pending Requests -->
+            <div class="as-panel">
+                <div class="as-panel-header">
+                    <h3 class="as-panel-title">Action Required</h3>
+                    <a href="{% url 'assets:manage_requests' %}" style="font-size: 13px; font-weight: 600; color: #2563eb; text-decoration: none;">View All</a>
+                </div>
+                <ul class="as-list">
+                    {% for req in pending_requests %}
+                    <li class="as-list-item">
+                        <div class="as-item-main">
+                            <div>
+                                <p class="as-item-title">{{ req.employee.first_name }} requested a {{ req.category.name }}</p>
+                                <p class="as-item-sub">Priority: {{ req.priority }}</p>
+                            </div>
+                        </div>
+                        <a href="{% url 'assets:manage_requests' %}" class="as-btn" style="padding: 6px 12px; font-size: 12px; border-radius: 6px;">Review</a>
+                    </li>
+                    {% empty %}
+                    <li class="as-list-item" style="justify-content: center; color: #64748b;">No pending requests.</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

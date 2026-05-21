@@ -1,0 +1,88 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>My Assets | GlassEntials</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Manrope:wght@700;800&display=swap">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link rel="stylesheet" href="{% static 'css/landing.css' %}?v=3.0">
+    <link rel="stylesheet" href="{% static 'css/home.css' %}?v=3.0">
+    <style>
+        body { font-family: 'Inter', sans-serif; background: #f8fafc; margin: 0; padding-top: 84px; }
+        .wrapper { max-width: 1200px; margin: 40px auto; }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
+        h1 { font-family: 'Manrope', sans-serif; font-size: 32px; color: #0f172a; margin: 0; }
+        
+        .btn-primary { background: #2563eb; color: #fff; padding: 10px 20px; border-radius: 8px; font-weight: 600; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; }
+        
+        .grid { display: grid; grid-template-columns: 2fr 1fr; gap: 24px; }
+        .card { background: #fff; border-radius: 12px; border: 1px solid #e2e8f0; padding: 24px; }
+        .card-title { font-size: 18px; font-weight: 700; margin: 0 0 20px; color: #0f172a; }
+        
+        .asset-list { list-style: none; padding: 0; margin: 0; display: grid; gap: 16px; }
+        .asset-item { border: 1px solid #e2e8f0; border-radius: 12px; padding: 20px; display: flex; align-items: flex-start; gap: 16px; background: #fafafa; }
+        .asset-icon { width: 48px; height: 48px; border-radius: 10px; background: #eff6ff; color: #3b82f6; display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0; }
+        .asset-info h4 { margin: 0 0 4px; font-size: 16px; color: #1e293b; }
+        .asset-info p { margin: 0; font-size: 13px; color: #64748b; }
+        
+        .req-list { list-style: none; padding: 0; margin: 0; display: grid; gap: 12px; }
+        .req-item { padding: 16px; border-bottom: 1px solid #f1f5f9; }
+        .req-item:last-child { border-bottom: none; }
+        
+        .badge { padding: 4px 8px; border-radius: 6px; font-size: 11px; font-weight: 700; text-transform: uppercase; }
+        .badge-PENDING { background: #fef3c7; color: #d97706; }
+        .badge-APPROVED { background: #d1fae5; color: #059669; }
+        .badge-REJECTED { background: #fee2e2; color: #dc2626; }
+    </style>
+</head>
+<body>
+    {% include 'includes/navbar.html' %}
+    <div class="wrapper">
+        <div class="header">
+            <h1>My Assets</h1>
+            <a href="{% url 'assets:request_asset' %}" class="btn-primary"><i class="fas fa-plus"></i> Request Asset</a>
+        </div>
+        
+        <div class="grid">
+            <div class="card">
+                <h3 class="card-title">Currently Assigned to You</h3>
+                <ul class="asset-list">
+                    {% for assign in assignments %}
+                    <li class="asset-item">
+                        <div class="asset-icon"><i class="fas {{ assign.asset.category.icon }}"></i></div>
+                        <div class="asset-info">
+                            <h4>{{ assign.asset.name }}</h4>
+                            <p><strong>Code:</strong> {{ assign.asset.asset_code }} &nbsp;|&nbsp; <strong>Assigned:</strong> {{ assign.assigned_date }}</p>
+                            {% if assign.asset.serial_number %}<p><strong>S/N:</strong> {{ assign.asset.serial_number }}</p>{% endif %}
+                        </div>
+                    </li>
+                    {% empty %}
+                    <li style="color: #64748b; padding: 20px; text-align: center;">You have no assets currently assigned to you.</li>
+                    {% endfor %}
+                </ul>
+            </div>
+            
+            <div class="card">
+                <h3 class="card-title">My Requests</h3>
+                <ul class="req-list">
+                    {% for req in requests %}
+                    <li class="req-item">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                            <strong style="color: #1e293b;">{{ req.category.name }}</strong>
+                            <span class="badge badge-{{ req.status }}">{{ req.status }}</span>
+                        </div>
+                        <p style="margin: 0; font-size: 12px; color: #64748b;">Requested on {{ req.created_at|date:"M d, Y" }}</p>
+                        {% if req.status == 'REJECTED' and req.rejection_reason %}
+                        <p style="margin: 4px 0 0; font-size: 12px; color: #dc2626;"><i class="fas fa-info-circle"></i> {{ req.rejection_reason }}</p>
+                        {% endif %}
+                    </li>
+                    {% empty %}
+                    <li style="color: #64748b; padding: 20px; text-align: center;">No requests history.</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

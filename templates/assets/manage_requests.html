@@ -1,0 +1,86 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Manage Asset Requests | GlassEntials</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Manrope:wght@700;800&display=swap">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link rel="stylesheet" href="{% static 'css/landing.css' %}?v=3.0">
+    <link rel="stylesheet" href="{% static 'css/home.css' %}?v=3.0">
+    <style>
+        body { font-family: 'Inter', sans-serif; background: #f8fafc; margin: 0; padding-top: 84px; }
+        .wrapper { max-width: 1200px; margin: 40px auto; }
+        h1 { font-family: 'Manrope', sans-serif; font-size: 32px; color: #0f172a; margin: 0 0 30px; }
+        
+        .card { background: #fff; border-radius: 12px; border: 1px solid #e2e8f0; overflow: hidden; margin-bottom: 24px; }
+        table { width: 100%; border-collapse: collapse; text-align: left; }
+        th { background: #f8fafc; padding: 16px 20px; font-size: 13px; color: #64748b; font-weight: 600; text-transform: uppercase; border-bottom: 1px solid #e2e8f0; }
+        td { padding: 16px 20px; font-size: 14px; color: #1e293b; border-bottom: 1px solid #f1f5f9; vertical-align: middle; }
+        
+        .badge { padding: 4px 10px; border-radius: 6px; font-size: 12px; font-weight: 600; }
+        .badge-PENDING { background: #fef3c7; color: #d97706; }
+        .badge-APPROVED { background: #d1fae5; color: #059669; }
+        .badge-REJECTED { background: #fee2e2; color: #dc2626; }
+        
+        .btn { padding: 6px 12px; border-radius: 6px; font-weight: 600; font-size: 13px; cursor: pointer; border: none; }
+        .btn-success { background: #10b981; color: #fff; }
+        .btn-danger { background: #ef4444; color: #fff; }
+    </style>
+</head>
+<body>
+    {% include 'includes/navbar.html' %}
+    {% include 'includes/_messages.html' %}
+    <div class="wrapper">
+        <h1>Asset Requests</h1>
+        
+        <div class="card">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Employee</th>
+                        <th>Category</th>
+                        <th>Reason</th>
+                        <th>Priority</th>
+                        <th>Status</th>
+                        <th>Requested On</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for req in requests %}
+                    <tr>
+                        <td style="font-weight: 600;">{{ req.employee.first_name }} {{ req.employee.last_name }}</td>
+                        <td>{{ req.category.name }}</td>
+                        <td style="max-width: 300px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="{{ req.reason }}">{{ req.reason }}</td>
+                        <td>{{ req.priority }}</td>
+                        <td><span class="badge badge-{{ req.status }}">{{ req.status }}</span></td>
+                        <td>{{ req.created_at|date:"M d, Y" }}</td>
+                        <td>
+                            {% if req.status == 'PENDING' %}
+                            <form method="POST" action="{% url 'assets:request_action' req.id %}" style="display:inline;">
+                                {% csrf_token %}
+                                <input type="hidden" name="action" value="approve">
+                                <button type="submit" class="btn btn-success">Approve</button>
+                            </form>
+                            <form method="POST" action="{% url 'assets:request_action' req.id %}" style="display:inline;">
+                                {% csrf_token %}
+                                <input type="hidden" name="action" value="reject">
+                                <button type="submit" class="btn btn-danger">Reject</button>
+                            </form>
+                            {% else %}
+                            <span style="color: #94a3b8; font-size: 13px;">Resolved by {{ req.resolved_by.first_name|default:"Admin" }}</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="7" style="text-align: center; padding: 40px; color: #64748b;">No asset requests found.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</body>
+</html>
