@@ -224,7 +224,10 @@ def manage_employee_salary(request, employee_id):
                 
                 # 2. Add selected components
                 for comp_id in selected_component_ids:
-                    component = SalaryComponent.objects.get(id=comp_id)
+                    component = SalaryComponent.objects.get(
+                        Q(organization=organization) | Q(organization__isnull=True),
+                        id=comp_id
+                    )
                     item = SalaryStructureItem(
                         salary_structure=structure,
                         component=component,
@@ -1151,7 +1154,9 @@ def my_tax_declarations(request):
     # Get user declarations and group proofs
     user_declarations = EmployeeTaxDeclaration.objects.filter(tax_profile=profile).select_related('category')
     proofs = DeclarationProof.objects.filter(declaration__tax_profile=profile)
-    audit_logs = DeclarationWorkflowLog.objects.filter(Q(declaration__tax_profile=profile) | Q(declaration__isnull=True)).order_by('-id')[:10]
+    audit_logs = DeclarationWorkflowLog.objects.filter(
+        Q(declaration__tax_profile=profile) | Q(declaration__isnull=True, organization=organization)
+    ).order_by('-id')[:10]
 
     context = {
         'profile': profile,

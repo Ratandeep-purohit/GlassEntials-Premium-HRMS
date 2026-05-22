@@ -817,7 +817,7 @@ def approve_employee(request, pk):
         
         # Assign Shift
         from datetime import datetime
-        shift = Shift.objects.get(pk=shift_id)
+        shift = Shift.objects.get(pk=shift_id, organization=request.user.organization)
         ShiftAssignment.objects.create(
             employee=emp,
             shift=shift,

@@ -111,7 +111,10 @@ def add_asset_view(request):
             })
             
         # Check globally for duplicate asset_code (active and soft-deleted)
-        existing_asset = Asset.all_objects.filter(asset_code__iexact=asset_code).first()
+        existing_asset = Asset.all_objects.filter(
+            organization=request.user.organization,
+            asset_code__iexact=asset_code
+        ).first()
         if existing_asset:
             if not existing_asset.is_deleted:
                 messages.error(request, f"An active asset with code '{asset_code}' already exists.")

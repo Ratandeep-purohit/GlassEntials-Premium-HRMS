@@ -72,8 +72,7 @@ def register_view(request):
         
         if org_choice == 'org1':
             new_user.is_approved = True
-            new_user.is_staff = True # Org creator is an admin
-            new_user.is_superuser = True
+            new_user.is_staff = True # Org creator is an HR Admin for their tenant
             messages.success(request, "Organization and Admin account created successfully! Please login.")
         else:
             new_user.is_approved = False

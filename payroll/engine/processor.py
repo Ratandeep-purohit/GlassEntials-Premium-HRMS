@@ -34,9 +34,90 @@ class PayrollProcessor:
 
         # Identify employees to process (filter by department if applicable)
         from employees.models import Employee
-        employees = Employee.objects.filter(is_active=True)
+        employees = Employee.objects.filter(
+            organization=self.payroll_run.organization,
+            is_active=True
+        )
         if self.payroll_run.department:
             employees = employees.filter(department=self.payroll_run.department)
+
+        # PREFETCH DATA #
+        org = self.payroll_run.organization
+        now_date = timezone.now().date()
+        
+        # 1. Salary Structures
+        structures = SalaryStructure.objects.filter(
+            organization=org,
+            is_active=True,
+            effective_date__lte=now_date
+        ).order_by('employee_id', '-effective_date').prefetch_related('items__component')
+        self.active_structures = {}
+        for s in structures:
+            if s.employee_id not in self.active_structures:
+                self.active_structures[s.employee_id] = s
+                
+        # 2. LOP Days (Attendance)
+        from django.db.models import Count
+        lop_counts = Attendance.objects.filter(
+            employee__organization=org,
+            date__month=self.month,
+            date__year=self.year,
+            status__is_paid=False
+        ).values('employee_id').annotate(count=Count('id'))
+        self.lop_by_employee = {item['employee_id']: Decimal(str(item['count'])) for item in lop_counts}
+        
+        # 3. Global Salary Components
+        self.components_by_code = {
+            c.code: c for c in SalaryComponent.objects.filter(organization=org)
+        }
+        
+        # 4. Loan Installments
+        installments = LoanInstallment.objects.filter(
+            loan__organization=org,
+            due_month=self.month,
+            due_year=self.year,
+            status=LoanInstallment.InstallmentStatus.PENDING
+        ).select_related('loan')
+        self.installments_by_employee = {}
+        for inst in installments:
+            self.installments_by_employee.setdefault(inst.loan.employee_id, []).append(inst)
+            
+        # 5. Arrears
+        arrears = Arrear.objects.filter(
+            organization=org,
+            status=Arrear.ArrearStatus.PENDING
+        ).select_related('component')
+        self.arrears_by_employee = {}
+        for arr in arrears:
+            self.arrears_by_employee.setdefault(arr.employee_id, []).append(arr)
+            
+        # 6. Taxes & TDS
+        fy_name = self._get_financial_year()
+        from ..models import FinancialYear, EmployeeTaxProfile, TaxCalculationSnapshot, PayrollTDSSyncLog
+        self.fy = FinancialYear.objects.filter(name=fy_name).first()
+        self.tax_profiles_by_employee = {}
+        self.tax_snapshots_by_profile = {}
+        
+        if self.fy:
+            tps = EmployeeTaxProfile.objects.filter(
+                employee__organization=org,
+                financial_year=self.fy
+            ).select_related('selected_regime')
+            self.tax_profiles_by_employee = {tp.employee_id: tp for tp in tps}
+            
+            snaps = TaxCalculationSnapshot.objects.filter(
+                tax_profile__in=tps,
+                is_active_for_payroll=True
+            ).order_by('tax_profile_id', '-snapshot_date')
+            for snap in snaps:
+                if snap.tax_profile_id not in self.tax_snapshots_by_profile:
+                    self.tax_snapshots_by_profile[snap.tax_profile_id] = snap
+
+        # Bulk accumulation lists
+        self.payslip_items_to_create = []
+        self.installments_to_update = []
+        self.arrears_to_update = []
+        self.tds_logs_to_create = []
 
         total_gross = Decimal("0.00")
         total_deductions = Decimal("0.00")
@@ -50,6 +131,16 @@ class PayrollProcessor:
                 total_deductions += payslip.total_deductions
                 total_net += payslip.net_salary
                 processed_count += 1
+                
+        # Execute Bulk DB Operations
+        if self.payslip_items_to_create:
+            PayslipItem.objects.bulk_create(self.payslip_items_to_create)
+        if self.installments_to_update:
+            LoanInstallment.objects.bulk_update(self.installments_to_update, ['status', 'payslip'])
+        if self.arrears_to_update:
+            Arrear.objects.bulk_update(self.arrears_to_update, ['status', 'processed_in_payroll', 'processed_payslip'])
+        if self.tds_logs_to_create:
+            PayrollTDSSyncLog.objects.bulk_create(self.tds_logs_to_create)
 
         # Update PayrollRun totals
         self.payroll_run.total_employees = processed_count
@@ -65,18 +156,12 @@ class PayrollProcessor:
         """Calculate and save payslip for a single employee."""
         
         # 1. Get Active Salary Structure
-        structure = SalaryStructure.objects.filter(
-            employee=employee,
-            is_active=True,
-            effective_date__lte=timezone.now().date()
-        ).order_by("-effective_date").first()
+        structure = self.active_structures.get(employee.id)
 
         if not structure:
             return None
 
         # 2. Calculate Attendance / LOP
-        # Simplified: Count days with status.is_paid=False in Attendance
-        # And LeaveRequest where status='APPROVED' and leave_type.is_paid=False
         lop_days = self._get_lop_days(employee)
         paid_days = Decimal(str(self.total_days)) - lop_days
 
@@ -121,17 +206,20 @@ class PayrollProcessor:
                 value = (value * paid_days / Decimal(str(self.total_days)))
 
             # Save PayslipItem
-            PayslipItem.objects.create(
-                payslip=payslip,
-                component=comp,
-                item_type=comp.component_type,
-                amount=value.quantize(Decimal("0.01"))
+            amount = value.quantize(Decimal("0.01"))
+            self.payslip_items_to_create.append(
+                PayslipItem(
+                    payslip=payslip,
+                    component=comp,
+                    item_type=comp.component_type,
+                    amount=amount
+                )
             )
 
             if comp.component_type == SalaryComponent.ComponentType.EARNING:
-                gross_earnings += value
+                gross_earnings += amount
             else:
-                total_deductions += value
+                total_deductions += amount
 
         # 5. Statutory Deductions
         stat_deductions = calculate_statutory_deductions(
@@ -140,59 +228,59 @@ class PayrollProcessor:
         )
         for code, amount in stat_deductions.items():
             if amount > 0:
-                comp = SalaryComponent.objects.filter(code=code).first()
+                comp = self.components_by_code.get(code)
                 if comp:
-                    PayslipItem.objects.create(
-                        payslip=payslip,
-                        component=comp,
-                        item_type=PayslipItem.ItemType.DEDUCTION,
-                        amount=amount
+                    self.payslip_items_to_create.append(
+                        PayslipItem(
+                            payslip=payslip,
+                            component=comp,
+                            item_type=PayslipItem.ItemType.DEDUCTION,
+                            amount=amount
+                        )
                     )
                     total_deductions += amount
 
         # 6. Loans (EMI Recovery)
-        installments = LoanInstallment.objects.filter(
-            loan__employee=employee,
-            due_month=self.month,
-            due_year=self.year,
-            status=LoanInstallment.InstallmentStatus.PENDING
-        )
+        installments = self.installments_by_employee.get(employee.id, [])
         for inst in installments:
-            comp = SalaryComponent.objects.filter(code="LOAN_RECOVERY").first()
+            comp = self.components_by_code.get("LOAN_RECOVERY")
             if not comp:
                 # Create a default loan recovery component if missing
-                comp = SalaryComponent.objects.get_or_create(
+                comp = SalaryComponent.objects.create(
+                    organization=self.payroll_run.organization,
                     code="LOAN_RECOVERY",
                     name="Loan EMI Recovery",
                     component_type=SalaryComponent.ComponentType.DEDUCTION,
                     calculation_type=SalaryComponent.CalculationType.FIXED
-                )[0]
+                )
+                self.components_by_code["LOAN_RECOVERY"] = comp
             
-            PayslipItem.objects.create(
-                payslip=payslip,
-                component=comp,
-                item_type=PayslipItem.ItemType.DEDUCTION,
-                amount=inst.emi_amount,
-                calculation_note=f"Loan {inst.loan.loan_number} EMI #{inst.installment_number}"
+            self.payslip_items_to_create.append(
+                PayslipItem(
+                    payslip=payslip,
+                    component=comp,
+                    item_type=PayslipItem.ItemType.DEDUCTION,
+                    amount=inst.emi_amount,
+                    calculation_note=f"Loan {inst.loan.loan_number} EMI #{inst.installment_number}"
+                )
             )
             total_deductions += inst.emi_amount
             # Mark installment as deducted (link to payslip)
             inst.status = LoanInstallment.InstallmentStatus.DEDUCTED
             inst.payslip = payslip
-            inst.save()
+            self.installments_to_update.append(inst)
 
         # 7. Arrears
-        arrears = Arrear.objects.filter(
-            employee=employee,
-            status=Arrear.ArrearStatus.PENDING
-        )
+        arrears = self.arrears_by_employee.get(employee.id, [])
         for arr in arrears:
-            PayslipItem.objects.create(
-                payslip=payslip,
-                component=arr.component,
-                item_type=arr.arrear_type,
-                amount=arr.amount,
-                calculation_note=f"Arrear for {arr.from_month}/{arr.from_year}"
+            self.payslip_items_to_create.append(
+                PayslipItem(
+                    payslip=payslip,
+                    component=arr.component,
+                    item_type=arr.arrear_type,
+                    amount=arr.amount,
+                    calculation_note=f"Arrear for {arr.from_month}/{arr.from_year}"
+                )
             )
             if arr.arrear_type == Arrear.ArrearType.EARNING:
                 gross_earnings += arr.amount
@@ -203,53 +291,45 @@ class PayrollProcessor:
             arr.status = Arrear.ArrearStatus.PROCESSED
             arr.processed_in_payroll = self.payroll_run
             arr.processed_payslip = payslip
-            arr.save()
+            self.arrears_to_update.append(arr)
 
         # 8. Income Tax (TDS)
-        from ..models import EmployeeTaxProfile, TaxCalculationSnapshot, PayrollTDSSyncLog, FinancialYear
-        fy_name = self._get_financial_year()
-        fy = FinancialYear.objects.filter(name=fy_name).first()
-        
-        tax_profile = None
-        if fy:
-            tax_profile = EmployeeTaxProfile.objects.filter(
-                employee=employee,
-                financial_year=fy
-            ).first()
-            
-        snapshot = None
-        if tax_profile:
-            snapshot = TaxCalculationSnapshot.objects.filter(
-                tax_profile=tax_profile,
-                is_active_for_payroll=True
-            ).order_by('-snapshot_date').first()
+        tax_profile = self.tax_profiles_by_employee.get(employee.id)
+        snapshot = self.tax_snapshots_by_profile.get(tax_profile.id) if tax_profile else None
             
         if snapshot and snapshot.monthly_tds > Decimal("0.00"):
-            comp = SalaryComponent.objects.filter(code="TDS").first()
+            comp = self.components_by_code.get("TDS")
             if not comp:
-                comp = SalaryComponent.objects.get_or_create(
+                comp = SalaryComponent.objects.create(
+                    organization=self.payroll_run.organization,
                     code="TDS",
                     name="Income Tax (TDS)",
                     component_type=SalaryComponent.ComponentType.DEDUCTION,
                     calculation_type=SalaryComponent.CalculationType.FIXED
-                )[0]
+                )
+                self.components_by_code["TDS"] = comp
             
             tds_amount = snapshot.monthly_tds.quantize(Decimal("0.01"))
-            PayslipItem.objects.create(
-                payslip=payslip,
-                component=comp,
-                item_type=PayslipItem.ItemType.DEDUCTION,
-                amount=tds_amount,
-                calculation_note=f"TDS based on {tax_profile.selected_regime.regime_type if tax_profile.selected_regime else 'NEW'} Regime"
+            self.payslip_items_to_create.append(
+                PayslipItem(
+                    payslip=payslip,
+                    component=comp,
+                    item_type=PayslipItem.ItemType.DEDUCTION,
+                    amount=tds_amount,
+                    calculation_note=f"TDS based on {tax_profile.selected_regime.regime_type if tax_profile.selected_regime else 'NEW'} Regime"
+                )
             )
             total_deductions += tds_amount
             
             # Log TDS Sync
-            PayrollTDSSyncLog.objects.create(
-                organization=self.payroll_run.organization,
-                tax_profile=tax_profile,
-                payroll_run=self.payroll_run,
-                synced_tds_amount=tds_amount
+            from ..models import PayrollTDSSyncLog
+            self.tds_logs_to_create.append(
+                PayrollTDSSyncLog(
+                    organization=self.payroll_run.organization,
+                    tax_profile=tax_profile,
+                    payroll_run=self.payroll_run,
+                    synced_tds_amount=tds_amount
+                )
             )
 
         # Finalize Payslip totals
@@ -267,17 +347,7 @@ class PayrollProcessor:
 
     def _get_lop_days(self, employee):
         """Calculate Loss of Pay days for the month."""
-        # This is a simplified implementation. 
-        # In production, it would query Attendance and LeaveRequest.
-        lop_from_attendance = Attendance.objects.filter(
-            employee=employee,
-            date__month=self.month,
-            date__year=self.year,
-            status__is_paid=False
-        ).count()
-        
-        # We can expand this with leave logic
-        return Decimal(str(lop_from_attendance))
+        return self.lop_by_employee.get(employee.id, Decimal("0.00"))
 
     def _get_financial_year(self):
         """Returns string like '2024-2025' based on payroll month and year."""

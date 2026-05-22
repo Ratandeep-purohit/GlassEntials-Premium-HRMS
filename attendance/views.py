@@ -85,7 +85,7 @@ def create_shift_view(request,pk=None):
         
     if pk:
         try:
-            edit_shift = Shift.objects.get(pk=pk, is_deleted=False)
+            edit_shift = Shift.objects.get(pk=pk, organization=request.user.organization, is_deleted=False)
         except Shift.DoesNotExist:
             messages.error(request, 'Shift not found.')
             return redirect('create_shift')
@@ -95,7 +95,7 @@ def create_shift_view(request,pk=None):
         delete_id = request.GET.get('delete')
         if delete_id:
             try:
-                shift_to_delete = Shift.objects.get(pk=delete_id, is_deleted=False)
+                shift_to_delete = Shift.objects.get(pk=delete_id, organization=request.user.organization, is_deleted=False)
                 shift_to_delete.is_deleted = True
                 shift_to_delete.updated_by = request.user
                 shift_to_delete.save()
@@ -121,7 +121,7 @@ def create_shift_view(request,pk=None):
             return redirect('create_shift')
 
         # Check uniqueness across all records (including deleted)
-        existing_shift = Shift.objects.filter(name__iexact=name).first()
+        existing_shift = Shift.objects.filter(organization=request.user.organization, name__iexact=name).first()
         if existing_shift:
             if edit_shift and existing_shift.pk == edit_shift.pk:
                 pass # Editing same record
@@ -154,6 +154,7 @@ def create_shift_view(request,pk=None):
             messages.success(request, f'Shift "{name}" updated successfully!')
         else:
             Shift.objects.create(
+                organization=request.user.organization,
                 name=name,
                 start_time=start_time,
                 end_time=end_time,
@@ -168,7 +169,7 @@ def create_shift_view(request,pk=None):
     
     context = {
         'edit_shift': edit_shift,
-        'shifts': Shift.objects.filter(is_deleted=False).order_by('-created_at'),
+        'shifts': Shift.objects.filter(organization=request.user.organization, is_deleted=False).order_by('-created_at'),
     }
     return render(request, 'createshift.html', context)
 
@@ -180,7 +181,7 @@ def assign_shift_view(request, pk=None):
         
     if pk:
         try:
-            edit_assignment = ShiftAssignment.objects.get(pk=pk, is_deleted=False)
+            edit_assignment = ShiftAssignment.objects.get(pk=pk, organization=request.user.organization, is_deleted=False)
         except ShiftAssignment.DoesNotExist:
             messages.error(request, 'Shift assignment not found.')
             return redirect('assign_shift')
@@ -190,7 +191,7 @@ def assign_shift_view(request, pk=None):
         delete_id = request.GET.get('delete')
         if delete_id:
             try:
-                assignment_to_delete = ShiftAssignment.objects.get(pk=delete_id, is_deleted=False)
+                assignment_to_delete = ShiftAssignment.objects.get(pk=delete_id, organization=request.user.organization, is_deleted=False)
                 assignment_to_delete.is_deleted = True
                 assignment_to_delete.updated_by = request.user
                 assignment_to_delete.save()
@@ -209,8 +210,8 @@ def assign_shift_view(request, pk=None):
             return redirect('assign_shift')
 
         try:
-            employee = Employee.objects.get(pk=employee_id, is_deleted=False)
-            shift = Shift.objects.get(pk=shift_id, is_deleted=False)
+            employee = Employee.objects.get(pk=employee_id, organization=request.user.organization, is_deleted=False)
+            shift = Shift.objects.get(pk=shift_id, organization=request.user.organization, is_deleted=False)
             
             if edit_assignment:
                 edit_assignment.employee = employee
@@ -224,6 +225,7 @@ def assign_shift_view(request, pk=None):
                 messages.success(request, f'Shift assignment for {employee.first_name} updated successfully!')
             else:
                 new_assignment = ShiftAssignment(
+                    organization=request.user.organization,
                     employee=employee,
                     shift=shift,
                     effective_from=effective_from,
@@ -246,9 +248,9 @@ def assign_shift_view(request, pk=None):
 
     context = {
         'edit_assignment': edit_assignment,
-        'employees': Employee.objects.filter(is_deleted=False).order_by('first_name'),
-        'shifts': Shift.objects.filter(is_deleted=False).order_by('name'),
-        'assignments': ShiftAssignment.objects.filter(is_deleted=False).select_related('employee', 'shift').order_by('-created_at'),
+        'employees': Employee.objects.filter(organization=request.user.organization, is_deleted=False).order_by('first_name'),
+        'shifts': Shift.objects.filter(organization=request.user.organization, is_deleted=False).order_by('name'),
+        'assignments': ShiftAssignment.objects.filter(organization=request.user.organization, is_deleted=False).select_related('employee', 'shift').order_by('-created_at'),
     }
     return render(request, 'assignshift.html', context)
 
@@ -832,7 +834,7 @@ def attendance_analytics_view(request):
         trend_overtime.append(float(o_hours))
         
     # Department Wise Attendance
-    departments = Department.objects.filter(is_deleted=False)
+    departments = Department.objects.filter(organization=request.user.organization, is_deleted=False)
     dept_labels = []
     dept_present_rates = []
     
@@ -893,8 +895,8 @@ def overtime_dashboard_view(request):
         pending_requests = None
         
     elif request.user.is_staff:
-        requests_list = OvertimeRequest.objects.all().order_by('-created_at')
-        pending_requests = OvertimeRequest.objects.filter(status='PENDING').order_by('-created_at')
+        requests_list = OvertimeRequest.objects.filter(employee__organization=request.user.organization).order_by('-created_at')
+        pending_requests = OvertimeRequest.objects.filter(employee__organization=request.user.organization, status='PENDING').order_by('-created_at')
         
     else:
         requests_list = []

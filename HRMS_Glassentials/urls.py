@@ -18,9 +18,14 @@ from django.contrib import admin
 from django.urls import include, path
 from django.conf import settings
 from django.conf.urls.static import static
+import os
+
+# Admin URL is configurable via env var to prevent bot/brute-force attacks.
+# In production, set DJANGO_ADMIN_URL to something random, e.g. 'xK9mP2-manage/'.
+_admin_url = os.environ.get('DJANGO_ADMIN_URL', 'secret-admin/')
 
 urlpatterns = [
-    path('admin/', admin.site.urls),
+    path(_admin_url, admin.site.urls),
     path('', include('accounts.urls')),
     path('home/', include('home.urls')),
     path('employees/', include('employees.urls')),
