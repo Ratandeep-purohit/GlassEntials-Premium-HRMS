@@ -1,6 +1,6 @@
 import datetime
 from datetime import date
-from decimal import Decimal
+from decimal import Decimal, InvalidOperation
 import random
 
 from django.shortcuts import render, redirect, get_object_or_404
@@ -9,6 +9,7 @@ from django.contrib import messages
 from django.db import transaction
 from django.db.models import Sum, Q
 from django.utils import timezone
+from django.utils.dateparse import parse_date
 from django.core.exceptions import ValidationError
 
 from employees.models import Employee, Department
@@ -17,7 +18,36 @@ from .models import (
     PayrollRun, EmployeePayslip, PayslipItem, EmployeeLoan, 
     LoanInstallment, Arrear
 )
+from payroll.engine.formula_runner import evaluate_formula
 from payroll.engine.processor import PayrollProcessor
+
+
+def _decimal_from_post(request, field_name, label, required=True):
+    value = request.POST.get(field_name, '').strip()
+    if not value:
+        if required:
+            raise ValidationError(f"{label} is required.")
+        return Decimal("0.00")
+    try:
+        return Decimal(value)
+    except (InvalidOperation, ValueError):
+        raise ValidationError(f"{label} must be a valid number.")
+
+
+def _resolve_structure_item_amount(item, structure):
+    if item.component.calculation_type == SalaryComponent.CalculationType.FIXED:
+        amount = item.fixed_amount
+    elif item.component.calculation_type == SalaryComponent.CalculationType.PERCENTAGE:
+        amount = structure.basic_salary * item.percentage
+    elif item.component.calculation_type == SalaryComponent.CalculationType.FORMULA:
+        amount = evaluate_formula(item.formula_override or item.component.formula, {
+            'basic': structure.basic_salary,
+            'gross': structure.gross_salary,
+            'ctc': structure.ctc,
+        })
+    else:
+        amount = Decimal("0.00")
+    return amount.quantize(Decimal("0.01"))
 
 @login_required
 def payroll_dashboard(request):
@@ -201,14 +231,19 @@ def manage_employee_salary(request, employee_id):
         return redirect('salary_list')
         
     if request.method == 'POST':
-        ctc = Decimal(request.POST.get('ctc', '0'))
-        gross_salary = Decimal(request.POST.get('gross_salary', '0'))
-        basic_salary = Decimal(request.POST.get('basic_salary', '0'))
-        effective_date_str = request.POST.get('effective_date')
-        
-        selected_component_ids = request.POST.getlist('components')
-        
         try:
+            ctc = _decimal_from_post(request, 'ctc', 'Annual CTC')
+            gross_salary = _decimal_from_post(request, 'gross_salary', 'Monthly gross salary')
+            basic_salary = _decimal_from_post(request, 'basic_salary', 'Basic salary')
+            effective_date = parse_date(request.POST.get('effective_date', ''))
+            selected_component_ids = request.POST.getlist('components')
+
+            if not effective_date:
+                raise ValidationError("Effective date is required.")
+
+            if not selected_component_ids:
+                raise ValidationError("Select at least one salary component.")
+
             with transaction.atomic():
                 # 1. Create the new SalaryStructure
                 structure = SalaryStructure(
@@ -217,9 +252,8 @@ def manage_employee_salary(request, employee_id):
                     ctc=ctc,
                     gross_salary=gross_salary,
                     basic_salary=basic_salary,
-                    effective_date=effective_date_str
+                    effective_date=effective_date
                 )
-                structure.clean()
                 structure.save()
                 
                 # 2. Add selected components
@@ -235,13 +269,19 @@ def manage_employee_salary(request, employee_id):
                     )
                     
                     if component.calculation_type == SalaryComponent.CalculationType.FIXED:
-                        fixed_val = request.POST.get(f'fixed_{comp_id}', '0')
-                        item.fixed_amount = Decimal(fixed_val)
+                        item.fixed_amount = _decimal_from_post(
+                            request,
+                            f'fixed_{comp_id}',
+                            f"{component.name} fixed amount",
+                        )
                     elif component.calculation_type == SalaryComponent.CalculationType.PERCENTAGE:
-                        perc_val = request.POST.get(f'perc_{comp_id}', '0')
-                        item.percentage = Decimal(perc_val) / Decimal('100')
+                        percentage = _decimal_from_post(
+                            request,
+                            f'perc_{comp_id}',
+                            f"{component.name} percentage",
+                        )
+                        item.percentage = percentage / Decimal('100')
                     
-                    item.clean()
                     item.save()
                     
             messages.success(request, f"Successfully updated salary structure for {employee.first_name} {employee.last_name}.")
@@ -317,6 +357,57 @@ def salary_components_list(request):
     return render(request, 'salary_components.html', context)
 
 @login_required
+def edit_salary_component(request, component_id):
+    if not (request.user.is_staff or request.user.is_superuser):
+        return redirect('my_payslips')
+
+    organization = request.user.organization
+    try:
+        component = SalaryComponent.objects.get(
+            Q(organization=organization) | Q(organization__isnull=True),
+            id=component_id
+        )
+    except SalaryComponent.DoesNotExist:
+        messages.error(request, 'Component not found.')
+        return redirect('salary_components')
+
+    if request.method == 'POST':
+        action = request.POST.get('action')
+
+        if action == 'delete':
+            try:
+                component.delete()
+                messages.success(request, f"Component '{component.name}' deleted successfully.")
+            except Exception as e:
+                messages.error(request, f"Cannot delete: {e}")
+            return redirect('salary_components')
+
+        # Edit
+        component.name = request.POST.get('name', component.name)
+        component.code = request.POST.get('code', component.code).upper()
+        component.component_type = request.POST.get('component_type', component.component_type)
+        component.calculation_type = request.POST.get('calculation_type', component.calculation_type)
+        component.formula = request.POST.get('formula', '')
+        component.description = request.POST.get('description', '')
+        component.display_order = int(request.POST.get('display_order', component.display_order))
+        component.is_taxable = 'is_taxable' in request.POST
+        component.is_statutory = 'is_statutory' in request.POST
+        component.is_calculated_on_attendance = 'is_calculated_on_attendance' in request.POST
+        component.is_active = 'is_active' in request.POST
+
+        try:
+            component.clean()
+            component.save()
+            messages.success(request, f"Component '{component.name}' updated successfully.")
+        except ValidationError as e:
+            err_msg = ", ".join(e.messages) if hasattr(e, 'messages') else str(e)
+            messages.error(request, f"Validation error: {err_msg}")
+        except Exception as e:
+            messages.error(request, f"Error updating component: {e}")
+
+    return redirect('salary_components')
+
+@login_required
 def my_payslips(request):
     organization = request.user.organization
     employee = Employee.objects.filter(
@@ -362,6 +453,11 @@ def my_salary_structure(request):
         if structure:
             earnings_items = structure.items.filter(component__component_type=SalaryComponent.ComponentType.EARNING)
             deduction_items = structure.items.filter(component__component_type=SalaryComponent.ComponentType.DEDUCTION)
+            for item in list(earnings_items) + list(deduction_items):
+                try:
+                    item.resolved_amount = _resolve_structure_item_amount(item, structure)
+                except Exception:
+                    item.resolved_amount = Decimal("0.00")
             
     context = {
         'employee': employee,

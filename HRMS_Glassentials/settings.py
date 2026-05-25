@@ -74,6 +74,7 @@ INSTALLED_APPS = [
     'attendance',
     'leaves',
     'assets',
+    'announcements',
 ]
 
 

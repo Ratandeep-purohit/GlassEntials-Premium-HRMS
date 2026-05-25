@@ -1,4 +1,44 @@
 {% load static %}
+<style>
+    .header-right .profile-dropdown {
+        display: flex;
+        align-items: center;
+        min-height: 58px;
+    }
+
+    .header-right .profile-dropdown .profile-menu.dropdown-content {
+        position: absolute !important;
+        top: calc(100% + 4px) !important;
+        right: 0 !important;
+        left: auto !important;
+        width: min(240px, calc(100vw - 32px)) !important;
+        min-width: min(240px, calc(100vw - 32px)) !important;
+        max-width: calc(100vw - 32px) !important;
+        margin-top: 0 !important;
+        box-sizing: border-box;
+        padding: 10px;
+        border-radius: 14px;
+        z-index: 1200;
+        transform: none !important;
+    }
+
+    .header-right .profile-dropdown:hover .profile-menu.dropdown-content,
+    .header-right .profile-dropdown:focus-within .profile-menu.dropdown-content,
+    .header-right .profile-dropdown.profile-menu-active .profile-menu.dropdown-content {
+        display: block !important;
+    }
+
+    .header-right .profile-dropdown .profile-menu.dropdown-content::before {
+        content: '';
+        display: block;
+        position: absolute;
+        left: 0;
+        right: 0;
+        top: -16px;
+        height: 16px;
+        background: transparent;
+    }
+</style>
 <header class="platform-header">
     <a href="{% url 'home' %}" class="brand-section">
         <img src="{% static 'img/logo.png' %}" alt="GlassEntials Logo" class="brand-logo-img">
@@ -132,6 +172,18 @@
                 </a>
             </div>
         </div>
+        <!-- More Dropdown -->
+        <div class="nav-item-dropdown">
+            <a href="#" class="nav-pill {% if request.resolver_match.app_name == 'announcements' %}active{% endif %}">
+                <i class="fas fa-layer-group"></i> More
+                <i class="fas fa-chevron-down"></i>
+            </a>
+            <div class="dropdown-content">
+                <a href="{% url 'announcements:manage' %}" class="dropdown-item">
+                    <i class="fas fa-bullhorn"></i> Announcements
+                </a>
+            </div>
+        </div>
         {% else %}
         <!-- Employees Dropdown for Employee -->
         <div class="nav-item-dropdown">
@@ -225,11 +277,23 @@
                 </a>
             </div>
         </div>
+        <!-- More Dropdown for Employee -->
+        <div class="nav-item-dropdown">
+            <a href="#" class="nav-pill {% if request.resolver_match.app_name == 'announcements' %}active{% endif %}">
+                <i class="fas fa-layer-group"></i> More
+                <i class="fas fa-chevron-down"></i>
+            </a>
+            <div class="dropdown-content">
+                <a href="{% url 'announcements:list' %}" class="dropdown-item">
+                    <i class="fas fa-bullhorn"></i> Announcements
+                </a>
+            </div>
+        </div>
         {% endif %}
     </nav>
 
     <div class="header-right">
-        <div class="nav-item-dropdown">
+        <div class="nav-item-dropdown profile-dropdown">
             <div class="profile-trigger">
                 <div class="avatar-box">
                     {% if current_employee and current_employee.profile_img %}
@@ -240,7 +304,7 @@
                 </div>
                 <i class="fas fa-chevron-down" style="font-size: 10px; color: var(--text-secondary);"></i>
             </div>
-            <div class="dropdown-content" style="right: 0; left: auto; min-width: 180px;">
+            <div class="dropdown-content profile-menu">
                 <a href="{% url 'edit_profile' %}" class="dropdown-item">
                     <i class="fas fa-user-circle"></i> Manage Profile
                 </a>
@@ -287,3 +351,45 @@
         </div>
     </div>
 </header>
+<script>
+    (function () {
+        const profileDropdown = document.querySelector('.header-right .profile-dropdown');
+        if (!profileDropdown) return;
+
+        const trigger = profileDropdown.querySelector('.profile-trigger');
+        const menu = profileDropdown.querySelector('.profile-menu');
+        let closeTimer = null;
+
+        function openProfileMenu() {
+            window.clearTimeout(closeTimer);
+            profileDropdown.classList.add('profile-menu-active');
+        }
+
+        function closeProfileMenu() {
+            window.clearTimeout(closeTimer);
+            closeTimer = window.setTimeout(function () {
+                if (!profileDropdown.matches(':hover') && !menu.matches(':hover')) {
+                    profileDropdown.classList.remove('profile-menu-active');
+                }
+            }, 120);
+        }
+
+        trigger.addEventListener('mouseenter', openProfileMenu);
+        trigger.addEventListener('focusin', openProfileMenu);
+        trigger.addEventListener('mouseleave', closeProfileMenu);
+        trigger.addEventListener('click', function (event) {
+            event.stopPropagation();
+            openProfileMenu();
+        });
+
+        menu.addEventListener('mouseenter', openProfileMenu);
+        menu.addEventListener('mouseleave', closeProfileMenu);
+        menu.addEventListener('click', function (event) {
+            event.stopPropagation();
+        });
+
+        document.addEventListener('click', function () {
+            profileDropdown.classList.remove('profile-menu-active');
+        });
+    })();
+</script>

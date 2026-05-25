@@ -1,0 +1,182 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manage Announcements | GlassEntials HRMS</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Manrope:wght@700;800&display=swap">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link rel="stylesheet" href="{% static 'css/landing.css' %}?v=3.0">
+    <link rel="stylesheet" href="{% static 'css/home.css' %}?v=3.1">
+    <link rel="stylesheet" href="{% static 'css/dashboard.css' %}?v=3.0">
+    <style>
+        body { background: #f8fafc; overflow-x: hidden; }
+        .ann-admin { max-width: 1480px; margin: 116px auto 64px; padding: 0 clamp(24px, 4vw, 56px); }
+        .ann-top { display: flex; align-items: flex-end; justify-content: space-between; gap: 20px; margin-bottom: 28px; }
+        .ann-title { font-family: 'Manrope', sans-serif; font-size: 32px; font-weight: 800; color: #0f172a; margin: 0 0 6px; letter-spacing: -0.5px; }
+        .ann-sub { color: #64748b; font-size: 14px; font-weight: 500; margin: 0; }
+        .ann-grid { display: grid; grid-template-columns: minmax(680px, 0.95fr) minmax(420px, 1fr); gap: 24px; align-items: start; }
+        .ann-card { background: #fff; border: 1px solid #e2e8f0; border-radius: 16px; padding: 24px; box-shadow: 0 2px 8px rgba(15,23,42,.04); min-width: 0; }
+        .ann-card-head { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 20px; }
+        .ann-card h2 { margin: 0; font-size: 18px; font-weight: 800; color: #0f172a; display: flex; align-items: center; gap: 10px; }
+        .ann-card h2 i { width: 34px; height: 34px; border-radius: 10px; display: inline-flex; align-items: center; justify-content: center; background: #eff6ff; color: #2563eb; font-size: 14px; }
+        .ann-form-group { margin-bottom: 14px; min-width: 0; }
+        .ann-label { display: block; font-size: 13px; font-weight: 800; color: #64748b; margin-bottom: 8px; }
+        .ann-input, .ann-select, .ann-textarea { width: 100%; min-width: 0; box-sizing: border-box; border: 1px solid #e2e8f0; background: #f8fafc; border-radius: 12px; padding: 12px 14px; font-family: inherit; font-size: 14px; font-weight: 600; color: #0f172a; outline: none; }
+        .ann-textarea { resize: vertical; line-height: 1.6; }
+        .ann-summary-field { min-height: 76px; }
+        .ann-body-field { min-height: 132px; }
+        .ann-input:focus, .ann-select:focus, .ann-textarea:focus { background: #fff; border-color: #2563eb; box-shadow: 0 0 0 4px rgba(37,99,235,.08); }
+        .ann-row { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+        .ann-row-3 { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(220px, 1.15fr); gap: 14px; }
+        .ann-checks { display: flex; gap: 10px; flex-wrap: wrap; margin: 14px 0 18px; }
+        .ann-check { display: inline-flex; align-items: center; gap: 8px; min-height: 42px; padding: 0 14px; border: 1px solid #e2e8f0; background: #f8fafc; border-radius: 12px; font-size: 13px; font-weight: 800; color: #475569; }
+        .ann-check input { width: 16px; height: 16px; margin: 0; }
+        .ann-form-actions { display: flex; gap: 12px; align-items: center; }
+        .ann-save { flex: 1; min-height: 48px; border: none; border-radius: 12px; padding: 0 18px; background: #2563eb; color: #fff; font-weight: 800; cursor: pointer; box-shadow: 0 6px 16px rgba(37,99,235,.22); }
+        .ann-save:hover { background: #1d4ed8; }
+        .ann-view-btn { text-decoration: none; }
+        .ann-view-btn:hover { text-decoration: none; }
+        .ann-list { display: grid; gap: 12px; }
+        .ann-item { border: 1px solid #eef2f7; border-radius: 14px; padding: 18px; background: #fff; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 14px; align-items: center; transition: border-color .2s, box-shadow .2s, transform .2s; }
+        .ann-item:hover { border-color: #bfdbfe; box-shadow: 0 8px 20px rgba(15,23,42,.06); transform: translateY(-1px); }
+        .ann-item-title { font-size: 15px; font-weight: 800; margin: 0 0 6px; color: #0f172a; }
+        .ann-meta { color: #64748b; font-size: 12px; font-weight: 700; }
+        .ann-tag { display: inline-flex; padding: 5px 9px; border-radius: 8px; font-size: 10px; font-weight: 900; text-transform: uppercase; margin-right: 6px; background: #e8f0ff; color: #315477; }
+        .ann-item-actions { display: flex; gap: 8px; flex-shrink: 0; }
+        .ann-icon-btn { width: 36px; height: 36px; border-radius: 9px; display: inline-flex; align-items: center; justify-content: center; text-decoration: none; border: 1px solid #e2e8f0; color: #64748b; background: #f8fafc; }
+        .ann-icon-btn:hover { color: #2563eb; background: #eff6ff; border-color: #bfdbfe; }
+        .ann-danger:hover { color: #ef4444; background: #fef2f2; border-color: #fecaca; }
+        .ann-empty { padding: 64px 20px; text-align: center; color: #64748b; border: 1px dashed #dbe4ef; border-radius: 14px; background: #f8fafc; }
+        .ann-count { color: #64748b; font-size: 12px; font-weight: 800; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 999px; padding: 7px 11px; }
+        @media (max-width: 1180px) {
+            .ann-grid { grid-template-columns: 1fr; }
+        }
+        @media (max-width: 760px) {
+            .ann-row { grid-template-columns: 1fr; }
+            .ann-row-3 { grid-template-columns: 1fr; }
+            .ann-top { flex-direction: column; align-items: flex-start; }
+            .ann-admin { margin-top: 104px; padding: 0 16px; }
+            .ann-form-actions { flex-direction: column; align-items: stretch; }
+            .ann-item { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    {% include 'includes/navbar.html' %}
+    {% include 'includes/_messages.html' %}
+
+    <main class="ann-admin">
+        <div class="ann-top">
+            <div>
+                <h1 class="ann-title">Manage Announcements</h1>
+                <p class="ann-sub">Create updates that appear on employee dashboards and the announcements page.</p>
+            </div>
+            <a href="{% url 'announcements:list' %}" class="btn-secondary ann-view-btn"><i class="fas fa-eye"></i> Employee View</a>
+        </div>
+
+        <div class="ann-grid">
+            <section class="ann-card">
+                <div class="ann-card-head">
+                    <h2><i class="fas fa-bullhorn"></i> {% if edit_announcement %}Edit Announcement{% else %}Create Announcement{% endif %}</h2>
+                </div>
+                <form method="POST">
+                    {% csrf_token %}
+                    <div class="ann-row">
+                        <div class="ann-form-group">
+                            <label class="ann-label">Title</label>
+                            <input class="ann-input" type="text" name="title" maxlength="180" required value="{{ edit_announcement.title|default:'' }}" placeholder="e.g. Updated Work-from-Home Policy">
+                        </div>
+                        <div class="ann-form-group">
+                            <label class="ann-label">Department / Author</label>
+                            <input class="ann-input" type="text" name="department" value="{{ edit_announcement.department|default:'HR Department' }}">
+                        </div>
+                    </div>
+                    <div class="ann-row-3">
+                        <div class="ann-form-group">
+                            <label class="ann-label">Category</label>
+                            <select class="ann-select" name="category">
+                                {% for value, label in category_choices %}
+                                <option value="{{ value }}" {% if edit_announcement.category == value %}selected{% endif %}>{{ label }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="ann-form-group">
+                            <label class="ann-label">Audience</label>
+                            <select class="ann-select" name="audience">
+                                {% for value, label in audience_choices %}
+                                <option value="{{ value }}" {% if edit_announcement.audience == value %}selected{% endif %}>{{ label }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="ann-form-group">
+                            <label class="ann-label">Publish At</label>
+                            <input class="ann-input" type="datetime-local" name="publish_at" value="{% if edit_announcement %}{{ edit_announcement.publish_at|date:'Y-m-d\\TH:i' }}{% else %}{{ now|date:'Y-m-d\\TH:i' }}{% endif %}">
+                        </div>
+                    </div>
+                    <div class="ann-form-group">
+                        <label class="ann-label">Short Summary</label>
+                        <textarea class="ann-textarea ann-summary-field" name="summary" placeholder="Optional preview text">{{ edit_announcement.summary|default:'' }}</textarea>
+                    </div>
+                    <div class="ann-form-group">
+                        <label class="ann-label">Announcement Body</label>
+                        <textarea class="ann-textarea ann-body-field" name="body" required>{{ edit_announcement.body|default:'' }}</textarea>
+                    </div>
+                    <div class="ann-row" style="align-items: end;">
+                        <div class="ann-form-group">
+                            <label class="ann-label">Expires At</label>
+                            <input class="ann-input" type="datetime-local" name="expires_at" value="{% if edit_announcement.expires_at %}{{ edit_announcement.expires_at|date:'Y-m-d\\TH:i' }}{% endif %}">
+                        </div>
+                        <div class="ann-form-group">
+                            <label class="ann-label">Visibility</label>
+                            <div class="ann-checks" style="margin: 0;">
+                                <label class="ann-check"><input type="checkbox" name="is_pinned" {% if edit_announcement.is_pinned %}checked{% endif %}> Pin to top</label>
+                                <label class="ann-check"><input type="checkbox" name="is_active" {% if not edit_announcement or edit_announcement.is_active %}checked{% endif %}> Active</label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="ann-form-actions">
+                        <button class="ann-save" type="submit"><i class="fas fa-paper-plane"></i> Save Announcement</button>
+                        {% if edit_announcement %}
+                        <a href="{% url 'announcements:manage' %}" class="btn-secondary">Cancel Edit</a>
+                        {% endif %}
+                    </div>
+                </form>
+            </section>
+
+            <section class="ann-card">
+                <div class="ann-card-head">
+                    <h2><i class="fas fa-list-ul"></i> Published Updates</h2>
+                    <span class="ann-count">{{ announcements|length }} total</span>
+                </div>
+                <div class="ann-list">
+                    {% for announcement in announcements %}
+                    <div class="ann-item">
+                        <div>
+                            <div style="margin-bottom: 8px;">
+                                <span class="ann-tag">{{ announcement.get_category_display }}</span>
+                                {% if announcement.is_pinned %}<span class="ann-tag" style="background:#fef3c7;color:#b45309;">Pinned</span>{% endif %}
+                                {% if not announcement.is_active %}<span class="ann-tag" style="background:#fee2e2;color:#b91c1c;">Inactive</span>{% endif %}
+                            </div>
+                            <p class="ann-item-title">{{ announcement.title }}</p>
+                            <div class="ann-meta">{{ announcement.publish_at|date:"M d, Y h:i A" }} &bull; {{ announcement.department }} &bull; {{ announcement.get_audience_display }}</div>
+                        </div>
+                        <div class="ann-item-actions">
+                            <a class="ann-icon-btn" href="{% url 'announcements:edit' announcement.id %}" title="Edit"><i class="fas fa-pen"></i></a>
+                            <a class="ann-icon-btn" href="{% url 'announcements:toggle' announcement.id %}" title="Toggle status"><i class="fas fa-toggle-on"></i></a>
+                            <a class="ann-icon-btn ann-danger" href="{% url 'announcements:delete' announcement.id %}" title="Delete"><i class="fas fa-trash"></i></a>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <div class="ann-empty">
+                        <i class="fas fa-bullhorn" style="font-size: 26px; color: #2563eb;"></i>
+                        <p>No announcements yet. Create the first one from the form.</p>
+                    </div>
+                    {% endfor %}
+                </div>
+            </section>
+        </div>
+    </main>
+</body>
+</html>

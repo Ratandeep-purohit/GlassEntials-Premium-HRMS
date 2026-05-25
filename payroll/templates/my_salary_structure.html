@@ -10,7 +10,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 <link rel="stylesheet" href="{% static 'css/landing.css' %}?v=3.0">
-<link rel="stylesheet" href="{% static 'css/home.css' %}?v=3.0">
+<link rel="stylesheet" href="{% static 'css/home.css' %}?v=3.1">
 <link rel="stylesheet" href="{% static 'css/dashboard.css' %}?v=3.0">
 <style>
 :root {
@@ -503,12 +503,10 @@ body {
               <div class="ss-amount-val earn">₹{{ item.fixed_amount }}</div>
               <div class="ss-amount-desc">Flat rate / month</div>
             {% elif item.component.calculation_type == 'PERCENTAGE' %}
-              <div class="ss-amount-val earn">{{ item.percentage }}%</div>
-              <div class="ss-amount-desc">of ₹{{ structure.basic_salary }} base</div>
+              <div class="ss-amount-val earn">₹{{ item.resolved_amount }}</div>
+              <div class="ss-amount-desc">{{ item.percentage|multiply:100|floatformat:2 }}% of ₹{{ structure.basic_salary }} base</div>
             {% else %}
-              <div class="ss-amount-val earn" style="font-family:inherit;font-size:12.5px;color:#334155;">
-                {{ item.formula_override|default:item.component.formula }}
-              </div>
+              <div class="ss-amount-val earn">₹{{ item.resolved_amount }}</div>
               <div class="ss-amount-desc">Derived formula</div>
             {% endif %}
           </td>
@@ -581,12 +579,10 @@ body {
               <div class="ss-amount-val deduct">₹{{ item.fixed_amount }}</div>
               <div class="ss-amount-desc">Flat rate / month</div>
             {% elif item.component.calculation_type == 'PERCENTAGE' %}
-              <div class="ss-amount-val deduct">{{ item.percentage }}%</div>
-              <div class="ss-amount-desc">of ₹{{ structure.basic_salary }} base</div>
+              <div class="ss-amount-val deduct">₹{{ item.resolved_amount }}</div>
+              <div class="ss-amount-desc">{{ item.percentage|multiply:100|floatformat:2 }}% of ₹{{ structure.basic_salary }} base</div>
             {% else %}
-              <div class="ss-amount-val deduct" style="font-family:inherit;font-size:12.5px;color:#334155;">
-                {{ item.formula_override|default:item.component.formula }}
-              </div>
+              <div class="ss-amount-val deduct">₹{{ item.resolved_amount }}</div>
               <div class="ss-amount-desc">Derived formula</div>
             {% endif %}
           </td>

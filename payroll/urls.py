@@ -10,6 +10,7 @@ urlpatterns = [
     path('payslip/<int:payslip_id>/', views.payslip_detail, name='payslip_detail'),
     path('employee-salary/<int:employee_id>/', views.manage_employee_salary, name='manage_employee_salary'),
     path('components/', views.salary_components_list, name='salary_components'),
+    path('components/<int:component_id>/edit/', views.edit_salary_component, name='edit_salary_component'),
     path('my-payslips/', views.my_payslips, name='my_payslips'),
     path('my-salary-structure/', views.my_salary_structure, name='my_salary_structure'),
     path('my-loans/', views.my_loans, name='my_loans'),

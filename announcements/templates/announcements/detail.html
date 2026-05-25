@@ -1,0 +1,42 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ announcement.title }} | Announcements</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Manrope:wght@700;800&display=swap">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link rel="stylesheet" href="{% static 'css/landing.css' %}?v=3.0">
+    <link rel="stylesheet" href="{% static 'css/home.css' %}?v=3.1">
+    <style>
+        body { background: #f8fafc; }
+        .ann-detail { max-width: 860px; margin: 104px auto 64px; padding: 0 24px; }
+        .ann-panel { background: #fff; border: 1px solid #e2e8f0; border-radius: 18px; padding: 34px; box-shadow: 0 2px 10px rgba(15,23,42,.05); }
+        .ann-back { display: inline-flex; align-items: center; gap: 8px; color: #2563eb; text-decoration: none; font-size: 13px; font-weight: 800; margin-bottom: 18px; }
+        .ann-tag { display: inline-flex; padding: 7px 11px; border-radius: 8px; background: #e8f0ff; color: #315477; font-size: 11px; font-weight: 800; text-transform: uppercase; margin-bottom: 14px; }
+        .ann-title { font-family: 'Manrope', sans-serif; font-size: 34px; line-height: 1.16; margin: 0 0 12px; color: #020617; letter-spacing: -0.8px; }
+        .ann-meta { color: #64748b; font-size: 14px; font-weight: 600; margin-bottom: 28px; }
+        .ann-body { color: #334155; line-height: 1.8; font-size: 15px; white-space: pre-line; }
+        @media (max-width: 640px) {
+            .ann-panel { padding: 24px; }
+            .ann-title { font-size: 28px; }
+        }
+    </style>
+</head>
+<body>
+    {% include 'includes/navbar.html' %}
+    {% include 'includes/_messages.html' %}
+
+    <main class="ann-detail">
+        <a href="{% url 'announcements:list' %}" class="ann-back"><i class="fas fa-arrow-left"></i> Back to announcements</a>
+        <article class="ann-panel">
+            <span class="ann-tag">{{ announcement.get_category_display }}</span>
+            <h1 class="ann-title">{{ announcement.title }}</h1>
+            <div class="ann-meta">Posted {{ announcement.publish_at|timesince }} ago &bull; {{ announcement.department }}</div>
+            <div class="ann-body">{{ announcement.body }}</div>
+        </article>
+    </main>
+</body>
+</html>
+

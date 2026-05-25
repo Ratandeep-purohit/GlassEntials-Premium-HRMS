@@ -9,7 +9,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 <link rel="stylesheet" href="{% static 'css/landing.css' %}?v=3.0">
-<link rel="stylesheet" href="{% static 'css/home.css' %}?v=3.0">
+<link rel="stylesheet" href="{% static 'css/home.css' %}?v=3.1">
 <link rel="stylesheet" href="{% static 'css/dashboard.css' %}?v=3.0">
 
 <style>
@@ -58,6 +58,8 @@ body { background: var(--ent-slate-50); font-family: var(--font-sans); color: va
 .btn-ent-secondary:hover { background: var(--ent-slate-50); border-color: var(--ent-slate-300); }
 .btn-ent-primary { background: var(--ent-blue); color: white; box-shadow: 0 4px 12px rgba(37,99,235,0.2); }
 .btn-ent-primary:hover { background: var(--ent-blue-hover); transform: translateY(-1px); }
+.ent-actions a.btn-ent { text-decoration: none; }
+.ent-actions a.btn-ent:hover { text-decoration: none; }
 
 /* ── GRID LAYOUT ── */
 .ent-grid { display: grid; grid-template-columns: minmax(0, 1fr) 380px; gap: 32px; align-items: start; }
@@ -133,6 +135,76 @@ body { background: var(--ent-slate-50); font-family: var(--font-sans); color: va
 .info-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 12px; }
 .info-list li { display: flex; align-items: flex-start; gap: 10px; font-size: 12.5px; color: var(--ent-slate-600); line-height: 1.5; }
 .info-list li i { margin-top: 3px; font-size: 14px; color: var(--ent-slate-400); }
+
+/* --- Live Salary Projection --- */
+.projection-section { margin-top: 24px; }
+.projection-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 12px;
+  font-weight: 700;
+  color: rgba(255,255,255,0.72);
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  margin-bottom: 12px;
+}
+.projection-heading i { font-size: 12px; }
+.projection-list { display: flex; flex-direction: column; gap: 8px; }
+.projection-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: rgba(255,255,255,0.055);
+  border: 1px solid rgba(255,255,255,0.08);
+}
+.projection-name {
+  color: rgba(255,255,255,0.84);
+  font-size: 12.5px;
+  font-weight: 600;
+  line-height: 1.35;
+}
+.projection-note {
+  color: rgba(255,255,255,0.45);
+  font-size: 10.5px;
+  margin-top: 3px;
+}
+.projection-amount {
+  color: #fff;
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.projection-row.deduct .projection-amount { color: #FCA5A5; }
+.projection-empty {
+  padding: 12px;
+  border: 1px dashed rgba(255,255,255,0.12);
+  border-radius: 10px;
+  color: rgba(255,255,255,0.45);
+  font-size: 12px;
+  line-height: 1.5;
+}
+.projection-total {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(255,255,255,0.1);
+  font-size: 13px;
+  font-weight: 700;
+  color: rgba(255,255,255,0.76);
+}
+.projection-total span:last-child {
+  color: #fff;
+  font-family: var(--font-mono);
+  font-size: 15px;
+}
+.projection-total.deduct span:last-child { color: #FCA5A5; }
 </style>
 </head>
 
@@ -229,10 +301,14 @@ body { background: var(--ent-slate-50); font-family: var(--font-sans); color: va
                                     </thead>
                                     <tbody>
                                         {% for comp in components %}
-                                        <tr>
+                                        <tr class="component-row"
+                                            data-name="{{ comp.name|escape }}"
+                                            data-type="{{ comp.component_type }}"
+                                            data-calc="{{ comp.calculation_type }}"
+                                            data-formula="{{ comp.formula|escapejs }}">
                                             <td style="text-align: center;">
                                                 <label class="ent-toggle">
-                                                    <input type="checkbox" name="components" value="{{ comp.id }}" 
+                                                    <input type="checkbox" name="components" value="{{ comp.id }}" class="component-toggle"
                                                     {% for item in structure.items.all %}{% if item.component_id == comp.id %}checked{% endif %}{% endfor %}>
                                                     <span class="ent-slider"></span>
                                                 </label>
@@ -266,12 +342,12 @@ body { background: var(--ent-slate-50); font-family: var(--font-sans); color: va
                                                 {% if comp.calculation_type == 'FIXED' %}
                                                 <div class="inline-input-group" style="justify-content: flex-end;">
                                                     <span style="color:var(--ent-slate-400); font-family:var(--font-mono);">₹</span>
-                                                    <input type="number" step="0.01" name="fixed_{{ comp.id }}" placeholder="0.00" class="inline-input" 
+                                                    <input type="number" step="0.01" name="fixed_{{ comp.id }}" placeholder="0.00" class="inline-input component-value" 
                                                     {% for item in structure.items.all %}{% if item.component_id == comp.id %}value="{{ item.fixed_amount }}"{% endif %}{% endfor %}>
                                                 </div>
                                                 {% elif comp.calculation_type == 'PERCENTAGE' %}
                                                 <div class="inline-input-group" style="justify-content: flex-end;">
-                                                    <input type="number" step="0.01" name="perc_{{ comp.id }}" placeholder="0.0" class="inline-input percent" 
+                                                    <input type="number" step="0.01" name="perc_{{ comp.id }}" placeholder="0.0" class="inline-input percent component-value" 
                                                     {% for item in structure.items.all %}{% if item.component_id == comp.id %}value="{{ item.percentage|multiply:100 }}"{% endif %}{% endfor %}>
                                                     <span style="color:var(--ent-slate-400); font-family:var(--font-mono);">%</span>
                                                 </div>
@@ -308,20 +384,36 @@ body { background: var(--ent-slate-50); font-family: var(--font-sans); color: va
                                 
                                 <hr class="summary-divider">
                                 
-                                <div class="summary-stat" style="margin-bottom: 16px;">
-                                    <div class="summary-stat-label" style="display:flex; justify-content:space-between;">
-                                        <span>Estimated Total Deductions</span>
-                                        <i class="fas fa-minus-circle" style="color:#F87171;"></i>
+                                <div class="projection-section">
+                                    <div class="projection-heading">
+                                        <span>Earnings</span>
+                                        <i class="fas fa-circle-plus" style="color:#34D399;"></i>
                                     </div>
-                                    <div class="summary-stat-value" style="font-size:18px; color:#FCA5A5;">System Generated</div>
+                                    <div id="earningBreakdown" class="projection-list"></div>
+                                    <div class="projection-total">
+                                        <span>Total Earnings</span>
+                                        <span id="summaryEarnings">₹0.00</span>
+                                    </div>
+                                </div>
+
+                                <div class="projection-section">
+                                    <div class="projection-heading">
+                                        <span>Deductions</span>
+                                        <i class="fas fa-circle-minus" style="color:#F87171;"></i>
+                                    </div>
+                                    <div id="deductionBreakdown" class="projection-list"></div>
+                                    <div class="projection-total deduct">
+                                        <span>Total Deductions</span>
+                                        <span id="summaryDeductions">₹0.00</span>
+                                    </div>
                                 </div>
                                 
                                 <div class="net-pay-block">
                                     <div class="net-pay-label">
-                                        <span>Projected Net Salary</span>
+                                        <span>Estimated Take Home</span>
                                         <i class="fas fa-check-circle"></i>
                                     </div>
-                                    <div class="net-pay-value">TBD</div>
+                                    <div class="net-pay-value" id="summaryNet">₹0.00</div>
                                 </div>
                             </div>
 
@@ -351,5 +443,209 @@ body { background: var(--ent-slate-50); font-family: var(--font-sans); color: va
             </div>
         </form>
     </main>
+    <script>
+        (function () {
+            const form = document.getElementById('salaryForm');
+            const summaryValues = document.querySelectorAll('.ent-summary-card .summary-stat-value');
+            const earningBreakdown = document.getElementById('earningBreakdown');
+            const deductionBreakdown = document.getElementById('deductionBreakdown');
+            const summaryEarnings = document.getElementById('summaryEarnings');
+            const summaryDeductions = document.getElementById('summaryDeductions');
+            const summaryNet = document.getElementById('summaryNet');
+
+            function numberFromInput(name) {
+                const input = form.querySelector(`[name="${name}"]`);
+                const value = input ? parseFloat(input.value) : 0;
+                return Number.isFinite(value) ? value : 0;
+            }
+
+            function formatMoney(value) {
+                return new Intl.NumberFormat('en-IN', {
+                    style: 'currency',
+                    currency: 'INR',
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2
+                }).format(Number.isFinite(value) ? value : 0);
+            }
+
+            function renderRows(container, rows, emptyText, type) {
+                container.innerHTML = '';
+                if (!rows.length) {
+                    const empty = document.createElement('div');
+                    empty.className = 'projection-empty';
+                    empty.textContent = emptyText;
+                    container.appendChild(empty);
+                    return;
+                }
+
+                rows.forEach(row => {
+                    const item = document.createElement('div');
+                    item.className = `projection-row ${type === 'deduction' ? 'deduct' : ''}`;
+                    item.innerHTML = `
+                        <div>
+                            <div class="projection-name">${row.name}</div>
+                            <div class="projection-note">${row.note}</div>
+                        </div>
+                        <div class="projection-amount">${formatMoney(row.amount)}</div>
+                    `;
+                    container.appendChild(item);
+                });
+            }
+
+            function safeFormulaEvaluate(expression, variables) {
+                const source = (expression || '').replace(/\s+/g, '');
+                if (!source) return 0;
+
+                const tokens = source.match(/[A-Za-z_][A-Za-z0-9_]*|\d*\.?\d+|[()+\-*/]/g);
+                if (!tokens || tokens.join('') !== source) return 0;
+
+                const precedence = { '+': 1, '-': 1, '*': 2, '/': 2 };
+                const output = [];
+                const ops = [];
+                let previous = 'start';
+
+                tokens.forEach(token => {
+                    if (/^\d*\.?\d+$/.test(token)) {
+                        output.push(parseFloat(token));
+                        previous = 'value';
+                    } else if (/^[A-Za-z_]/.test(token)) {
+                        output.push(Number(variables[token] || 0));
+                        previous = 'value';
+                    } else if (token in precedence) {
+                        if (token === '-' && (previous === 'start' || previous === 'operator' || previous === '(')) {
+                            output.push(0);
+                        }
+                        while (ops.length && ops[ops.length - 1] in precedence && precedence[ops[ops.length - 1]] >= precedence[token]) {
+                            output.push(ops.pop());
+                        }
+                        ops.push(token);
+                        previous = 'operator';
+                    } else if (token === '(') {
+                        ops.push(token);
+                        previous = '(';
+                    } else if (token === ')') {
+                        while (ops.length && ops[ops.length - 1] !== '(') {
+                            output.push(ops.pop());
+                        }
+                        ops.pop();
+                        previous = 'value';
+                    }
+                });
+
+                while (ops.length) output.push(ops.pop());
+
+                const stack = [];
+                output.forEach(token => {
+                    if (typeof token === 'number') {
+                        stack.push(token);
+                        return;
+                    }
+                    const right = stack.pop() || 0;
+                    const left = stack.pop() || 0;
+                    if (token === '+') stack.push(left + right);
+                    if (token === '-') stack.push(left - right);
+                    if (token === '*') stack.push(left * right);
+                    if (token === '/') stack.push(right === 0 ? 0 : left / right);
+                });
+
+                return Number.isFinite(stack[0]) ? stack[0] : 0;
+            }
+
+            function calculateComponent(row, basic, gross, ctc) {
+                const calc = row.dataset.calc;
+                const input = row.querySelector('.component-value');
+
+                if (calc === 'FIXED') {
+                    const amount = input ? parseFloat(input.value) : 0;
+                    return {
+                        amount: Number.isFinite(amount) ? amount : 0,
+                        note: 'Fixed monthly value'
+                    };
+                }
+
+                if (calc === 'PERCENTAGE') {
+                    const percent = input ? parseFloat(input.value) : 0;
+                    const cleanPercent = Number.isFinite(percent) ? percent : 0;
+                    return {
+                        amount: basic * cleanPercent / 100,
+                        note: `${cleanPercent.toFixed(2)}% of basic`
+                    };
+                }
+
+                const formula = row.dataset.formula || '';
+                return {
+                    amount: safeFormulaEvaluate(formula, { basic, gross, ctc, paid_days: 30, total_days: 30 }),
+                    note: formula ? `Formula: ${formula}` : 'Formula based'
+                };
+            }
+
+            function updateProjection() {
+                const ctc = numberFromInput('ctc');
+                const gross = numberFromInput('gross_salary');
+                const basic = numberFromInput('basic_salary');
+                const earnings = [];
+                const deductions = [];
+
+                document.querySelectorAll('.component-row').forEach(row => {
+                    const toggle = row.querySelector('.component-toggle');
+                    if (!toggle || !toggle.checked) return;
+
+                    const result = calculateComponent(row, basic, gross, ctc);
+                    const line = {
+                        name: row.dataset.name || 'Component',
+                        amount: Math.max(result.amount, 0),
+                        note: result.note
+                    };
+
+                    if (row.dataset.type === 'DEDUCTION') {
+                        deductions.push(line);
+                    } else {
+                        earnings.push(line);
+                    }
+                });
+
+                let totalEarnings = earnings.reduce((sum, item) => sum + item.amount, 0);
+                const totalDeductions = deductions.reduce((sum, item) => sum + item.amount, 0);
+                const earningsForDisplay = [...earnings];
+
+                if (!earningsForDisplay.length && gross > 0) {
+                    totalEarnings = gross;
+                    earningsForDisplay.push({
+                        name: 'Monthly Gross Allocation',
+                        amount: gross,
+                        note: 'Used for take-home preview'
+                    });
+                }
+
+                const netSalary = Math.max(totalEarnings - totalDeductions, 0);
+
+                if (summaryValues[0]) summaryValues[0].textContent = formatMoney(ctc);
+                if (summaryValues[1]) summaryValues[1].textContent = formatMoney(gross);
+                summaryEarnings.textContent = formatMoney(totalEarnings);
+                summaryDeductions.textContent = formatMoney(totalDeductions);
+                summaryNet.textContent = formatMoney(netSalary);
+
+                renderRows(
+                    earningBreakdown,
+                    earningsForDisplay,
+                    'No earning component selected yet.',
+                    'earning'
+                );
+                renderRows(
+                    deductionBreakdown,
+                    deductions,
+                    'No deduction component selected.',
+                    'deduction'
+                );
+            }
+
+            form.querySelectorAll('input, select').forEach(input => {
+                input.addEventListener('input', updateProjection);
+                input.addEventListener('change', updateProjection);
+            });
+
+            updateProjection();
+        })();
+    </script>
 </body>
 </html>

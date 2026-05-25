@@ -4,6 +4,7 @@ from accounts.models import CustomUser , Organization
 from datetime import datetime 
 from employees.models import Employee
 from attendance.models import Attendance
+from announcements.views import visible_announcements_for
 
 @login_required
 def home_view(request):
@@ -101,6 +102,7 @@ def home_view(request):
             status='APPROVED'
         ).count()
 
+    dashboard_announcements = visible_announcements_for(request.user)[:3]
 
     context = {
         'user_count': user_count,
@@ -121,6 +123,7 @@ def home_view(request):
         'my_present_days': my_present_days,
         'my_pending_leaves': my_pending_leaves,
         'my_approved_leaves': my_approved_leaves,
+        'dashboard_announcements': dashboard_announcements,
     }
 
     return render(request, 'home.html', context)

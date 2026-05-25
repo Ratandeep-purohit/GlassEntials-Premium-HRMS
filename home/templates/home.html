@@ -10,7 +10,7 @@
         href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Manrope:wght@600;700;800&display=swap">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <link rel="stylesheet" href="{% static 'css/landing.css' %}?v=3.0">
-    <link rel="stylesheet" href="{% static 'css/home.css' %}?v=1.0">
+    <link rel="stylesheet" href="{% static 'css/home.css' %}?v=3.1">
 
 </head>
 
@@ -209,23 +209,28 @@
             <div class="bento-card">
                 <div class="bento-header">
                     <h2 class="bento-title">Announcements</h2>
-                    <a href="#" class="action-link">View all &rarr;</a>
+                    <a href="{% url 'announcements:list' %}" class="action-link">View all &rarr;</a>
                 </div>
-                <div class="announce-item">
-                    <span class="item-tag">Company News</span>
-                    <h3 class="item-h">New Office Health &amp; Safety Guidelines for 2026</h3>
-                    <div class="item-meta">Posted 2 days ago · HR Department</div>
+                {% for announcement in dashboard_announcements %}
+                <a href="{% url 'announcements:detail' announcement.id %}" class="announce-item" style="display: block; text-decoration: none; color: inherit;">
+                    <span class="item-tag"
+                        {% if announcement.category == 'POLICY' %}style="background: rgba(124,58,237,0.1); color: #7c3aed;"
+                        {% elif announcement.category == 'EVENT' %}style="background: rgba(245,158,11,0.1); color: #d97706;"
+                        {% elif announcement.category == 'HR_UPDATE' %}style="background: rgba(34,197,94,0.1); color: #15803d;"
+                        {% elif announcement.category == 'OPERATIONS' %}style="background: rgba(14,165,233,0.1); color: #0369a1;"
+                        {% endif %}>
+                        {{ announcement.get_category_display }}
+                    </span>
+                    <h3 class="item-h">{{ announcement.title }}</h3>
+                    <div class="item-meta">Posted {{ announcement.publish_at|timesince }} ago &middot; {{ announcement.department }}</div>
+                </a>
+                {% empty %}
+                <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 180px; color: var(--text-secondary); text-align: center;">
+                    <i class="fas fa-bullhorn" style="font-size: 28px; color: var(--accent); opacity: 0.75; margin-bottom: 10px;"></i>
+                    <span style="font-size: 13px; font-weight: 700;">No announcements yet</span>
+                    <span style="font-size: 11px; margin-top: 4px;">Company updates will appear here</span>
                 </div>
-                <div class="announce-item">
-                    <span class="item-tag" style="background: rgba(124,58,237,0.1); color: #7c3aed;">Policy</span>
-                    <h3 class="item-h">Updated Work-from-Home Policy for May</h3>
-                    <div class="item-meta">Posted yesterday · Operations</div>
-                </div>
-                <div class="announce-item">
-                    <span class="item-tag" style="background: rgba(245,158,11,0.1); color: #d97706;">Event</span>
-                    <h3 class="item-h">Annual Team Offsite: Save the Date!</h3>
-                    <div class="item-meta">Posted 4 hours ago · Culture Team</div>
-                </div>
+                {% endfor %}
             </div>
 
             <!-- Middle Column (Col 2) -->

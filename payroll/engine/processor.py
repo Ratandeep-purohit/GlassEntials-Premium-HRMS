@@ -1,13 +1,15 @@
 import calendar
+from datetime import date
 from decimal import Decimal
 from django.db import transaction
+from django.db.models import Q
 from django.utils import timezone
 from .formula_runner import evaluate_formula
 from .statutory import calculate_statutory_deductions
 from ..models import (
     PayrollRun, EmployeePayslip, PayslipItem, 
     SalaryStructure, SalaryStructureItem, SalaryComponent,
-    LoanInstallment, Arrear
+    LoanInstallment, Arrear, PayrollTDSSyncLog
 )
 from attendance.models import Attendance
 from leaves.models import LeaveRequest
@@ -29,8 +31,7 @@ class PayrollProcessor:
         self.payroll_run.status = PayrollRun.Status.PROCESSING
         self.payroll_run.save()
 
-        # Clear existing draft payslips for this run to allow re-runs
-        self.payroll_run.payslips.filter(status=EmployeePayslip.Status.DRAFT).delete()
+        self._clear_editable_run_outputs()
 
         # Identify employees to process (filter by department if applicable)
         from employees.models import Employee
@@ -43,13 +44,13 @@ class PayrollProcessor:
 
         # PREFETCH DATA #
         org = self.payroll_run.organization
-        now_date = timezone.now().date()
+        period_end = date(self.year, self.month, self.total_days)
         
         # 1. Salary Structures
         structures = SalaryStructure.objects.filter(
             organization=org,
             is_active=True,
-            effective_date__lte=now_date
+            effective_date__lte=period_end
         ).order_by('employee_id', '-effective_date').prefetch_related('items__component')
         self.active_structures = {}
         for s in structures:
@@ -93,7 +94,7 @@ class PayrollProcessor:
             
         # 6. Taxes & TDS
         fy_name = self._get_financial_year()
-        from ..models import FinancialYear, EmployeeTaxProfile, TaxCalculationSnapshot, PayrollTDSSyncLog
+        from ..models import FinancialYear, EmployeeTaxProfile, TaxCalculationSnapshot
         self.fy = FinancialYear.objects.filter(name=fy_name).first()
         self.tax_profiles_by_employee = {}
         self.tax_snapshots_by_profile = {}
@@ -167,6 +168,7 @@ class PayrollProcessor:
 
         # 3. Initialize Payslip
         payslip = EmployeePayslip.objects.create(
+            organization=self.payroll_run.organization,
             payroll_run=self.payroll_run,
             employee=employee,
             total_working_days=self.total_days,
@@ -209,6 +211,7 @@ class PayrollProcessor:
             amount = value.quantize(Decimal("0.01"))
             self.payslip_items_to_create.append(
                 PayslipItem(
+                    organization=self.payroll_run.organization,
                     payslip=payslip,
                     component=comp,
                     item_type=comp.component_type,
@@ -232,6 +235,7 @@ class PayrollProcessor:
                 if comp:
                     self.payslip_items_to_create.append(
                         PayslipItem(
+                            organization=self.payroll_run.organization,
                             payslip=payslip,
                             component=comp,
                             item_type=PayslipItem.ItemType.DEDUCTION,
@@ -257,6 +261,7 @@ class PayrollProcessor:
             
             self.payslip_items_to_create.append(
                 PayslipItem(
+                    organization=self.payroll_run.organization,
                     payslip=payslip,
                     component=comp,
                     item_type=PayslipItem.ItemType.DEDUCTION,
@@ -275,6 +280,7 @@ class PayrollProcessor:
         for arr in arrears:
             self.payslip_items_to_create.append(
                 PayslipItem(
+                    organization=self.payroll_run.organization,
                     payslip=payslip,
                     component=arr.component,
                     item_type=arr.arrear_type,
@@ -312,6 +318,7 @@ class PayrollProcessor:
             tds_amount = snapshot.monthly_tds.quantize(Decimal("0.01"))
             self.payslip_items_to_create.append(
                 PayslipItem(
+                    organization=self.payroll_run.organization,
                     payslip=payslip,
                     component=comp,
                     item_type=PayslipItem.ItemType.DEDUCTION,
@@ -321,8 +328,6 @@ class PayrollProcessor:
             )
             total_deductions += tds_amount
             
-            # Log TDS Sync
-            from ..models import PayrollTDSSyncLog
             self.tds_logs_to_create.append(
                 PayrollTDSSyncLog(
                     organization=self.payroll_run.organization,
@@ -344,6 +349,48 @@ class PayrollProcessor:
         payslip.save()
 
         return payslip
+
+    def _clear_editable_run_outputs(self):
+        """Clear generated artifacts so reruns pick up changed salary components."""
+        locked_exists = self.payroll_run.payslips.filter(
+            status__in=[
+                EmployeePayslip.Status.FINALIZED,
+                EmployeePayslip.Status.PAID,
+            ]
+        ).exists()
+        if locked_exists:
+            raise ValueError("Cannot rerun payroll because one or more payslips are finalized or paid.")
+
+        editable_payslips = self.payroll_run.payslips.exclude(
+            status__in=[
+                EmployeePayslip.Status.FINALIZED,
+                EmployeePayslip.Status.PAID,
+            ]
+        )
+        editable_payslip_ids = list(editable_payslips.values_list('id', flat=True))
+        if not editable_payslip_ids:
+            PayrollTDSSyncLog.objects.filter(payroll_run=self.payroll_run).delete()
+            return
+
+        LoanInstallment.objects.filter(
+            payslip_id__in=editable_payslip_ids,
+            status=LoanInstallment.InstallmentStatus.DEDUCTED,
+        ).update(
+            status=LoanInstallment.InstallmentStatus.PENDING,
+            payslip=None,
+        )
+
+        Arrear.objects.filter(
+            Q(processed_payslip_id__in=editable_payslip_ids)
+            | Q(processed_in_payroll=self.payroll_run)
+        ).update(
+            status=Arrear.ArrearStatus.PENDING,
+            processed_in_payroll=None,
+            processed_payslip=None,
+        )
+
+        PayrollTDSSyncLog.objects.filter(payroll_run=self.payroll_run).delete()
+        editable_payslips.delete()
 
     def _get_lop_days(self, employee):
         """Calculate Loss of Pay days for the month."""

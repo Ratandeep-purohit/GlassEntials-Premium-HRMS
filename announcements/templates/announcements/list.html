@@ -1,0 +1,84 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Announcements | GlassEntials HRMS</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Manrope:wght@700;800&display=swap">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link rel="stylesheet" href="{% static 'css/landing.css' %}?v=3.0">
+    <link rel="stylesheet" href="{% static 'css/home.css' %}?v=3.1">
+    <link rel="stylesheet" href="{% static 'css/dashboard.css' %}?v=3.0">
+    <style>
+        body { background: #f8fafc; }
+        .ann-shell { max-width: 1120px; margin: 104px auto 64px; padding: 0 24px; }
+        .ann-top { display: flex; justify-content: space-between; align-items: flex-end; gap: 20px; margin-bottom: 24px; }
+        .ann-title { font-family: 'Manrope', sans-serif; font-size: 32px; font-weight: 800; color: #0f172a; margin: 0 0 6px; letter-spacing: -0.5px; }
+        .ann-sub { color: #64748b; font-size: 14px; font-weight: 500; margin: 0; }
+        .ann-actions { display: flex; gap: 10px; flex-wrap: wrap; justify-content: flex-end; }
+        .ann-filter { text-decoration: none; color: #64748b; background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 10px 14px; font-size: 13px; font-weight: 700; }
+        .ann-filter.active, .ann-filter:hover { color: #2563eb; background: #eff6ff; border-color: #bfdbfe; }
+        .ann-list { display: grid; gap: 14px; }
+        .ann-card { display: block; text-decoration: none; color: inherit; background: #fff; border: 1px solid #e2e8f0; border-radius: 16px; padding: 22px; box-shadow: 0 2px 8px rgba(15,23,42,.04); transition: transform .2s, box-shadow .2s, border-color .2s; }
+        .ann-card:hover { transform: translateY(-2px); border-color: #bfdbfe; box-shadow: 0 12px 28px rgba(15,23,42,.08); }
+        .ann-tag { display: inline-flex; align-items: center; gap: 6px; padding: 6px 10px; border-radius: 8px; font-size: 11px; font-weight: 800; text-transform: uppercase; margin-bottom: 12px; }
+        .ann-tag.company { background: #e8f0ff; color: #315477; }
+        .ann-tag.policy { background: #ede9fe; color: #7c3aed; }
+        .ann-tag.event { background: #fff1db; color: #ea580c; }
+        .ann-tag.hr { background: #dcfce7; color: #15803d; }
+        .ann-tag.ops { background: #e0f2fe; color: #0369a1; }
+        .ann-card h2 { font-size: 18px; font-weight: 800; margin: 0 0 8px; color: #020617; }
+        .ann-summary { font-size: 14px; line-height: 1.6; color: #475569; margin: 0 0 12px; }
+        .ann-meta { color: #64748b; font-size: 13px; font-weight: 600; }
+        .ann-empty { background: #fff; border: 1px solid #e2e8f0; border-radius: 16px; padding: 54px 24px; text-align: center; color: #64748b; }
+        .ann-empty i { color: #2563eb; font-size: 28px; margin-bottom: 12px; display: block; }
+        @media (max-width: 760px) {
+            .ann-top { flex-direction: column; align-items: flex-start; }
+            .ann-actions { justify-content: flex-start; }
+        }
+    </style>
+</head>
+<body>
+    {% include 'includes/navbar.html' %}
+    {% include 'includes/_messages.html' %}
+
+    <main class="ann-shell">
+        <div class="ann-top">
+            <div>
+                <h1 class="ann-title">Announcements</h1>
+                <p class="ann-sub">Company updates, policies, events, and important notices.</p>
+            </div>
+            <div class="ann-actions">
+                <a href="{% url 'announcements:list' %}" class="ann-filter {% if not selected_category %}active{% endif %}">All</a>
+                {% for value, label in category_choices %}
+                <a href="{% url 'announcements:list' %}?category={{ value }}" class="ann-filter {% if selected_category == value %}active{% endif %}">{{ label }}</a>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div class="ann-list">
+            {% for announcement in announcements %}
+            <a href="{% url 'announcements:detail' announcement.id %}" class="ann-card">
+                <span class="ann-tag {% if announcement.category == 'POLICY' %}policy{% elif announcement.category == 'EVENT' %}event{% elif announcement.category == 'HR_UPDATE' %}hr{% elif announcement.category == 'OPERATIONS' %}ops{% else %}company{% endif %}">
+                    {% if announcement.is_pinned %}<i class="fas fa-thumbtack"></i>{% endif %}
+                    {{ announcement.get_category_display }}
+                </span>
+                <h2>{{ announcement.title }}</h2>
+                {% if announcement.summary %}
+                <p class="ann-summary">{{ announcement.summary }}</p>
+                {% endif %}
+                <div class="ann-meta">Posted {{ announcement.publish_at|timesince }} ago &bull; {{ announcement.department }}</div>
+            </a>
+            {% empty %}
+            <div class="ann-empty">
+                <i class="fas fa-bullhorn"></i>
+                <strong>No announcements yet</strong>
+                <p>New updates will appear here when your organization publishes them.</p>
+            </div>
+            {% endfor %}
+        </div>
+    </main>
+</body>
+</html>
+
