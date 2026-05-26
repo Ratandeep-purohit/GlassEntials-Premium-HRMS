@@ -1,7 +1,8 @@
 from django.shortcuts import render , redirect
 from django.contrib.auth.decorators import login_required
+from django.db.models import Q
+from django.utils import timezone
 from accounts.models import CustomUser , Organization
-from datetime import datetime 
 from employees.models import Employee
 from attendance.models import Attendance
 from announcements.views import visible_announcements_for
@@ -10,13 +11,14 @@ from announcements.views import visible_announcements_for
 def home_view(request):
     # Get the organization the current user belongs to
     organization = request.user.organization
-    today = datetime.now().date()
+    now = timezone.localtime()
+    today = now.date()
     
     try:
         # SaaS Metrics
         active_employees = Employee.objects.filter(organization=organization, is_active=True)[:5]
         user_count = Employee.objects.filter(organization=organization).count()
-        today_date = datetime.now().strftime("%A, %B %d, %Y")
+        today_date = now.strftime("%A, %B %d, %Y")
         origination_code = organization.unique_code if organization else "GLOBAL"
 
         # Attendance Summary (Today)
@@ -29,7 +31,7 @@ def home_view(request):
         print(f"Error in dashboard metrics: {e}")
         active_employees = []
         user_count = 0
-        today_date = datetime.now().strftime("%A, %B %d, %Y")
+        today_date = now.strftime("%A, %B %d, %Y")
         origination_code = organization.unique_code if organization else "INTERNAL"
         present_today = 0
         pending_leaves = 0
@@ -54,7 +56,7 @@ def home_view(request):
         from attendance.models import BreakLog
         on_break = BreakLog.objects.filter(attendance=today_attendance, end_time__isnull=True).exists()
 
-    current_hour = datetime.now().hour
+    current_hour = now.hour
     if current_hour < 12:
         greeting = "Good morning"
     elif 12 <= current_hour < 17:
@@ -62,22 +64,55 @@ def home_view(request):
     else:
         greeting = "Good evening"
 
-    # Fetch Upcoming Data for Dashboard Card
+    # Fetch upcoming data for dashboard cards from live HR data only.
     from leaves.models import Holiday, LeaveRequest
+    from payroll.models import EmployeePayslip
+
     upcoming_leaves = []
+    latest_payslip = None
     if current_employee:
         upcoming_leaves = LeaveRequest.objects.filter(
             employee=current_employee,
             status='APPROVED',
-            start_date__gte=today
+            end_date__gte=today
         ).order_by('start_date')[:3]
-    
-    upcoming_holidays = Holiday.objects.filter(
+
+        latest_payslip = EmployeePayslip.objects.filter(
+            Q(organization=organization) | Q(organization__isnull=True),
+            employee=current_employee,
+            status__in=[
+                EmployeePayslip.Status.GENERATED,
+                EmployeePayslip.Status.FINALIZED,
+                EmployeePayslip.Status.PAID,
+            ],
+        ).select_related('payroll_run').order_by(
+            '-payroll_run__year',
+            '-payroll_run__month',
+            '-created_at',
+        ).first()
+
+    upcoming_holiday_query = Holiday.objects.filter(
         organization=organization,
-        date__gte=today
+        calendar__isnull=False,
+        is_optional=False,
+        date__gte=today,
     ).order_by('date')
-    
-    filtered_holidays = [h for h in upcoming_holidays if h.date.weekday() != 6][:5] # 6 is Sunday
+
+    work_location = (getattr(current_employee, "work_location", "") or "").strip()
+    if work_location:
+        upcoming_holiday_query = upcoming_holiday_query.filter(
+            Q(calendar__is_default=True)
+            | Q(calendar__branch="")
+            | Q(calendar__branch__iexact=work_location)
+        )
+    else:
+        upcoming_holiday_query = upcoming_holiday_query.filter(
+            Q(calendar__is_default=True)
+            | Q(calendar__branch="")
+            | Q(calendar__branch__isnull=True)
+        )
+
+    filtered_holidays = list(upcoming_holiday_query[:5])
 
     # Employee specific metrics
     my_present_days = 0
@@ -120,6 +155,7 @@ def home_view(request):
         'greeting': greeting,
         'upcoming_leaves': upcoming_leaves,
         'upcoming_holidays': filtered_holidays,
+        'latest_payslip': latest_payslip,
         'my_present_days': my_present_days,
         'my_pending_leaves': my_pending_leaves,
         'my_approved_leaves': my_approved_leaves,

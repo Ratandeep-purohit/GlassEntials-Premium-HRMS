@@ -153,7 +153,20 @@ class EnterpriseLeaveModuleTests(TestCase):
     # ──────── 4. RESTRICTED HOLIDAY (RH) ────────
     def test_restricted_holiday_claim(self):
         """Test RH claim creation and status"""
-        holiday = Holiday.objects.create(name="Regional Fest", date=date(2026, 8, 15), is_optional=True, organization=self.org)
+        calendar_obj = HolidayCalendar.objects.create(
+            organization=self.org,
+            name="India Holidays",
+            year=2026,
+            is_default=True,
+        )
+        holiday = Holiday.objects.create(
+            name="Regional Fest",
+            date=date(2026, 8, 15),
+            calendar=calendar_obj,
+            holiday_type="OPTIONAL",
+            is_optional=True,
+            organization=self.org,
+        )
         
         claim = RestrictedHolidayClaim.objects.create(
             employee=self.employee, holiday=holiday, year=2026, status='APPROVED'
@@ -161,6 +174,22 @@ class EnterpriseLeaveModuleTests(TestCase):
         
         self.assertEqual(self.employee.rh_claims.count(), 1)
         self.assertEqual(claim.holiday.name, "Regional Fest")
+
+    def test_restricted_holiday_picker_ignores_orphan_holidays(self):
+        """Optional holidays must come from an HR-managed holiday calendar."""
+        self.client.login(username="employee", password="password")
+        Holiday.objects.create(
+            name="Regional Fest",
+            date=date(2026, 8, 15),
+            holiday_type="OPTIONAL",
+            is_optional=True,
+            organization=self.org,
+        )
+
+        response = self.client.get(reverse('leaves:rh_picker'))
+
+        self.assertContains(response, "No optional holidays configured")
+        self.assertNotContains(response, "Regional Fest")
 
     # ──────── 5. LEAVE CANCELLATION ────────
     def test_admin_can_create_leave_type_and_policy(self):
