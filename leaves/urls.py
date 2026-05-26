@@ -14,11 +14,14 @@ urlpatterns = [
     path('claim-rh/<int:holiday_id>/', views.claim_rh_view, name='claim_rh'),
 
     
-    # Manager/HR Actions
+    # Manager/HR Actions        
     path('pending/', views.pending_approvals_view, name='pending_approvals'),
     path('action/<int:leave_id>/', views.approve_reject_action_view, name='leave_action'),
     path('compoff-action/<int:compoff_id>/', views.compoff_action_view, name='compoff_action'),
     path('cancel-action/<int:leave_id>/', views.cancel_approval_action_view, name='cancel_action'),
+    path('create-leave/', views.manage_leave_types_view, name='create_leave'),
+    path('assign-leaves/', views.assign_leave_balances_view, name='assign_leaves'),
+    path('holiday-calendars/', views.manage_holiday_calendars_view, name='holiday_calendars'),
 
     
     # Policy & Settings
@@ -27,4 +30,3 @@ urlpatterns = [
     # Reports
     path('export-leave-card/', views.export_leave_card_view, name='export_leave_card'),
 ]
-

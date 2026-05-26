@@ -1,0 +1,527 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/leaves.css' %}?v=3.0">
+<style>
+    .assign-shell {
+        max-width: 1180px;
+        margin: 0 auto;
+    }
+
+    .assign-panel {
+        background: rgba(255, 255, 255, 0.86);
+        border: 1px solid var(--border-light);
+        border-radius: 22px;
+        box-shadow: 0 18px 45px rgba(15, 23, 42, 0.07);
+        overflow: hidden;
+    }
+
+    .assign-toolbar {
+        display: grid;
+        grid-template-columns: 1.4fr 170px 190px;
+        gap: 16px;
+        padding: 24px;
+        border-bottom: 1px solid var(--border-light);
+        background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+        align-items: end;
+    }
+
+    .assign-stage {
+        padding: 24px;
+    }
+
+    .employee-empty {
+        min-height: 260px;
+        display: grid;
+        place-items: center;
+        text-align: center;
+        color: var(--text-secondary);
+        border: 1px dashed #cbd5e1;
+        border-radius: 18px;
+        background: #f8fafc;
+    }
+
+    .employee-empty i {
+        width: 54px;
+        height: 54px;
+        display: inline-grid;
+        place-items: center;
+        border-radius: 18px;
+        background: #eef4ff;
+        color: var(--accent);
+        font-size: 22px;
+        margin-bottom: 14px;
+    }
+
+    .policy-grid {
+        display: none;
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 16px;
+    }
+
+    .policy-grid.active {
+        display: grid;
+    }
+
+    .policy-card {
+        border: 1.5px solid #e2e8f0;
+        border-radius: 18px;
+        padding: 18px;
+        background: #fff;
+        transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+    }
+
+    .policy-card.is-selected {
+        border-color: var(--accent);
+        box-shadow: 0 14px 30px rgba(37, 99, 235, 0.12);
+        transform: translateY(-2px);
+    }
+
+    .policy-head {
+        display: flex;
+        justify-content: space-between;
+        gap: 14px;
+        align-items: flex-start;
+        margin-bottom: 16px;
+    }
+
+    .policy-title {
+        display: flex;
+        gap: 12px;
+        align-items: flex-start;
+        min-width: 0;
+    }
+
+    .policy-color {
+        width: 38px;
+        height: 38px;
+        border-radius: 12px;
+        display: grid;
+        place-items: center;
+        color: #fff;
+        font-weight: 900;
+        flex: 0 0 auto;
+        box-shadow: 0 10px 20px rgba(37, 99, 235, 0.18);
+    }
+
+    .policy-title h3 {
+        margin: 0;
+        font-size: 16px;
+        line-height: 1.25;
+        color: var(--text-main);
+        word-break: break-word;
+    }
+
+    .policy-title p {
+        margin: 5px 0 0;
+        color: var(--text-secondary);
+        font-size: 12px;
+        font-weight: 700;
+    }
+
+    .policy-check {
+        width: 22px;
+        height: 22px;
+        accent-color: var(--accent);
+        cursor: pointer;
+        flex: 0 0 auto;
+    }
+
+    .policy-meta {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+        margin-bottom: 14px;
+    }
+
+    .policy-chip {
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        padding: 10px;
+        background: #f8fafc;
+    }
+
+    .policy-chip span {
+        display: block;
+        font-size: 10px;
+        color: var(--text-secondary);
+        text-transform: uppercase;
+        font-weight: 900;
+        letter-spacing: 0.5px;
+    }
+
+    .policy-chip strong {
+        display: block;
+        margin-top: 3px;
+        color: var(--text-main);
+        font-size: 16px;
+    }
+
+    .policy-days-row {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        gap: 10px;
+        align-items: center;
+    }
+
+    .policy-days-row .glass-input {
+        min-height: 46px;
+    }
+
+    .policy-status {
+        font-size: 11px;
+        color: var(--text-secondary);
+        font-weight: 800;
+        white-space: nowrap;
+    }
+
+    .bulk-actions {
+        display: none;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 18px;
+        padding: 14px 16px;
+        border: 1px solid #e2e8f0;
+        border-radius: 14px;
+        background: #f8fafc;
+    }
+
+    .bulk-actions.active {
+        display: flex;
+    }
+
+    .mini-actions {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+    }
+
+    .mini-btn {
+        border: 1px solid #cbd5e1;
+        background: #fff;
+        color: var(--text-main);
+        border-radius: 10px;
+        padding: 8px 12px;
+        font-size: 12px;
+        font-weight: 800;
+        cursor: pointer;
+    }
+
+    .submit-row {
+        display: none;
+        margin-top: 20px;
+    }
+
+    .submit-row.active {
+        display: block;
+    }
+
+    .assigned-panel {
+        margin-top: 22px;
+        background: rgba(255, 255, 255, 0.86);
+        border: 1px solid var(--border-light);
+        border-radius: 22px;
+        box-shadow: 0 18px 45px rgba(15, 23, 42, 0.06);
+        overflow: hidden;
+    }
+
+    .assigned-head {
+        padding: 20px 22px;
+        border-bottom: 1px solid var(--border-light);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 14px;
+        background: linear-gradient(180deg, #fff 0%, #f8fafc 100%);
+    }
+
+    .assigned-head h2 {
+        margin: 0;
+        font-size: 18px;
+        color: var(--text-main);
+    }
+
+    .assigned-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .assigned-table th,
+    .assigned-table td {
+        padding: 14px 18px;
+        text-align: left;
+        border-bottom: 1px solid #e2e8f0;
+    }
+
+    .assigned-table th {
+        background: #f8fafc;
+        color: var(--text-secondary);
+        font-size: 11px;
+        font-weight: 900;
+        letter-spacing: 0.5px;
+        text-transform: uppercase;
+    }
+
+    .assigned-table tr:last-child td {
+        border-bottom: 0;
+    }
+
+    .assigned-pill {
+        display: inline-flex;
+        align-items: center;
+        border-radius: 999px;
+        background: #eff6ff;
+        color: #2563eb;
+        padding: 6px 10px;
+        font-weight: 900;
+        font-size: 12px;
+    }
+
+    @media (max-width: 920px) {
+        .assign-toolbar {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="workspace">
+    <div class="hero-banner">
+        <div class="hero-text">
+            <h1>Assign Leaves</h1>
+            <p>Select an employee, choose the leave policies, and assign balances in one clean flow.</p>
+        </div>
+        <div class="header-actions" style="display: flex; gap: 12px;">
+            <a href="{% url 'leaves:create_leave' %}" class="punch-btn" style="background: #fff; color: var(--text-main); border: 1px solid var(--border-light); text-decoration: none;">
+                <i class="fas fa-tags"></i> Create Leave
+            </a>
+            <a href="{% url 'leaves:dashboard' %}" class="punch-btn" style="background: #fff; color: var(--text-main); border: 1px solid var(--border-light); text-decoration: none;">
+                <i class="fas fa-arrow-left"></i> Dashboard
+            </a>
+        </div>
+    </div>
+
+    <div class="assign-shell">
+        <form method="POST" class="assign-panel" id="assignLeaveForm">
+            {% csrf_token %}
+            <div class="assign-toolbar">
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label class="form-label">Employee</label>
+                    <select name="employee" id="employeeSelect" class="glass-input" required>
+                        <option value="" selected disabled>Select employee</option>
+                        {% for employee in employees %}
+                        <option value="{{ employee.id }}" {% if selected_employee and employee.id == selected_employee.id %}selected{% endif %}>{{ employee.employee_id }} - {{ employee.first_name }} {{ employee.last_name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label class="form-label">Year</label>
+                    <input type="number" name="year" class="glass-input" min="2000" max="2100" value="{{ selected_year }}" required>
+                </div>
+
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label class="form-label">Mode</label>
+                    <select name="assignment_mode" class="glass-input">
+                        <option value="SET">Set balance</option>
+                        <option value="ADD">Add to balance</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="assign-stage">
+                <div class="employee-empty" id="employeeEmpty">
+                    <div>
+                        <i class="fas fa-user-check"></i>
+                        <h3 style="margin: 0 0 6px; color: var(--text-main);">Choose an employee</h3>
+                        <p style="margin: 0;">Leave policies will appear here after employee selection.</p>
+                    </div>
+                </div>
+
+                <div class="bulk-actions" id="bulkActions">
+                    <div>
+                        <strong id="selectedEmployeeName">Employee selected</strong>
+                        <div style="color: var(--text-secondary); font-size: 12px; font-weight: 700;">Check the policies you want to assign.</div>
+                    </div>
+                    <div class="mini-actions">
+                        <button type="button" class="mini-btn" id="selectAllLeaves"><i class="fas fa-check-double"></i> Select All</button>
+                        <button type="button" class="mini-btn" id="clearAllLeaves"><i class="fas fa-xmark"></i> Clear</button>
+                    </div>
+                </div>
+
+                <div class="policy-grid" id="policyGrid">
+                    {% for leave_type in leave_types %}
+                    <div class="policy-card" data-leave-card data-leave-id="{{ leave_type.id }}" data-default-days="{{ leave_type.assignment_default }}">
+                        <div class="policy-head">
+                            <div class="policy-title">
+                                <div class="policy-color" data-policy-color="{{ leave_type.color_tag|default:'#2563eb' }}">{{ leave_type.code|slice:":2" }}</div>
+                                <div>
+                                    <h3>{{ leave_type.name }}</h3>
+                                    <p>{{ leave_type.category.name }} | {{ leave_type.code }} | v{{ leave_type.policy_version }}</p>
+                                </div>
+                            </div>
+                            <input type="checkbox" class="policy-check" name="leave_types" value="{{ leave_type.id }}">
+                        </div>
+
+                        <div class="policy-meta">
+                            <div class="policy-chip">
+                                <span>Default</span>
+                                <strong>{{ leave_type.assignment_default }}</strong>
+                            </div>
+                            <div class="policy-chip">
+                                <span>Current</span>
+                                <strong data-current-balance>--</strong>
+                            </div>
+                        </div>
+
+                        <div class="policy-days-row">
+                            <input type="number" name="amount_{{ leave_type.id }}" class="glass-input" step="0.01" min="0.01" value="{{ leave_type.assignment_default }}" disabled data-days-input>
+                            <span class="policy-status" data-policy-status>Not selected</span>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <div class="employee-empty" style="grid-column: 1 / -1;">
+                        <div>
+                            <i class="fas fa-tags"></i>
+                            <h3 style="margin: 0 0 6px; color: var(--text-main);">No leave policies found</h3>
+                            <p style="margin: 0;">Create leave policies first, then return here to assign them.</p>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+
+                <div class="submit-row" id="submitRow">
+                    <button type="submit" class="punch-btn" style="width: 100%; padding: 14px;" {% if not leave_types %}disabled{% endif %}>
+                        <i class="fas fa-user-check"></i> Assign Selected Leaves
+                    </button>
+                </div>
+            </div>
+        </form>
+
+        <section class="assigned-panel">
+            <div class="assigned-head">
+                <div>
+                    <h2>Assigned Balances</h2>
+                    <div style="color: var(--text-secondary); font-size: 12px; font-weight: 700;">Showing saved balances for {{ selected_year }}.</div>
+                </div>
+                {% if selected_employee %}
+                <span class="assigned-pill">{{ selected_employee.employee_id }} - {{ selected_employee.first_name }} {{ selected_employee.last_name }}</span>
+                {% endif %}
+            </div>
+            <div style="overflow-x: auto;">
+                <table class="assigned-table">
+                    <thead>
+                        <tr>
+                            <th>Employee</th>
+                            <th>Leave Policy</th>
+                            <th>Current</th>
+                            <th>Used</th>
+                            <th>Pending</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for balance in recent_balances %}
+                            <tr>
+                                <td><strong>{{ balance.employee.employee_id }}</strong> - {{ balance.employee.first_name }} {{ balance.employee.last_name }}</td>
+                                <td>{{ balance.leave_type.name }} <span style="color: var(--text-secondary); font-weight: 800;">({{ balance.leave_type.code }})</span></td>
+                                <td><strong>{{ balance.current_balance }}</strong></td>
+                                <td>{{ balance.used_balance }}</td>
+                                <td>{{ balance.pending_balance }}</td>
+                            </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="5" style="text-align: center; color: var(--text-secondary); padding: 26px;">No balances assigned for {{ selected_year }}.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </div>
+</div>
+
+{{ balance_lookup|json_script:"balance-lookup" }}
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const employeeSelect = document.getElementById('employeeSelect');
+    const employeeEmpty = document.getElementById('employeeEmpty');
+    const policyGrid = document.getElementById('policyGrid');
+    const bulkActions = document.getElementById('bulkActions');
+    const submitRow = document.getElementById('submitRow');
+    const selectedEmployeeName = document.getElementById('selectedEmployeeName');
+    const selectAllLeaves = document.getElementById('selectAllLeaves');
+    const clearAllLeaves = document.getElementById('clearAllLeaves');
+    const balanceLookup = JSON.parse(document.getElementById('balance-lookup').textContent || '{}');
+
+    function setCardState(card, checked) {
+        const checkbox = card.querySelector('.policy-check');
+        const input = card.querySelector('[data-days-input]');
+        const status = card.querySelector('[data-policy-status]');
+        checkbox.checked = checked;
+        input.disabled = !checked;
+        card.classList.toggle('is-selected', checked);
+        status.textContent = checked ? 'Ready to assign' : 'Not selected';
+    }
+
+    function refreshBalances(employeeId) {
+        document.querySelectorAll('[data-leave-card]').forEach(function (card) {
+            const leaveId = card.dataset.leaveId;
+            const currentBalance = card.querySelector('[data-current-balance]');
+            const input = card.querySelector('[data-days-input]');
+            const employeeBalance = balanceLookup[employeeId] && balanceLookup[employeeId][leaveId];
+
+            currentBalance.textContent = employeeBalance ? employeeBalance.current : '0.00';
+            input.value = employeeBalance ? employeeBalance.current : (card.dataset.defaultDays || '0.00');
+            setCardState(card, false);
+        });
+    }
+
+    employeeSelect.addEventListener('change', function () {
+        const employeeId = employeeSelect.value;
+        const selectedOption = employeeSelect.options[employeeSelect.selectedIndex];
+        const hasEmployee = Boolean(employeeId);
+
+        employeeEmpty.style.display = hasEmployee ? 'none' : 'grid';
+        policyGrid.classList.toggle('active', hasEmployee);
+        bulkActions.classList.toggle('active', hasEmployee);
+        submitRow.classList.toggle('active', hasEmployee);
+        selectedEmployeeName.textContent = hasEmployee ? selectedOption.textContent : 'Employee selected';
+
+        if (hasEmployee) {
+            refreshBalances(employeeId);
+        }
+    });
+
+    document.querySelectorAll('[data-leave-card]').forEach(function (card) {
+        const colorBlock = card.querySelector('[data-policy-color]');
+        const checkbox = card.querySelector('.policy-check');
+        if (colorBlock) {
+            colorBlock.style.backgroundColor = colorBlock.dataset.policyColor || '#2563eb';
+        }
+        checkbox.addEventListener('change', function () {
+            setCardState(card, checkbox.checked);
+        });
+    });
+
+    selectAllLeaves.addEventListener('click', function () {
+        document.querySelectorAll('[data-leave-card]').forEach(function (card) {
+            setCardState(card, true);
+        });
+    });
+
+    clearAllLeaves.addEventListener('click', function () {
+        document.querySelectorAll('[data-leave-card]').forEach(function (card) {
+            setCardState(card, false);
+        });
+    });
+
+    if (employeeSelect.value) {
+        employeeSelect.dispatchEvent(new Event('change'));
+    }
+});
+</script>
+{% endblock %}

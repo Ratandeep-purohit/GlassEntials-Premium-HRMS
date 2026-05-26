@@ -2,8 +2,43 @@
 {% load static %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="{% static 'css/leaves.css' %}?v=3.0">
+<link rel="stylesheet" href="{% static 'css/leaves.css' %}?v=3.2">
 <style>
+    html.modal-open,
+    body.modal-open {
+        overflow: hidden !important;
+        overscroll-behavior: none;
+    }
+
+    body.modal-open {
+        position: fixed;
+        width: 100%;
+        left: 0;
+        right: 0;
+    }
+
+    #applyModal.glass-modal,
+    #compOffModal.glass-modal {
+        align-items: flex-start !important;
+        justify-content: center !important;
+        overflow: hidden !important;
+        padding: 24px !important;
+    }
+
+    #applyModal.glass-modal.active,
+    #compOffModal.glass-modal.active {
+        display: flex !important;
+    }
+
+    #applyModal .modal-content,
+    #compOffModal .modal-content {
+        max-height: calc(100dvh - 48px) !important;
+        overflow-y: auto !important;
+        overscroll-behavior: contain !important;
+        -webkit-overflow-scrolling: touch;
+        margin: 0 !important;
+    }
+
     .glass-scroll::-webkit-scrollbar {
         width: 4px;
     }
@@ -17,6 +52,128 @@
     }
     .glass-scroll::-webkit-scrollbar-thumb:hover {
         background: rgba(255, 255, 255, 0.3);
+    }
+
+    .policy-card-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 18px;
+        margin-bottom: 32px;
+    }
+
+    .employee-policy-card {
+        background: #fff;
+        border: 1px solid var(--border-light);
+        border-radius: 18px;
+        padding: 20px;
+        box-shadow: var(--shadow-subtle);
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+    }
+
+    .policy-card-top {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 16px;
+    }
+
+    .policy-color-mark {
+        width: 42px;
+        height: 42px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #fff;
+        font-weight: 900;
+        flex: 0 0 42px;
+    }
+
+    .policy-title {
+        margin: 0;
+        color: var(--text-main);
+        font-size: 16px;
+        font-weight: 900;
+    }
+
+    .policy-subtitle {
+        margin-top: 4px;
+        color: var(--text-secondary);
+        font-size: 12px;
+        font-weight: 700;
+    }
+
+    .policy-balance-row {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 10px;
+    }
+
+    .policy-balance-cell {
+        background: #f8fafc;
+        border: 1px solid var(--border-light);
+        border-radius: 12px;
+        padding: 10px;
+    }
+
+    .policy-balance-label {
+        color: var(--text-secondary);
+        font-size: 10px;
+        font-weight: 900;
+        letter-spacing: 0.6px;
+        text-transform: uppercase;
+    }
+
+    .policy-balance-value {
+        color: var(--text-main);
+        font-size: 18px;
+        font-weight: 900;
+        margin-top: 4px;
+    }
+
+    .rule-chip-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+
+    .rule-chip {
+        background: var(--accent-muted);
+        color: var(--accent);
+        border-radius: 999px;
+        padding: 6px 10px;
+        font-size: 11px;
+        font-weight: 800;
+    }
+
+    .policy-snapshot {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px;
+        margin: 0 0 18px;
+    }
+
+    .policy-snapshot-item {
+        background: #f8fafc;
+        border: 1px solid var(--border-light);
+        border-radius: 12px;
+        padding: 12px;
+    }
+
+    .policy-snapshot-label {
+        color: var(--text-secondary);
+        font-size: 10px;
+        font-weight: 900;
+        text-transform: uppercase;
+    }
+
+    .policy-snapshot-value {
+        color: var(--text-main);
+        font-size: 13px;
+        font-weight: 800;
+        margin-top: 5px;
     }
 </style>
 {% endblock %}
@@ -67,7 +224,7 @@
         </div>
         <div class="stat-card">
             <div class="stat-info">
-                <div class="val-primary">{{ leave_types|length }}</div>
+                <div class="val-primary">{{ admin_stats.leave_categories }}</div>
                 <div class="label-primary">Leave Categories</div>
             </div>
             <div class="stat-icon" style="background: rgba(59, 130, 246, 0.1); color: #3b82f6;">
@@ -86,29 +243,74 @@
     </div>
     {% endif %}
 
-    <!-- Leave Balances hidden as per user request -->
-    <div style="display: none;">
-        <h2 style="font-weight: 800; margin-bottom: 20px; font-size: 20px;">Your Balances</h2>
-        <div class="balance-grid">
-            {% for bal in balances %}
-            <div class="balance-card">
-                <div class="balance-content">
-                    <div class="balance-header">
-                        <span class="type-badge">{{ bal.leave_type.code }}</span>
-                        <i class="fas fa-info-circle" style="opacity: 0.3;"></i>
+    <div style="margin-bottom: 32px;">
+        <h2 style="font-weight: 800; margin-bottom: 20px; font-size: 20px;">Your Leave Policies</h2>
+        {% if policy_cards %}
+        <div class="policy-card-grid">
+            {% for card in policy_cards %}
+            <div class="employee-policy-card">
+                <div class="policy-card-top">
+                    <div style="display: flex; gap: 12px; align-items: flex-start;">
+                        <div class="policy-color-mark" style="background: {{ card.leave_type.color_tag|default:'#2563eb' }};">
+                            {{ card.leave_type.code|slice:":2" }}
+                        </div>
+                        <div>
+                            <h3 class="policy-title">{{ card.leave_type.name }}</h3>
+                            <div class="policy-subtitle">
+                                {{ card.leave_type.category.name|default:"Leave Policy" }} | v{{ card.leave_type.policy_version }}
+                            </div>
+                        </div>
                     </div>
-                    <div class="balance-value">{{ bal.current_balance }}</div>
-                    <div class="balance-label">{{ bal.leave_type.name }} (Available)</div>
-                    <div class="progress-container">
-                        <div class="progress-bar" style="width: {% widthratio bal.current_balance 30 100 %}%"></div>
+                    <span class="type-badge">{{ card.leave_type.code }}</span>
+                </div>
+
+                <div class="policy-balance-row">
+                    <div class="policy-balance-cell">
+                        <div class="policy-balance-label">Available</div>
+                        <div class="policy-balance-value">{{ card.available }}</div>
                     </div>
-                    <div style="margin-top: 12px; font-size: 11px; color: var(--text-secondary); font-weight: 600;">
-                        Used: {{ bal.used_balance }} days
+                    <div class="policy-balance-cell">
+                        <div class="policy-balance-label">Used</div>
+                        <div class="policy-balance-value">{{ card.balance.used_balance }}</div>
+                    </div>
+                    <div class="policy-balance-cell">
+                        <div class="policy-balance-label">Pending</div>
+                        <div class="policy-balance-value">{{ card.balance.pending_balance }}</div>
                     </div>
                 </div>
+
+                <div class="rule-chip-row">
+                    {% if card.accrual and card.accrual.enabled %}
+                    <span class="rule-chip">{{ card.accrual.get_frequency_display }}</span>
+                    {% endif %}
+                    {% if card.carry and card.carry.is_allowed %}
+                    <span class="rule-chip">Carry {{ card.carry.max_carry_forward_days }}</span>
+                    {% endif %}
+                    {% if card.proof and card.proof.proof_required %}
+                    <span class="rule-chip">Proof after {{ card.proof.required_after_days }}d</span>
+                    {% endif %}
+                    {% if card.integration and card.integration.payroll_sync_enabled %}
+                    <span class="rule-chip">Payroll linked</span>
+                    {% endif %}
+                    {% if card.duration and card.duration.allow_hourly %}
+                    <span class="rule-chip">Hourly</span>
+                    {% endif %}
+                    {% if not card.eligibility.eligible %}
+                    <span class="rule-chip" style="background: #fef2f2; color: #dc2626;">Not eligible</span>
+                    {% endif %}
+                </div>
+
+                <button class="punch-btn" type="button" onclick="openApplyModal('{{ card.leave_type.id }}')" {% if card.available <= 0 and not card.leave_type.allow_negative_balance %}disabled{% endif %}>
+                    <i class="fas fa-plus"></i> Apply
+                </button>
             </div>
             {% endfor %}
         </div>
+        {% else %}
+        <div class="bento-card" style="padding: 28px; color: var(--text-secondary);">
+            No leave policy is assigned yet. Please contact HR.
+        </div>
+        {% endif %}
     </div>
 
 
@@ -238,10 +440,64 @@
             <div class="form-group">
                 <label class="form-label">Leave Type</label>
                 <select name="leave_type" id="leaveTypeSelect" class="glass-input" required onchange="handleLeaveTypeChange()">
-                    {% for lt in leave_types %}
-                        <option value="{{ lt.id }}" data-code="{{ lt.code }}">{{ lt.name }} ({{ lt.code }})</option>
+                    {% for card in policy_cards %}
+                        <option value="{{ card.leave_type.id }}"
+                            data-code="{{ card.leave_type.code }}"
+                            data-balance="{{ card.available }}"
+                            data-used="{{ card.balance.used_balance }}"
+                            data-pending="{{ card.balance.pending_balance }}"
+                            data-proof-required="{% if card.proof and card.proof.proof_required %}Yes{% else %}No{% endif %}"
+                            data-proof-after="{% if card.proof %}{{ card.proof.required_after_days }}{% else %}0{% endif %}"
+                            data-min-duration="{% if card.restriction %}{{ card.restriction.min_duration }}{% else %}0.5{% endif %}"
+                            data-max-duration="{% if card.restriction %}{{ card.restriction.max_duration }}{% else %}0{% endif %}"
+                            data-backdate="{% if card.restriction and card.restriction.backdate_allowed %}{{ card.restriction.max_backdate_days }}{% else %}Not allowed{% endif %}"
+                            data-future="{% if card.restriction and card.restriction.future_date_allowed %}{{ card.restriction.max_future_days }}{% else %}Not allowed{% endif %}"
+                            data-workflow="{% if card.workflow %}{% for step in card.workflow_steps %}{{ step.get_approver_type_display }}{% if not forloop.last %} > {% endif %}{% endfor %}{% else %}Manager > HR{% endif %}"
+                            data-paid="{% if card.leave_type.is_paid %}Paid{% else %}LOP{% endif %}">
+                            {{ card.leave_type.name }} ({{ card.leave_type.code }}) - {{ card.available }} available
+                        </option>
+                    {% empty %}
+                        <option value="" disabled selected>No assigned leave balance</option>
                     {% endfor %}
                 </select>
+            </div>
+
+            <div class="policy-snapshot">
+                <div class="policy-snapshot-item">
+                    <div class="policy-snapshot-label">Proof</div>
+                    <div class="policy-snapshot-value" id="policyProof">No</div>
+                </div>
+                <div class="policy-snapshot-item">
+                    <div class="policy-snapshot-label">Duration</div>
+                    <div class="policy-snapshot-value" id="policyDuration">-</div>
+                </div>
+                <div class="policy-snapshot-item">
+                    <div class="policy-snapshot-label">Date Window</div>
+                    <div class="policy-snapshot-value" id="policyDateWindow">-</div>
+                </div>
+                <div class="policy-snapshot-item">
+                    <div class="policy-snapshot-label">Workflow</div>
+                    <div class="policy-snapshot-value" id="policyWorkflow">-</div>
+                </div>
+                <div class="policy-snapshot-item">
+                    <div class="policy-snapshot-label">Payroll</div>
+                    <div class="policy-snapshot-value" id="policyPayroll">-</div>
+                </div>
+            </div>
+
+            <div id="selectedLeaveBalance" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin: -6px 0 20px;">
+                <div style="background: #f8fafc; border: 1px solid var(--border-light); border-radius: 12px; padding: 12px;">
+                    <div style="font-size: 10px; font-weight: 800; color: var(--text-secondary); text-transform: uppercase;">Available</div>
+                    <div id="selectedAvailable" style="font-size: 18px; font-weight: 900; color: var(--accent);">0</div>
+                </div>
+                <div style="background: #f8fafc; border: 1px solid var(--border-light); border-radius: 12px; padding: 12px;">
+                    <div style="font-size: 10px; font-weight: 800; color: var(--text-secondary); text-transform: uppercase;">Used</div>
+                    <div id="selectedUsed" style="font-size: 18px; font-weight: 900; color: var(--text-main);">0</div>
+                </div>
+                <div style="background: #f8fafc; border: 1px solid var(--border-light); border-radius: 12px; padding: 12px;">
+                    <div style="font-size: 10px; font-weight: 800; color: var(--text-secondary); text-transform: uppercase;">Pending</div>
+                    <div id="selectedPending" style="font-size: 18px; font-weight: 900; color: #f59e0b;">0</div>
+                </div>
             </div>
 
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
@@ -282,11 +538,11 @@
             </div>
 
             <div class="form-group">
-                <label class="form-label">Attachment (Optional)</label>
+                <label class="form-label" id="attachmentLabel">Attachment (Optional)</label>
                 <input type="file" name="attachment" class="glass-input" style="padding: 8px;">
             </div>
 
-            <button type="submit" class="punch-btn" style="width: 100%; margin-top: 12px; padding: 14px;">
+            <button type="submit" class="punch-btn" style="width: 100%; margin-top: 12px; padding: 14px;" {% if not policy_cards %}disabled{% endif %}>
                 Submit Application
             </button>
         </form>
@@ -294,17 +550,54 @@
 </div>
 
 <script>
-    function openApplyModal() {
-        document.getElementById('applyModal').style.display = 'flex';
+    let leaveModalScrollY = 0;
+
+    function showLeaveModal(modalId) {
+        const modal = document.getElementById(modalId);
+        if (!modal) return;
+        leaveModalScrollY = window.scrollY || document.documentElement.scrollTop || 0;
+        document.documentElement.classList.add('modal-open');
+        document.body.classList.add('modal-open');
+        document.body.style.top = `-${leaveModalScrollY}px`;
+        modal.style.display = 'flex';
+        modal.classList.add('active');
+        const modalContent = modal.querySelector('.modal-content');
+        if (modalContent) {
+            modalContent.scrollTop = 0;
+        }
+    }
+
+    function hideLeaveModal(modalId) {
+        const modal = document.getElementById(modalId);
+        if (!modal) return;
+        modal.style.display = 'none';
+        modal.classList.remove('active');
+        const anyOpenModal = Array.from(document.querySelectorAll('.glass-modal')).some(function (item) {
+            return item.style.display === 'flex';
+        });
+        if (!anyOpenModal) {
+            document.documentElement.classList.remove('modal-open');
+            document.body.classList.remove('modal-open');
+            document.body.style.top = '';
+            window.scrollTo(0, leaveModalScrollY);
+        }
+    }
+
+    function openApplyModal(policyId) {
+        showLeaveModal('applyModal');
+        if (policyId) {
+            document.getElementById('leaveTypeSelect').value = policyId;
+        }
+        handleLeaveTypeChange();
     }
     function closeApplyModal() {
-        document.getElementById('applyModal').style.display = 'none';
+        hideLeaveModal('applyModal');
     }
     function openCompOffModal() {
-        document.getElementById('compOffModal').style.display = 'flex';
+        showLeaveModal('compOffModal');
     }
     function closeCompOffModal() {
-        document.getElementById('compOffModal').style.display = 'none';
+        hideLeaveModal('compOffModal');
     }
 
     function handleSessionChange() {
@@ -335,8 +628,19 @@
     function handleLeaveTypeChange() {
         const leaveTypeSelect = document.getElementById('leaveTypeSelect');
         const selectedOption = leaveTypeSelect.options[leaveTypeSelect.selectedIndex];
+        if (!selectedOption || !selectedOption.value) {
+            updateSelectedLeaveBalance('0', '0', '0');
+            return;
+        }
+
         const leaveCode = selectedOption.getAttribute('data-code');
         const sessionType = document.getElementById('sessionType');
+        updateSelectedLeaveBalance(
+            selectedOption.getAttribute('data-balance') || '0',
+            selectedOption.getAttribute('data-used') || '0',
+            selectedOption.getAttribute('data-pending') || '0'
+        );
+        updatePolicySnapshot(selectedOption);
 
         if (leaveCode === 'SHL') {
             sessionType.value = 'SHORT';
@@ -347,6 +651,28 @@
                 handleSessionChange();
             }
         }
+    }
+
+    function updateSelectedLeaveBalance(available, used, pending) {
+        document.getElementById('selectedAvailable').textContent = available;
+        document.getElementById('selectedUsed').textContent = used;
+        document.getElementById('selectedPending').textContent = pending;
+    }
+
+    function updatePolicySnapshot(option) {
+        const proofRequired = option.getAttribute('data-proof-required') || 'No';
+        const proofAfter = option.getAttribute('data-proof-after') || '0';
+        const minDuration = option.getAttribute('data-min-duration') || '0.5';
+        const maxDuration = option.getAttribute('data-max-duration') || '0';
+        const backdate = option.getAttribute('data-backdate') || '-';
+        const future = option.getAttribute('data-future') || '-';
+
+        document.getElementById('policyProof').textContent = proofRequired === 'Yes' ? `Required after ${proofAfter} day(s)` : 'Not required';
+        document.getElementById('policyDuration').textContent = maxDuration === '0' ? `Min ${minDuration} day(s)` : `${minDuration} - ${maxDuration} day(s)`;
+        document.getElementById('policyDateWindow').textContent = `Backdate: ${backdate} | Future: ${future}`;
+        document.getElementById('policyWorkflow').textContent = option.getAttribute('data-workflow') || '-';
+        document.getElementById('policyPayroll').textContent = option.getAttribute('data-paid') || '-';
+        document.getElementById('attachmentLabel').textContent = proofRequired === 'Yes' ? 'Attachment (Required)' : 'Attachment (Optional)';
     }
 
 

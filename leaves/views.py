@@ -2,13 +2,22 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.db.models import Sum
+from django.urls import reverse
 from django.utils import timezone
+from decimal import Decimal, InvalidOperation
 from .models import (
     Location, LeaveType, LeavePolicy, LeaveBalance, LeaveRequest, 
     ApprovalWorkflow, LeaveAccrualLog, Holiday, CompOffRequest,
-    LeaveApprovalMatrix, LeaveApprovalMatrixStep
+    LeaveApprovalMatrix, LeaveApprovalMatrixStep, HolidayCalendar
 )
-from employees.models import Employee
+from employees.models import Employee, Department, Designation
+from .services.balance_engine import LeaveBalanceEngine
+from .services.calendar_engine import LeaveCalendarEngine
+from .services.eligibility_engine import LeaveEligibilityEngine
+from .services.employee_policy import EmployeeLeavePolicyPresenter
+from .services.holiday_calendar_service import HolidayCalendarService
+from .services.policy_workbench import LeavePolicyWorkbenchService
+from .services.restriction_engine import LeaveRestrictionEngine
 from datetime import datetime, timedelta
 from accounts.models import CustomUser
 
@@ -20,13 +29,44 @@ def get_working_days(start_date, end_date, organization):
     """
     days = 0
     curr = start_date
-    holidays = Holiday.objects.filter(organization=organization).values_list('date', flat=True)
+    holidays = HolidayCalendarService.holiday_dates_for_period(
+        organization=organization,
+        start_date=start_date,
+        end_date=end_date,
+        include_optional=False,
+    )
     
     while curr <= end_date:
         if curr.weekday() < 5 and curr not in holidays: # Monday to Friday
             days += 1
         curr += timedelta(days=1)
     return days
+
+
+def _require_staff(request):
+    if request.user.is_staff:
+        return True
+    messages.error(request, "Only Admin or HR can access this leave setup page.")
+    return False
+
+
+def _parse_decimal(value, field_name, minimum=Decimal('0.00')):
+    try:
+        parsed = Decimal(str(value or '0')).quantize(Decimal('0.01'))
+    except (InvalidOperation, ValueError):
+        raise ValueError(f"{field_name} must be a valid number.")
+
+    if parsed < minimum:
+        raise ValueError(f"{field_name} cannot be less than {minimum}.")
+
+    return parsed
+
+
+def _user_for_employee(employee, organization):
+    if not employee or not employee.email:
+        return None
+    return CustomUser.objects.filter(email=employee.email, organization=organization).first()
+
 
 @login_required
 def leave_dashboard_view(request):
@@ -36,22 +76,26 @@ def leave_dashboard_view(request):
         return redirect('home')
 
     current_year = timezone.now().year
-    
-    # Get or create leave balances for the year
-    leave_types = LeaveType.objects.filter(organization=request.user.organization)
-    balances = []
-    for lt in leave_types:
-        # Check if there's a policy for this leave type
-        policy = LeavePolicy.objects.filter(leave_type=lt, organization=request.user.organization).first()
-        initial_balance = policy.max_balance if policy else 12.0 # Fallback
-        
-        bal, created = LeaveBalance.objects.get_or_create(
+    balances = list(
+        LeaveBalance.objects.filter(
             employee=employee,
-            leave_type=lt,
             year=current_year,
-            defaults={'current_balance': initial_balance}
-        )
-        balances.append(bal)
+            leave_type__organization=request.user.organization,
+            leave_type__is_active=True,
+            leave_type__category__isnull=False,
+            leave_type__status='ACTIVE',
+            leave_type__is_requestable=True,
+        ).select_related('leave_type', 'leave_type__category').prefetch_related(
+            'leave_type__enterprise_workflows__steps',
+        ).order_by('leave_type__name')
+    )
+    policy_cards = EmployeeLeavePolicyPresenter.build_cards(employee=employee, balances=balances)
+    leave_types = [card['leave_type'] for card in policy_cards if card['available'] > 0]
+    leave_type_count = LeaveType.objects.filter(
+        organization=request.user.organization,
+        is_active=True,
+        category__isnull=False,
+    ).count()
 
     # Admin Stats
     admin_stats = {}
@@ -67,6 +111,7 @@ def leave_dashboard_view(request):
                 start_date__lte=timezone.now().date(),
                 end_date__gte=timezone.now().date()
             ).count(),
+            'leave_categories': leave_type_count,
         }
         # Fetch all pending requests for the organization for the admin view
         team_requests = LeaveRequest.objects.filter(
@@ -92,6 +137,7 @@ def leave_dashboard_view(request):
     # Upcoming Holidays (Except Sundays)
     upcoming_holidays = Holiday.objects.filter(
         organization=request.user.organization,
+        calendar__isnull=False,
         date__gte=timezone.now().date()
     ).order_by('date')
     
@@ -101,6 +147,7 @@ def leave_dashboard_view(request):
     context = {
         'employee': employee,
         'balances': balances,
+        'policy_cards': policy_cards,
         'recent_requests': recent_requests,
         'recent_compoffs': recent_compoffs,
         'upcoming_leaves': upcoming_leaves,
@@ -111,6 +158,189 @@ def leave_dashboard_view(request):
         'admin_stats': admin_stats,
     }
     return render(request, 'leaves/leave_dashboard.html', context)
+
+
+@login_required
+def manage_leave_types_view(request):
+    if not _require_staff(request):
+        return redirect('leaves:dashboard')
+
+    organization = request.user.organization
+
+    if request.method == 'POST':
+        try:
+            leave_type, created = LeavePolicyWorkbenchService.save_from_post(
+                organization=organization,
+                user=request.user,
+                data=request.POST,
+                request=request,
+            )
+
+            action = "updated" if not created else "created"
+            messages.success(request, f"{leave_type.name} policy {action} successfully.")
+            return redirect('leaves:create_leave')
+        except ValueError as exc:
+            messages.error(request, str(exc))
+        except Exception as exc:
+            messages.error(request, f"Could not save leave policy: {exc}")
+
+    leave_types = LeaveType.objects.filter(
+        organization=organization,
+        is_active=True,
+        category__isnull=False,
+    ).prefetch_related('policies').order_by('name')
+
+    return render(request, 'leaves/manage_leave_types.html', {
+        'leave_types': leave_types,
+        'departments': Department.objects.filter(organization=organization, is_active=True, is_deleted=False).order_by('name'),
+        'designations': Designation.objects.filter(organization=organization, is_active=True, is_deleted=False).order_by('name'),
+    })
+
+
+@login_required
+def assign_leave_balances_view(request):
+    if not _require_staff(request):
+        return redirect('leaves:dashboard')
+
+    organization = request.user.organization
+    current_year = timezone.now().year
+    selected_employee_id = request.POST.get('employee') if request.method == 'POST' else request.GET.get('employee', '')
+    try:
+        selected_year = int((request.POST.get('year') if request.method == 'POST' else request.GET.get('year')) or current_year)
+    except (TypeError, ValueError):
+        selected_year = current_year
+
+    employees = Employee.objects.filter(
+        organization=organization,
+        is_active=True,
+        is_deleted=False
+    ).order_by('first_name', 'last_name', 'employee_id')
+    selected_employee = employees.filter(id=selected_employee_id).first() if selected_employee_id else None
+    leave_types = LeaveType.objects.filter(
+        organization=organization,
+        is_active=True,
+        category__isnull=False,
+        status='ACTIVE',
+        is_requestable=True,
+    ).select_related('category').prefetch_related('policies').order_by('name')
+
+    for leave_type in leave_types:
+        policy = next(iter(leave_type.policies.all()), None)
+        leave_type.assignment_default = (
+            Decimal(str(policy.max_balance)).quantize(Decimal('0.01'))
+            if policy else Decimal('0.00')
+        )
+
+    if request.method == 'POST':
+        employee_id = request.POST.get('employee')
+        selected_leave_ids = request.POST.getlist('leave_types')
+        assignment_mode = request.POST.get('assignment_mode', 'SET')
+
+        try:
+            year = int(request.POST.get('year') or selected_year)
+            if year < 2000 or year > 2100:
+                raise ValueError("Enter a valid leave year.")
+
+            if assignment_mode not in ['SET', 'ADD']:
+                raise ValueError("Select a valid assignment mode.")
+
+            if not employee_id:
+                raise ValueError("Select an employee first.")
+
+            if not selected_leave_ids:
+                raise ValueError("Select at least one leave policy to assign.")
+
+            employee = Employee.objects.get(
+                id=employee_id,
+                organization=organization,
+                is_active=True,
+                is_deleted=False,
+            )
+
+            selected_leave_types = list(LeaveType.objects.filter(
+                id__in=selected_leave_ids,
+                organization=organization,
+                is_active=True,
+                category__isnull=False,
+                status='ACTIVE',
+                is_requestable=True,
+            ).order_by('name'))
+            if len(selected_leave_types) != len(set(selected_leave_ids)):
+                raise ValueError("One or more selected leave policies are not available.")
+
+            updated_count = 0
+            for leave_type in selected_leave_types:
+                amount = _parse_decimal(
+                    request.POST.get(f'amount_{leave_type.id}'),
+                    f"{leave_type.name} leave days",
+                    minimum=Decimal('0.01'),
+                )
+                if assignment_mode == 'ADD':
+                    LeaveBalanceEngine.adjust(
+                        employee=employee,
+                        leave_type=leave_type,
+                        year=year,
+                        amount=amount,
+                        organization=organization,
+                        user=request.user,
+                        source="ADMIN",
+                        description=f"Admin added {amount} {leave_type.code} days for {year}.",
+                    )
+                else:
+                    LeaveBalanceEngine.set_balance(
+                        employee=employee,
+                        leave_type=leave_type,
+                        year=year,
+                        amount=amount,
+                        organization=organization,
+                        user=request.user,
+                        source="ADMIN",
+                        description=f"Admin assigned {amount} {leave_type.code} days for {year}.",
+                    )
+                updated_count += 1
+
+            messages.success(request, f"{updated_count} leave balance(s) assigned to {employee.first_name} {employee.last_name}.")
+            return redirect(f"{reverse('leaves:assign_leaves')}?employee={employee.id}&year={year}")
+        except (Employee.DoesNotExist, LeaveType.DoesNotExist):
+            messages.error(request, "Selected employee or leave type was not found.")
+        except ValueError as exc:
+            messages.error(request, str(exc))
+        except Exception as exc:
+            messages.error(request, f"Could not assign leave balance: {exc}")
+
+    recent_balances = LeaveBalance.objects.filter(
+        employee__organization=organization,
+        year=selected_year,
+        leave_type__organization=organization,
+        leave_type__category__isnull=False,
+    ).select_related('employee', 'leave_type').order_by('employee__first_name', 'leave_type__name')
+    if selected_employee:
+        recent_balances = recent_balances.filter(employee=selected_employee)
+
+    balance_lookup = {}
+    existing_balances = LeaveBalance.objects.filter(
+        employee__organization=organization,
+        employee__in=employees,
+        leave_type__in=leave_types,
+        year=selected_year,
+    ).select_related('employee', 'leave_type')
+    for balance in existing_balances:
+        balance_lookup.setdefault(str(balance.employee_id), {})[str(balance.leave_type_id)] = {
+            'current': str(Decimal(str(balance.current_balance or 0)).quantize(Decimal('0.01'))),
+            'used': str(Decimal(str(balance.used_balance or 0)).quantize(Decimal('0.01'))),
+            'pending': str(Decimal(str(balance.pending_balance or 0)).quantize(Decimal('0.01'))),
+        }
+
+    return render(request, 'leaves/assign_leave_balances.html', {
+        'employees': employees,
+        'leave_types': leave_types,
+        'recent_balances': recent_balances,
+        'current_year': current_year,
+        'selected_year': selected_year,
+        'selected_employee_id': str(selected_employee_id or ''),
+        'selected_employee': selected_employee,
+        'balance_lookup': balance_lookup,
+    })
 
 
 
@@ -127,9 +357,24 @@ def apply_leave_view(request):
         attachment = request.FILES.get('attachment')
 
         try:
-            leave_type = LeaveType.objects.get(id=leave_type_id, organization=request.user.organization)
+            leave_type = LeaveType.objects.get(
+                id=leave_type_id,
+                organization=request.user.organization,
+                category__isnull=False,
+                status='ACTIVE',
+                is_requestable=True,
+            )
             start_date = datetime.strptime(start_date_str, '%Y-%m-%d').date()
             end_date = datetime.strptime(end_date_str, '%Y-%m-%d').date()
+
+            eligibility = LeaveEligibilityEngine.evaluate(
+                employee=employee,
+                leave_type=leave_type,
+                on_date=start_date,
+            )
+            if not eligibility['eligible']:
+                messages.error(request, " ".join(eligibility['errors']))
+                return redirect('leaves:dashboard')
 
             if start_date > end_date:
                 messages.error(request, "Start date cannot be after end date.")
@@ -140,13 +385,14 @@ def apply_leave_view(request):
                 messages.error(request, "Half-day leaves must be for a single day (Start and End date must be the same).")
                 return redirect('leaves:dashboard')
 
-            # Calculate days
-            if session == 'FULL':
-                total_days = get_working_days(start_date, end_date, request.user.organization)
-            elif session == 'SHORT':
-                total_days = 0.25 # Represents 2 hours out of 8
-            else:
-                total_days = 0.5
+            total_days = LeaveCalendarEngine.calculate_days(
+                organization=request.user.organization,
+                leave_type=leave_type,
+                start_date=start_date,
+                end_date=end_date,
+                session_type=session,
+                employee=employee,
+            )
 
             if total_days <= 0:
                 messages.error(request, "Selected range contains no working days.")
@@ -171,6 +417,21 @@ def apply_leave_view(request):
                 # For Short Leave, we deduct 1.0 from the balance of 2.0 per month
                 total_days = 1.0 
 
+            requested_days = Decimal(str(total_days)).quantize(Decimal('0.01'))
+
+            restriction_result = LeaveRestrictionEngine.validate_application(
+                employee=employee,
+                leave_type=leave_type,
+                start_date=start_date,
+                end_date=end_date,
+                session_type=session,
+                total_days=requested_days,
+                attachment=attachment,
+            )
+            if not restriction_result['valid']:
+                messages.error(request, " ".join(restriction_result['errors']))
+                return redirect('leaves:dashboard')
+
             # Check balance
 
             balance = LeaveBalance.objects.filter(
@@ -179,9 +440,15 @@ def apply_leave_view(request):
                 year=start_date.year
             ).first()
 
-            if not balance or balance.current_balance < total_days:
+            available_balance = (balance.current_balance - balance.pending_balance) if balance else Decimal('0.00')
+            negative_limit = Decimal(str(leave_type.negative_balance_limit or 0)).quantize(Decimal('0.01'))
+            allowed_available = available_balance + negative_limit if leave_type.allow_negative_balance else available_balance
+            if not balance or allowed_available < requested_days:
                 messages.error(request, f"Insufficient {leave_type.code} balance.")
                 return redirect('leaves:dashboard')
+
+            payable_days = requested_days if leave_type.is_paid else Decimal('0.00')
+            lop_days = Decimal('0.00') if leave_type.is_paid else requested_days
 
             # Create request
             leave_req = LeaveRequest.objects.create(
@@ -192,7 +459,11 @@ def apply_leave_view(request):
                 session_type=session,
                 reason=reason,
                 attachment=attachment,
-                total_days=total_days,
+                total_days=requested_days,
+                payable_days=payable_days,
+                lop_days=lop_days,
+                policy_version=leave_type.policy_version,
+                applied_at=timezone.now(),
                 organization=request.user.organization,
                 created_by=request.user,
                 start_time=request.POST.get('start_time') if session == 'SHORT' else None,
@@ -219,7 +490,7 @@ def apply_leave_view(request):
                     # Resolve Approver based on role
                     approver = None
                     if step.approver_role == 'MANAGER':
-                        approver = employee.manager.user if employee.manager else None
+                        approver = _user_for_employee(employee.manager, request.user.organization)
                     elif step.approver_role == 'HR':
                         approver = CustomUser.objects.filter(organization=request.user.organization, is_staff=True).first()
                     
@@ -237,7 +508,7 @@ def apply_leave_view(request):
                 if employee.manager:
                     ApprovalWorkflow.objects.create(
                         leave_request=leave_req,
-                        approver=employee.manager.user,
+                        approver=_user_for_employee(employee.manager, request.user.organization),
                         approver_role='MANAGER',
                         sequence_order=1,
                         status='PENDING',
@@ -258,6 +529,8 @@ def apply_leave_view(request):
             if first_step:
                 leave_req.current_handler = first_step.approver
                 leave_req.save()
+
+            LeaveBalanceEngine.reserve(leave_request=leave_req, user=request.user)
 
             # Initial Notification for First Approver
             if leave_req.current_handler:
@@ -377,20 +650,18 @@ def approve_reject_action_view(request, leave_id):
                 leave_req.status = 'APPROVED'
                 leave_req.current_handler = None
                 
-                # Deduct from balance
-                balance = LeaveBalance.objects.get(
-                    employee=leave_req.employee, 
-                    leave_type=leave_req.leave_type, 
-                    year=leave_req.start_date.year
-                )
-                balance.current_balance -= leave_req.total_days
-                balance.used_balance += leave_req.total_days
-                balance.save()
+                LeaveBalanceEngine.consume(leave_request=leave_req, user=request.user)
 
                 
         elif action == 'reject':
             leave_req.status = 'REJECTED'
             leave_req.current_handler = None
+
+            LeaveBalanceEngine.release(
+                leave_request=leave_req,
+                user=request.user,
+                description="Released reserved balance after rejection.",
+            )
             
         leave_req.save()
         
@@ -428,11 +699,186 @@ def approve_reject_action_view(request, leave_id):
     return redirect('leaves:pending_approvals')
 
 @login_required
+def manage_holiday_calendars_view(request):
+    if not _require_staff(request):
+        return redirect('leaves:dashboard')
+
+    organization = request.user.organization
+    current_year = timezone.now().year
+
+    if request.method == 'POST':
+        action = request.POST.get('action')
+        try:
+            if action == 'create_calendar':
+                calendar_obj = HolidayCalendarService.create_calendar(
+                    organization=organization,
+                    user=request.user,
+                    name=request.POST.get('name'),
+                    year=request.POST.get('year'),
+                    branch=request.POST.get('branch'),
+                    location_id=request.POST.get('location'),
+                    is_default=bool(request.POST.get('is_default')),
+                )
+                messages.success(request, f"{calendar_obj.name} created successfully.")
+                return redirect(f"{reverse('leaves:holiday_calendars')}?year={calendar_obj.year}&calendar={calendar_obj.id}")
+
+            if action == 'copy_calendar':
+                calendar_obj, copied_count = HolidayCalendarService.copy_calendar(
+                    organization=organization,
+                    user=request.user,
+                    source_calendar_id=request.POST.get('source_calendar'),
+                    target_year=request.POST.get('target_year'),
+                    target_name=request.POST.get('target_name'),
+                    make_default=bool(request.POST.get('make_default')),
+                )
+                messages.success(request, f"Copied {copied_count} holiday(s) into {calendar_obj.name}.")
+                return redirect(f"{reverse('leaves:holiday_calendars')}?year={calendar_obj.year}&calendar={calendar_obj.id}")
+
+            if action == 'import_holidays':
+                calendar_id = request.POST.get('calendar')
+                imported_count = HolidayCalendarService.import_csv(
+                    organization=organization,
+                    user=request.user,
+                    calendar_id=calendar_id,
+                    uploaded_file=request.FILES.get('csv_file'),
+                )
+                calendar_obj = HolidayCalendar.objects.get(id=calendar_id, organization=organization)
+                messages.success(request, f"Imported {imported_count} holiday(s).")
+                return redirect(f"{reverse('leaves:holiday_calendars')}?year={calendar_obj.year}&calendar={calendar_obj.id}")
+
+            if action == 'save_holiday':
+                holiday, created = HolidayCalendarService.save_holiday(
+                    organization=organization,
+                    user=request.user,
+                    calendar_id=request.POST.get('calendar'),
+                    holiday_id=request.POST.get('holiday_id') or None,
+                    name=request.POST.get('holiday_name'),
+                    holiday_date=request.POST.get('holiday_date'),
+                    holiday_type=request.POST.get('holiday_type'),
+                    is_paid=bool(request.POST.get('is_paid')),
+                    is_optional=bool(request.POST.get('is_optional')),
+                    location_id=request.POST.get('holiday_location'),
+                )
+                action_label = "created" if created else "updated"
+                messages.success(request, f"{holiday.name} {action_label} successfully.")
+                return redirect(f"{reverse('leaves:holiday_calendars')}?year={holiday.calendar.year}&calendar={holiday.calendar_id}")
+
+            if action == 'delete_holiday':
+                holiday = Holiday.objects.get(id=request.POST.get('holiday_id'), organization=organization)
+                calendar_id = holiday.calendar_id
+                year = holiday.date.year
+                name = holiday.name
+                holiday.delete()
+                messages.success(request, f"{name} deleted successfully.")
+                return redirect(f"{reverse('leaves:holiday_calendars')}?year={year}&calendar={calendar_id}")
+
+            if action == 'set_default':
+                calendar_obj = HolidayCalendar.objects.get(id=request.POST.get('calendar'), organization=organization)
+                HolidayCalendar.objects.filter(
+                    organization=organization,
+                    year=calendar_obj.year,
+                    is_default=True,
+                ).update(is_default=False)
+                calendar_obj.is_default = True
+                calendar_obj.updated_by = request.user
+                calendar_obj.save(update_fields=['is_default', 'updated_by', 'updated_at'])
+                messages.success(request, f"{calendar_obj.name} is now the default calendar for {calendar_obj.year}.")
+                return redirect(f"{reverse('leaves:holiday_calendars')}?year={calendar_obj.year}&calendar={calendar_obj.id}")
+
+            messages.error(request, "Select a valid holiday calendar action.")
+        except (HolidayCalendar.DoesNotExist, Holiday.DoesNotExist, Location.DoesNotExist):
+            messages.error(request, "Selected calendar, holiday, or location was not found.")
+        except ValueError as exc:
+            messages.error(request, str(exc))
+        except Exception as exc:
+            messages.error(request, f"Could not update holiday calendar: {exc}")
+
+    try:
+        selected_year = int(request.GET.get('year') or current_year)
+    except (TypeError, ValueError):
+        selected_year = current_year
+
+    all_calendars = HolidayCalendar.objects.filter(
+        organization=organization,
+    ).select_related('location_fk').prefetch_related('holidays').order_by('-year', 'name')
+    year_calendars = all_calendars.filter(year=selected_year)
+
+    selected_calendar = None
+    selected_calendar_id = request.GET.get('calendar')
+    if selected_calendar_id:
+        selected_calendar = year_calendars.filter(id=selected_calendar_id).first()
+    if not selected_calendar:
+        selected_calendar = year_calendars.filter(is_default=True).first() or year_calendars.first()
+
+    holidays = Holiday.objects.none()
+    if selected_calendar:
+        holidays = Holiday.objects.filter(
+            organization=organization,
+            calendar=selected_calendar,
+        ).select_related('location_fk').order_by('date', 'name')
+
+    available_years = sorted(
+        set(all_calendars.values_list('year', flat=True)) | {current_year, current_year + 1},
+        reverse=True,
+    )
+    holiday_stats = {
+        'total': holidays.count(),
+        'public': holidays.filter(is_optional=False).count(),
+        'optional': holidays.filter(is_optional=True).count(),
+        'paid': holidays.filter(is_paid=True).count(),
+    }
+
+    return render(request, 'leaves/manage_holiday_calendars.html', {
+        'available_years': available_years,
+        'selected_year': selected_year,
+        'all_calendars': all_calendars,
+        'year_calendars': year_calendars,
+        'selected_calendar': selected_calendar,
+        'holidays': holidays,
+        'locations': Location.objects.filter(organization=organization, is_active=True, is_deleted=False).order_by('name'),
+        'holiday_stats': holiday_stats,
+        'current_year': current_year,
+    })
+
+
+@login_required
 def global_calendar_view(request):
-    # This would typically return JSON for a calendar library or render a calendar template
-    holidays = Holiday.objects.filter(organization=request.user.organization)
-    leaves = LeaveRequest.objects.filter(organization=request.user.organization, status='APPROVED')
-    return render(request, 'leaves/calendar.html', {'holidays': holidays, 'leaves': leaves})
+    try:
+        selected_year = int(request.GET.get('year') or timezone.now().year)
+    except (TypeError, ValueError):
+        selected_year = timezone.now().year
+
+    year_start = datetime(selected_year, 1, 1).date()
+    year_end = datetime(selected_year, 12, 31).date()
+
+    holidays = Holiday.objects.filter(
+        organization=request.user.organization,
+        calendar__isnull=False,
+        date__year=selected_year,
+    ).select_related('calendar').order_by('date', 'name')
+    leaves = LeaveRequest.objects.filter(
+        organization=request.user.organization,
+        status='APPROVED',
+        start_date__lte=year_end,
+        end_date__gte=year_start,
+    )
+    calendars = HolidayCalendar.objects.filter(
+        organization=request.user.organization,
+        year=selected_year,
+    ).order_by('name')
+    available_years = sorted(
+        set(HolidayCalendar.objects.filter(
+            organization=request.user.organization,
+        ).values_list('year', flat=True)) | {timezone.now().year, timezone.now().year + 1},
+        reverse=True,
+    )
+    return render(request, 'leaves/calendar.html', {
+        'holidays': holidays,
+        'leaves': leaves,
+        'calendars': calendars,
+        'selected_year': selected_year,
+        'available_years': available_years,
+    })
 
 
 @login_required
@@ -456,7 +902,7 @@ def apply_compoff_view(request):
                 worked_date=worked_date,
                 reason=reason,
                 organization=request.user.organization,
-                current_handler=employee.manager.user if employee.manager else None
+                current_handler=_user_for_employee(employee.manager, request.user.organization)
             )
 
             # Notification for Manager/HR
@@ -536,7 +982,7 @@ def request_leave_cancellation_view(request, leave_id):
         leave_req.status = 'CANCEL_REQUESTED'
         # Route back to manager or HR
         if leave_req.employee.manager:
-            leave_req.current_handler = leave_req.employee.manager.user
+            leave_req.current_handler = _user_for_employee(leave_req.employee.manager, request.user.organization)
         leave_req.save()
         
         # Notification for Manager/HR
@@ -579,25 +1025,31 @@ def cancel_approval_action_view(request, leave_id):
                 leave_req.status = 'CANCELLED'
                 
                 if was_fully_approved:
-                    balance = LeaveBalance.objects.get(
+                    balance = LeaveBalance.objects.filter(
                         employee=leave_req.employee,
                         leave_type=leave_req.leave_type,
                         year=leave_req.start_date.year
-                    )
-                    balance.current_balance += leave_req.total_days
-                    balance.used_balance -= leave_req.total_days
-                    balance.save()
-                    
-                    # Log credit back
-                    LeaveAccrualLog.objects.create(
+                    ).first()
+                    if balance:
+                        balance.used_balance = max(Decimal('0.00'), balance.used_balance - leave_req.total_days)
+                        balance.save(update_fields=['used_balance'])
+                    LeaveBalanceEngine.adjust(
                         employee=leave_req.employee,
                         leave_type=leave_req.leave_type,
+                        year=leave_req.start_date.year,
                         amount=leave_req.total_days,
-                        action_type='LEAVE_CANCEL_CREDIT',
+                        organization=request.user.organization,
+                        user=request.user,
+                        source="SYSTEM",
                         description=f"Balance credited back for cancelled leave ({leave_req.start_date})",
-                        organization=request.user.organization
                     )
-            
+                else:
+                    LeaveBalanceEngine.release(
+                        leave_request=leave_req,
+                        user=request.user,
+                        description="Released reserved balance after cancellation approval.",
+                    )
+                    
         elif action == 'reject':
             # Revert to previous status? Hard to know. 
             # Let's set it back to APPROVED if it was requested from APPROVED.
@@ -621,9 +1073,10 @@ def rh_picker_view(request):
     policy = LeavePolicy.objects.filter(leave_type=rh_type, organization=request.user.organization).first()
     rh_limit = int(policy.max_balance) if policy else 2
 
-    # Get all optional holidays for the year
+    # Show only optional holidays created inside an HR-managed holiday calendar.
     optional_holidays = Holiday.objects.filter(
         organization=request.user.organization,
+        calendar__isnull=False,
         is_optional=True,
         date__year=current_year
     ).order_by('date')
@@ -642,7 +1095,8 @@ def rh_picker_view(request):
         'claimed_holiday_ids': claimed_holiday_ids,
         'rh_limit': rh_limit,
         'claims_count': claims.count(),
-        'remaining': rh_limit - claims.count()
+        'remaining': rh_limit - claims.count(),
+        'current_year': current_year,
     }
     return render(request, 'leaves/rh_picker.html', context)
 
@@ -653,7 +1107,13 @@ def claim_rh_view(request, holiday_id):
     """
     if request.method == 'POST':
         employee = Employee.objects.filter(email=request.user.email, organization=request.user.organization).first()
-        holiday = get_object_or_404(Holiday, id=holiday_id, organization=request.user.organization, is_optional=True)
+        holiday = get_object_or_404(
+            Holiday,
+            id=holiday_id,
+            organization=request.user.organization,
+            calendar__isnull=False,
+            is_optional=True,
+        )
         current_year = holiday.date.year
         
         # Check if already claimed

@@ -3,17 +3,167 @@ from django.test import TestCase, Client
 from django.urls import reverse
 from django.contrib.auth import get_user_model
 from accounts.models import Organization
-from datetime import date
+from datetime import date, timedelta
+from django.utils import timezone
 from employees.models import Employee
+from attendance.models import Attendance, AttendanceStatus
+from leaves.models import LeaveCategory, LeaveRequest, LeaveType
 from payroll.models import (
     Arrear, SalaryComponent, FinancialYear, TaxRegime, TaxSlab,
     TaxDeclarationCategory, EmployeeTaxProfile, EmployeeTaxDeclaration,
     DeclarationProof, DeclarationWorkflowLog, TaxCalculationSnapshot,
-    PayrollTDSSyncLog
+    PayrollTDSSyncLog, PayrollRun, SalaryStructure, SalaryStructureItem,
+    EmployeePayslip
 )
+from payroll.engine.processor import PayrollProcessor
 from payroll.engine.tax_calculator import TaxCalculatorEngine
 
 User = get_user_model()
+
+
+class PayrollAttendanceIntegrationTests(TestCase):
+    def setUp(self):
+        self.org = Organization.objects.create(name="Payroll Org")
+        self.employee = Employee.objects.create(
+            organization=self.org,
+            employee_id="EMP-PAY-001",
+            first_name="Aarav",
+            last_name="Mehta",
+            email="aarav@example.com",
+            phone_number="9999999999",
+            is_active=True,
+        )
+        self.present_status = AttendanceStatus.objects.create(
+            organization=self.org,
+            name="Present",
+            code="P",
+            is_paid=True,
+            payable_day_value=Decimal("1.00"),
+            is_attendance_counted=True,
+        )
+        self.basic_component = SalaryComponent.objects.create(
+            organization=self.org,
+            code="BASIC_TEST",
+            name="Basic Test",
+            component_type=SalaryComponent.ComponentType.EARNING,
+            calculation_type=SalaryComponent.CalculationType.FIXED,
+            is_calculated_on_attendance=True,
+        )
+        self.structure = SalaryStructure.objects.create(
+            organization=self.org,
+            employee=self.employee,
+            ctc=Decimal("264000.00"),
+            gross_salary=Decimal("22000.00"),
+            basic_salary=Decimal("22000.00"),
+            effective_date=date(2026, 1, 1),
+        )
+        SalaryStructureItem.objects.create(
+            organization=self.org,
+            salary_structure=self.structure,
+            component=self.basic_component,
+            fixed_amount=Decimal("22000.00"),
+        )
+
+    def test_payroll_uses_attendance_paid_leave_and_lop_leave(self):
+        working_dates = self._weekdays(2026, 5)
+        attendance_dates = working_dates[:18]
+        paid_leave_dates = working_dates[18:20]
+        lop_leave_date = working_dates[20]
+
+        for attendance_date in attendance_dates:
+            Attendance.objects.create(
+                organization=self.org,
+                employee=self.employee,
+                date=attendance_date,
+                status=self.present_status,
+            )
+
+        paid_category = LeaveCategory.objects.create(
+            organization=self.org,
+            name="Paid Leave",
+            code="PAID_TEST",
+            is_paid_category=True,
+        )
+        paid_leave_type = LeaveType.objects.create(
+            organization=self.org,
+            category=paid_category,
+            name="Earned Leave Test",
+            code="ELT",
+            is_paid=True,
+            status="ACTIVE",
+        )
+        lop_category = LeaveCategory.objects.create(
+            organization=self.org,
+            name="Unpaid Leave",
+            code="LOP_TEST",
+            is_paid_category=False,
+        )
+        lop_leave_type = LeaveType.objects.create(
+            organization=self.org,
+            category=lop_category,
+            name="Loss of Pay Test",
+            code="LOPT",
+            is_paid=False,
+            status="ACTIVE",
+        )
+
+        LeaveRequest.objects.create(
+            organization=self.org,
+            employee=self.employee,
+            leave_type=paid_leave_type,
+            start_date=paid_leave_dates[0],
+            end_date=paid_leave_dates[-1],
+            total_days=Decimal("2.0"),
+            payable_days=Decimal("2.00"),
+            lop_days=Decimal("0.00"),
+            reason="Approved paid leave",
+            status="APPROVED",
+            applied_at=timezone.now(),
+        )
+        LeaveRequest.objects.create(
+            organization=self.org,
+            employee=self.employee,
+            leave_type=lop_leave_type,
+            start_date=lop_leave_date,
+            end_date=lop_leave_date,
+            total_days=Decimal("1.0"),
+            payable_days=Decimal("0.00"),
+            lop_days=Decimal("1.00"),
+            reason="Approved LOP",
+            status="APPROVED",
+            applied_at=timezone.now(),
+        )
+
+        payroll_run = PayrollRun.objects.create(
+            organization=self.org,
+            month=5,
+            year=2026,
+        )
+
+        processed_count = PayrollProcessor(payroll_run.id).process()
+
+        self.assertEqual(processed_count, 1)
+        payslip = EmployeePayslip.objects.get(payroll_run=payroll_run, employee=self.employee)
+        expected_working_days = Decimal(str(len(working_dates))).quantize(Decimal("0.01"))
+        expected_paid_days = Decimal("20.00")
+        expected_amount = (Decimal("22000.00") * expected_paid_days / expected_working_days).quantize(Decimal("0.01"))
+
+        self.assertEqual(payslip.total_working_days, len(working_dates))
+        self.assertEqual(payslip.paid_days, expected_paid_days)
+        self.assertEqual(payslip.lop_days, Decimal("1.00"))
+        self.assertIn("Paid leave: 2.00", payslip.remarks)
+        self.assertIn("LOP leave: 1.00", payslip.remarks)
+        self.assertEqual(payslip.items.get(component=self.basic_component).amount, expected_amount)
+
+    @staticmethod
+    def _weekdays(year, month):
+        current = date(year, month, 1)
+        dates = []
+        while current.month == month:
+            if current.weekday() < 5:
+                dates.append(current)
+            current += timedelta(days=1)
+        return dates
 
 class ArrearsTests(TestCase):
     def setUp(self):

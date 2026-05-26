@@ -1,0 +1,595 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/leaves.css' %}?v=3.0">
+<style>
+    .policy-shell {
+        display: grid;
+        grid-template-columns: 280px minmax(0, 1fr);
+        gap: 24px;
+        align-items: start;
+    }
+
+    .policy-rail {
+        position: sticky;
+        top: 112px;
+        background: #fff;
+        border: 1px solid var(--border-light);
+        border-radius: 18px;
+        padding: 12px;
+        box-shadow: var(--shadow-subtle);
+    }
+
+    .policy-rail a {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        color: var(--text-secondary);
+        text-decoration: none;
+        font-size: 13px;
+        font-weight: 800;
+        padding: 12px;
+        border-radius: 12px;
+    }
+
+    .policy-rail a:hover {
+        color: var(--accent);
+        background: var(--accent-muted);
+    }
+
+    .policy-workbench {
+        background: #fff;
+        border: 1px solid var(--border-light);
+        border-radius: 22px;
+        box-shadow: var(--shadow-subtle);
+        overflow: hidden;
+    }
+
+    .policy-section {
+        padding: 28px;
+        border-bottom: 1px solid var(--border-light);
+    }
+
+    .policy-section:last-child {
+        border-bottom: 0;
+    }
+
+    .section-kicker {
+        color: var(--accent);
+        font-size: 11px;
+        font-weight: 900;
+        letter-spacing: 0.8px;
+        margin-bottom: 8px;
+        text-transform: uppercase;
+    }
+
+    .section-title {
+        margin: 0 0 22px;
+        color: var(--text-main);
+        font-size: 20px;
+        font-weight: 900;
+    }
+
+    .form-grid-2,
+    .form-grid-3 {
+        display: grid;
+        gap: 16px;
+    }
+
+    .form-grid-2 {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .form-grid-3 {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .toggle-matrix {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 12px;
+    }
+
+    .toggle-pill {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        min-height: 44px;
+        padding: 10px 12px;
+        background: #f8fafc;
+        border: 1px solid var(--border-light);
+        border-radius: 12px;
+        color: var(--text-secondary);
+        font-size: 13px;
+        font-weight: 800;
+    }
+
+    textarea.glass-input {
+        max-width: 100%;
+        min-width: 100%;
+        resize: vertical;
+    }
+
+    .policy-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 12px;
+        padding: 22px 28px;
+        background: #f8fafc;
+    }
+
+    @media (max-width: 1080px) {
+        .policy-shell {
+            grid-template-columns: 1fr;
+        }
+
+        .policy-rail {
+            position: static;
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+    }
+
+    @media (max-width: 760px) {
+        .form-grid-2,
+        .form-grid-3,
+        .toggle-matrix,
+        .policy-rail {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="workspace">
+    <div class="hero-banner">
+        <div class="hero-text">
+            <h1>Leave Policy Workbench</h1>
+            <p>Configure policy, eligibility, accrual, workflow, attendance, and payroll behavior.</p>
+        </div>
+        <div class="header-actions" style="display: flex; gap: 12px;">
+            <a href="{% url 'leaves:assign_leaves' %}" class="punch-btn" style="text-decoration: none;">
+                <i class="fas fa-user-check"></i> Assign Balances
+            </a>
+            <a href="{% url 'leaves:dashboard' %}" class="punch-btn" style="background: #fff; color: var(--text-main); border: 1px solid var(--border-light); text-decoration: none;">
+                <i class="fas fa-arrow-left"></i> Dashboard
+            </a>
+        </div>
+    </div>
+
+    <div class="policy-shell">
+        <nav class="policy-rail">
+            <a href="#overview"><i class="fas fa-layer-group"></i> Overview</a>
+            <a href="#accrual"><i class="fas fa-rotate"></i> Accrual</a>
+            <a href="#eligibility"><i class="fas fa-user-check"></i> Eligibility</a>
+            <a href="#restrictions"><i class="fas fa-shield-halved"></i> Restrictions</a>
+            <a href="#duration"><i class="fas fa-clock"></i> Duration</a>
+            <a href="#sandwich"><i class="fas fa-calendar-days"></i> Sandwich</a>
+            <a href="#carry"><i class="fas fa-arrow-right-arrow-left"></i> Carry Forward</a>
+            <a href="#proof"><i class="fas fa-paperclip"></i> Proof</a>
+            <a href="#workflow"><i class="fas fa-diagram-project"></i> Workflow</a>
+            <a href="#integrations"><i class="fas fa-plug"></i> Integrations</a>
+        </nav>
+
+        <form method="POST" class="policy-workbench">
+            {% csrf_token %}
+            <section id="overview" class="policy-section">
+                <div class="section-kicker">Policy Master</div>
+                <h2 class="section-title">Overview</h2>
+                <div class="form-grid-3">
+                    <div class="form-group">
+                        <label class="form-label">Leave Name</label>
+                        <input type="text" name="name" class="glass-input" placeholder="Casual Leave" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Code</label>
+                        <input type="text" name="code" class="glass-input" placeholder="CL" maxlength="10" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Policy Status</label>
+                        <select name="status" class="glass-input">
+                            <option value="DRAFT">Draft</option>
+                            <option value="ACTIVE">Active</option>
+                            <option value="INACTIVE">Inactive</option>
+                            <option value="ARCHIVED">Archived</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-grid-3">
+                    <div class="form-group">
+                        <label class="form-label">Category</label>
+                        <input type="text" name="category_name" class="glass-input" placeholder="Paid Leave" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Category Code</label>
+                        <input type="text" name="category_code" class="glass-input" placeholder="PAID">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Color Tag</label>
+                        <input type="color" name="color_tag" class="glass-input" value="#2563eb" style="height: 48px; padding: 8px;">
+                    </div>
+                </div>
+
+                <div class="form-grid-3">
+                    <div class="form-group">
+                        <label class="form-label">Financial Year Start</label>
+                        <select name="financial_year_start_month" class="glass-input">
+                            <option value="1">January</option>
+                            <option value="4" selected>April</option>
+                            <option value="7">July</option>
+                            <option value="10">October</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Effective From</label>
+                        <input type="date" name="effective_from" class="glass-input">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Effective To</label>
+                        <input type="date" name="effective_to" class="glass-input">
+                    </div>
+                </div>
+
+                <div class="form-grid-3">
+                    <div class="form-group">
+                        <label class="form-label">Policy Version</label>
+                        <input type="number" name="policy_version" class="glass-input" min="1" value="1">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Max Balance</label>
+                        <input type="number" name="max_balance" class="glass-input" step="0.01" min="0" placeholder="12" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Negative Limit</label>
+                        <input type="number" name="negative_balance_limit" class="glass-input" step="0.01" min="0" value="0">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Description</label>
+                    <textarea name="description" class="glass-input" rows="3" placeholder="Policy note for HR and employees."></textarea>
+                </div>
+
+                <div class="toggle-matrix">
+                    <label class="toggle-pill"><input type="checkbox" name="is_paid" checked> Paid Leave</label>
+                    <label class="toggle-pill"><input type="checkbox" name="is_statutory"> Statutory</label>
+                    <label class="toggle-pill"><input type="checkbox" name="is_requestable" checked> Employee Requestable</label>
+                    <label class="toggle-pill"><input type="checkbox" name="allow_negative_balance"> Allow Negative Balance</label>
+                </div>
+            </section>
+
+            <section id="accrual" class="policy-section">
+                <div class="section-kicker">Balance Automation</div>
+                <h2 class="section-title">Accrual Engine</h2>
+                <div class="form-grid-3">
+                    <div class="form-group">
+                        <label class="form-label">Frequency</label>
+                        <select name="accrual_frequency" class="glass-input">
+                            <option value="NONE">No Automatic Accrual</option>
+                            <option value="MONTHLY" selected>Monthly</option>
+                            <option value="QUARTERLY">Quarterly</option>
+                            <option value="HALF_YEARLY">Half Yearly</option>
+                            <option value="YEARLY">Yearly</option>
+                            <option value="JOINING_DATE">Joining Date Based</option>
+                            <option value="MANUAL">Manual Only</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Accrual Rate</label>
+                        <input type="number" name="accrual_rate" class="glass-input" step="0.01" min="0" value="0">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Accrual Day</label>
+                        <input type="number" name="accrual_day" class="glass-input" min="1" max="31" value="1">
+                    </div>
+                </div>
+                <div class="form-grid-3">
+                    <div class="form-group">
+                        <label class="form-label">Accrual Month</label>
+                        <input type="number" name="accrual_month" class="glass-input" min="1" max="12">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Max Yearly Accrual</label>
+                        <input type="number" name="max_yearly_accrual" class="glass-input" step="0.01" min="0" value="0">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Balance Cap</label>
+                        <input type="number" name="max_balance_cap" class="glass-input" step="0.01" min="0" value="0">
+                    </div>
+                </div>
+                <div class="form-grid-2">
+                    <div class="form-group">
+                        <label class="form-label">Rounding</label>
+                        <select name="rounding_mode" class="glass-input">
+                            <option value="NONE">No Rounding</option>
+                            <option value="UP">Round Up</option>
+                            <option value="DOWN">Round Down</option>
+                            <option value="NEAREST_HALF">Nearest Half Day</option>
+                            <option value="NEAREST_FULL">Nearest Full Day</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="toggle-matrix">
+                    <label class="toggle-pill"><input type="checkbox" name="accrual_enabled" checked> Enable Accrual</label>
+                    <label class="toggle-pill"><input type="checkbox" name="prorate_on_joining" checked> Prorate Joining</label>
+                    <label class="toggle-pill"><input type="checkbox" name="prorate_on_exit" checked> Prorate Exit</label>
+                </div>
+            </section>
+
+            <section id="eligibility" class="policy-section">
+                <div class="section-kicker">Who Can Apply</div>
+                <h2 class="section-title">Eligibility Rules</h2>
+                <div class="form-grid-3">
+                    <div class="form-group">
+                        <label class="form-label">Gender</label>
+                        <select name="eligible_gender" class="glass-input">
+                            <option value="ANY">Any</option>
+                            <option value="Male">Male</option>
+                            <option value="Female">Female</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Min Service Days</label>
+                        <input type="number" name="min_service_days" class="glass-input" min="0" value="0">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Employee Filter</label>
+                        <select name="employee_filter_mode" class="glass-input">
+                            <option value="ALL">All Eligible Employees</option>
+                            <option value="INCLUDE">Only Included Employees</option>
+                            <option value="EXCLUDE">Exclude Selected Employees</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-grid-2">
+                    <div class="form-group">
+                        <label class="form-label">Departments</label>
+                        <select name="department_ids" class="glass-input" multiple size="5">
+                            {% for department in departments %}
+                            <option value="{{ department.id }}">{{ department.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Designations</label>
+                        <select name="designation_ids" class="glass-input" multiple size="5">
+                            {% for designation in designations %}
+                            <option value="{{ designation.id }}">{{ designation.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                <div class="form-grid-2">
+                    <div class="form-group">
+                        <label class="form-label">Employment Types</label>
+                        <select name="employment_types" class="glass-input" multiple size="4">
+                            <option value="Full Time">Full Time</option>
+                            <option value="Part Time">Part Time</option>
+                            <option value="Contract">Contract</option>
+                            <option value="Temporary">Temporary</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Work Locations</label>
+                        <input type="text" name="work_locations" class="glass-input" placeholder="Mumbai HQ, Delhi Branch">
+                    </div>
+                </div>
+                <div class="toggle-matrix">
+                    <label class="toggle-pill"><input type="checkbox" name="eligibility_enabled" checked> Enable Eligibility</label>
+                    <label class="toggle-pill"><input type="checkbox" name="probation_allowed" checked> Allow Probation</label>
+                    <label class="toggle-pill"><input type="checkbox" name="confirmation_required"> Confirmation Required</label>
+                </div>
+            </section>
+
+            <section id="restrictions" class="policy-section">
+                <div class="section-kicker">Validation Engine</div>
+                <h2 class="section-title">Restrictions</h2>
+                <div class="form-grid-3">
+                    <div class="form-group">
+                        <label class="form-label">Min Duration</label>
+                        <input type="number" name="min_duration" class="glass-input" step="0.01" min="0" value="0.5">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Max Duration</label>
+                        <input type="number" name="max_duration" class="glass-input" step="0.01" min="0" value="0">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Max Consecutive Days</label>
+                        <input type="number" name="max_consecutive_days" class="glass-input" step="0.01" min="0" value="0">
+                    </div>
+                </div>
+                <div class="form-grid-3">
+                    <div class="form-group">
+                        <label class="form-label">Gap Between Requests</label>
+                        <input type="number" name="min_gap_between_requests" class="glass-input" min="0" value="0">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Requests Per Month</label>
+                        <input type="number" name="max_requests_per_month" class="glass-input" min="0" value="0">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Requests Per Year</label>
+                        <input type="number" name="max_requests_per_year" class="glass-input" min="0" value="0">
+                    </div>
+                </div>
+                <div class="form-grid-3">
+                    <div class="form-group">
+                        <label class="form-label">Backdate Days</label>
+                        <input type="number" name="max_backdate_days" class="glass-input" min="0" value="0">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Future Days</label>
+                        <input type="number" name="max_future_days" class="glass-input" min="0" value="365">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Blackout Periods</label>
+                        <textarea name="blackout_periods" class="glass-input" rows="2" placeholder="2026-03-28 to 2026-03-31"></textarea>
+                    </div>
+                </div>
+                <div class="toggle-matrix">
+                    <label class="toggle-pill"><input type="checkbox" name="restriction_enabled" checked> Enable Restrictions</label>
+                    <label class="toggle-pill"><input type="checkbox" name="backdate_allowed" checked> Allow Backdated</label>
+                    <label class="toggle-pill"><input type="checkbox" name="future_date_allowed" checked> Allow Future Leave</label>
+                    <label class="toggle-pill"><input type="checkbox" name="block_during_payroll_lock" checked> Block Payroll Lock</label>
+                    <label class="toggle-pill"><input type="checkbox" name="block_month_end"> Block Month End</label>
+                </div>
+            </section>
+
+            <section id="duration" class="policy-section">
+                <div class="section-kicker">Time Rules</div>
+                <h2 class="section-title">Half Day and Hourly</h2>
+                <div class="form-grid-2">
+                    <div class="form-group">
+                        <label class="form-label">Minimum Hourly Unit</label>
+                        <input type="number" name="minimum_hourly_unit_minutes" class="glass-input" min="15" value="60">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Maximum Hourly Duration</label>
+                        <input type="number" name="maximum_hourly_duration_minutes" class="glass-input" min="15" value="480">
+                    </div>
+                </div>
+                <div class="toggle-matrix">
+                    <label class="toggle-pill"><input type="checkbox" name="allow_full_day" checked> Full Day</label>
+                    <label class="toggle-pill"><input type="checkbox" name="allow_half_day" checked> Half Day</label>
+                    <label class="toggle-pill"><input type="checkbox" name="allow_hourly"> Hourly</label>
+                    <label class="toggle-pill"><input type="checkbox" name="shift_aware" checked> Shift Aware</label>
+                </div>
+            </section>
+
+            <section id="sandwich" class="policy-section">
+                <div class="section-kicker">Calendar Counting</div>
+                <h2 class="section-title">Sandwich and Clubbing</h2>
+                <div class="toggle-matrix">
+                    <label class="toggle-pill"><input type="checkbox" name="sandwich_enabled" checked> Enable Rule</label>
+                    <label class="toggle-pill"><input type="checkbox" name="count_weekends_between_leave"> Count Weekend Between</label>
+                    <label class="toggle-pill"><input type="checkbox" name="count_holidays_between_leave"> Count Holiday Between</label>
+                    <label class="toggle-pill"><input type="checkbox" name="count_prefix_weekend"> Count Prefix Weekend</label>
+                    <label class="toggle-pill"><input type="checkbox" name="count_suffix_weekend"> Count Suffix Weekend</label>
+                    <label class="toggle-pill"><input type="checkbox" name="count_prefix_holiday"> Count Prefix Holiday</label>
+                    <label class="toggle-pill"><input type="checkbox" name="count_suffix_holiday"> Count Suffix Holiday</label>
+                </div>
+            </section>
+
+            <section id="carry" class="policy-section">
+                <div class="section-kicker">Year End</div>
+                <h2 class="section-title">Carry Forward and Encashment</h2>
+                <div class="form-grid-3">
+                    <div class="form-group">
+                        <label class="form-label">Carry Forward Limit</label>
+                        <input type="number" name="carry_forward_limit" class="glass-input" step="0.01" min="0" value="0">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Max Carry Days</label>
+                        <input type="number" name="max_carry_forward_days" class="glass-input" step="0.01" min="0" value="0">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Expiry Day</label>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                            <input type="number" name="carry_expiry_month" class="glass-input" min="1" max="12" value="3">
+                            <input type="number" name="carry_expiry_day" class="glass-input" min="1" max="31" value="31">
+                        </div>
+                    </div>
+                </div>
+                <div class="toggle-matrix">
+                    <label class="toggle-pill"><input type="checkbox" name="carry_forward_enabled" checked> Enable Carry Rules</label>
+                    <label class="toggle-pill"><input type="checkbox" name="carry_forward_allowed"> Carry Forward</label>
+                    <label class="toggle-pill"><input type="checkbox" name="encash_remaining"> Encash Remaining</label>
+                    <label class="toggle-pill"><input type="checkbox" name="lapse_remaining" checked> Lapse Remaining</label>
+                </div>
+            </section>
+
+            <section id="proof" class="policy-section">
+                <div class="section-kicker">Documents</div>
+                <h2 class="section-title">Proof and Attachments</h2>
+                <div class="form-grid-3">
+                    <div class="form-group">
+                        <label class="form-label">Required After Days</label>
+                        <input type="number" name="required_after_days" class="glass-input" step="0.01" min="0" value="0">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Allowed File Types</label>
+                        <input type="text" name="allowed_file_types" class="glass-input" value="pdf,jpg,jpeg,png">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Max File Size MB</label>
+                        <input type="number" name="max_file_size_mb" class="glass-input" min="1" value="5">
+                    </div>
+                </div>
+                <div class="form-grid-2">
+                    <div class="form-group">
+                        <label class="form-label">Reviewer Role</label>
+                        <select name="reviewer_role" class="glass-input">
+                            <option value="HR">HR</option>
+                            <option value="MANAGER">Reporting Manager</option>
+                            <option value="PAYROLL_ADMIN">Payroll Admin</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="toggle-matrix">
+                    <label class="toggle-pill"><input type="checkbox" name="proof_enabled" checked> Enable Proof Rule</label>
+                    <label class="toggle-pill"><input type="checkbox" name="proof_required"> Proof Required</label>
+                    <label class="toggle-pill"><input type="checkbox" name="requires_manual_review"> Manual Review</label>
+                </div>
+            </section>
+
+            <section id="workflow" class="policy-section">
+                <div class="section-kicker">Approvals</div>
+                <h2 class="section-title">Workflow</h2>
+                <div class="form-grid-3">
+                    <div class="form-group">
+                        <label class="form-label">Approval Route</label>
+                        <select name="approval_route" class="glass-input">
+                            <option value="MANAGER_HR">Manager then HR</option>
+                            <option value="MANAGER">Manager Only</option>
+                            <option value="HR">HR Only</option>
+                            <option value="DEPT_HEAD_HR">Department Head then HR</option>
+                            <option value="AUTO">Auto Approve</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Approval Mode</label>
+                        <select name="approval_mode" class="glass-input">
+                            <option value="ANY_ONE">Any One</option>
+                            <option value="ALL">All</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">SLA Hours</label>
+                        <input type="number" name="approval_sla_hours" class="glass-input" min="1" value="24">
+                    </div>
+                </div>
+                <div class="toggle-matrix">
+                    <label class="toggle-pill"><input type="checkbox" name="workflow_escalation_enabled"> Escalation</label>
+                    <label class="toggle-pill"><input type="checkbox" name="delegation_allowed" checked> Delegation</label>
+                </div>
+            </section>
+
+            <section id="integrations" class="policy-section">
+                <div class="section-kicker">Payroll and Attendance</div>
+                <h2 class="section-title">Integrations</h2>
+                <div class="toggle-matrix">
+                    <label class="toggle-pill"><input type="checkbox" name="attendance_sync_enabled" checked> Attendance Sync</label>
+                    <label class="toggle-pill"><input type="checkbox" name="prevent_attendance_conflict" checked> Prevent Attendance Conflict</label>
+                    <label class="toggle-pill"><input type="checkbox" name="adjust_late_marks" checked> Adjust Late Marks</label>
+                    <label class="toggle-pill"><input type="checkbox" name="comp_off_generation_enabled"> Comp Off Generation</label>
+                    <label class="toggle-pill"><input type="checkbox" name="payroll_sync_enabled" checked> Payroll Sync</label>
+                    <label class="toggle-pill"><input type="checkbox" name="generate_lop" checked> Generate LOP</label>
+                    <label class="toggle-pill"><input type="checkbox" name="negative_balance_deduction"> Negative Balance Deduction</label>
+                    <label class="toggle-pill"><input type="checkbox" name="enable_encashment"> Enable Encashment</label>
+                    <label class="toggle-pill"><input type="checkbox" name="final_settlement_encashment"> Final Settlement Encashment</label>
+                </div>
+            </section>
+
+            <div class="policy-actions">
+                <button type="submit" class="punch-btn" style="padding: 14px 24px;">
+                    <i class="fas fa-save"></i> Save Enterprise Policy
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

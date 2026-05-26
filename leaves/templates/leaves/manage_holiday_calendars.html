@@ -1,0 +1,630 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/leaves.css' %}?v=3.0">
+<style>
+    .holiday-shell {
+        max-width: 1240px;
+        margin: 0 auto;
+    }
+
+    .holiday-grid {
+        display: grid;
+        grid-template-columns: minmax(300px, 0.9fr) minmax(0, 1.6fr);
+        gap: 20px;
+        align-items: start;
+    }
+
+    .holiday-panel {
+        background: rgba(255, 255, 255, 0.88);
+        border: 1px solid var(--border-light);
+        border-radius: 22px;
+        box-shadow: 0 18px 45px rgba(15, 23, 42, 0.07);
+        overflow: hidden;
+    }
+
+    .holiday-panel-head {
+        padding: 20px 22px;
+        border-bottom: 1px solid var(--border-light);
+        background: linear-gradient(180deg, #fff 0%, #f8fafc 100%);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 14px;
+    }
+
+    .holiday-panel-head h2 {
+        margin: 0;
+        font-size: 18px;
+        color: var(--text-main);
+    }
+
+    .holiday-panel-body {
+        padding: 22px;
+    }
+
+    .calendar-list {
+        display: grid;
+        gap: 10px;
+    }
+
+    .calendar-link {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        align-items: center;
+        text-decoration: none;
+        color: var(--text-main);
+        padding: 14px;
+        border: 1px solid #e2e8f0;
+        border-radius: 14px;
+        background: #fff;
+        transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+    }
+
+    .calendar-link.active,
+    .calendar-link:hover {
+        border-color: var(--accent);
+        box-shadow: 0 12px 28px rgba(37, 99, 235, 0.10);
+        transform: translateY(-1px);
+    }
+
+    .calendar-name {
+        font-weight: 900;
+        line-height: 1.25;
+    }
+
+    .calendar-meta {
+        color: var(--text-secondary);
+        font-size: 12px;
+        font-weight: 700;
+        margin-top: 4px;
+    }
+
+    .default-pill,
+    .type-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        border-radius: 999px;
+        padding: 6px 10px;
+        font-size: 11px;
+        font-weight: 900;
+        white-space: nowrap;
+    }
+
+    .default-pill {
+        background: #ecfdf5;
+        color: #047857;
+    }
+
+    .type-pill.public {
+        background: #fef2f2;
+        color: #dc2626;
+    }
+
+    .type-pill.optional {
+        background: #fff7ed;
+        color: #c2410c;
+    }
+
+    .type-pill.paid {
+        background: #eff6ff;
+        color: #2563eb;
+    }
+
+    .stat-row {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 12px;
+        margin-bottom: 18px;
+    }
+
+    .stat-card {
+        border: 1px solid #e2e8f0;
+        border-radius: 16px;
+        background: #fff;
+        padding: 14px;
+    }
+
+    .stat-card span {
+        display: block;
+        color: var(--text-secondary);
+        font-size: 11px;
+        font-weight: 900;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .stat-card strong {
+        display: block;
+        margin-top: 5px;
+        font-size: 24px;
+        color: var(--text-main);
+    }
+
+    .form-stack {
+        display: grid;
+        gap: 14px;
+    }
+
+    .form-grid-2 {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 14px;
+    }
+
+    .toggle-row {
+        display: flex;
+        gap: 14px;
+        flex-wrap: wrap;
+        align-items: center;
+    }
+
+    .toggle-row label {
+        display: inline-flex;
+        gap: 8px;
+        align-items: center;
+        color: var(--text-main);
+        font-weight: 800;
+        font-size: 13px;
+    }
+
+    .holiday-table-wrap {
+        overflow-x: auto;
+        border: 1px solid #e2e8f0;
+        border-radius: 16px;
+        background: #fff;
+    }
+
+    .holiday-table {
+        width: 100%;
+        border-collapse: collapse;
+        min-width: 760px;
+    }
+
+    .holiday-table th,
+    .holiday-table td {
+        padding: 14px;
+        text-align: left;
+        border-bottom: 1px solid #e2e8f0;
+        vertical-align: middle;
+    }
+
+    .holiday-table th {
+        background: #f8fafc;
+        color: var(--text-secondary);
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 0.6px;
+        font-weight: 900;
+    }
+
+    .holiday-table tr:last-child td {
+        border-bottom: 0;
+    }
+
+    .table-actions {
+        display: flex;
+        gap: 8px;
+        justify-content: flex-end;
+    }
+
+    .icon-btn {
+        width: 36px;
+        height: 36px;
+        border: 1px solid #cbd5e1;
+        border-radius: 10px;
+        background: #fff;
+        color: var(--text-main);
+        cursor: pointer;
+        display: inline-grid;
+        place-items: center;
+        text-decoration: none;
+    }
+
+    .icon-btn.danger {
+        color: #dc2626;
+        border-color: #fecaca;
+        background: #fef2f2;
+    }
+
+    .mini-btn {
+        border: 1px solid #cbd5e1;
+        background: #fff;
+        color: var(--text-main);
+        border-radius: 10px;
+        padding: 9px 12px;
+        font-size: 12px;
+        font-weight: 900;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        text-decoration: none;
+    }
+
+    .empty-state {
+        border: 1px dashed #cbd5e1;
+        border-radius: 18px;
+        min-height: 220px;
+        display: grid;
+        place-items: center;
+        text-align: center;
+        background: #f8fafc;
+        color: var(--text-secondary);
+        padding: 24px;
+    }
+
+    .empty-state i {
+        width: 54px;
+        height: 54px;
+        border-radius: 18px;
+        background: #eef4ff;
+        color: var(--accent);
+        display: inline-grid;
+        place-items: center;
+        font-size: 22px;
+        margin-bottom: 12px;
+    }
+
+    @media (max-width: 1040px) {
+        .holiday-grid,
+        .form-grid-2,
+        .stat-row {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="workspace">
+    <div class="hero-banner">
+        <div class="hero-text">
+            <h1>Holiday Calendars</h1>
+            <p>Maintain yearly public, regional, company, and optional holidays for leave and payroll calculations.</p>
+        </div>
+        <div class="header-actions" style="display: flex; gap: 12px;">
+            <a href="{% url 'leaves:calendar' %}" class="punch-btn" style="background: #fff; color: var(--text-main); border: 1px solid var(--border-light); text-decoration: none;">
+                <i class="fas fa-calendar-days"></i> Team Calendar
+            </a>
+            <a href="{% url 'leaves:dashboard' %}" class="punch-btn" style="background: #fff; color: var(--text-main); border: 1px solid var(--border-light); text-decoration: none;">
+                <i class="fas fa-arrow-left"></i> Dashboard
+            </a>
+        </div>
+    </div>
+
+    <div class="holiday-shell">
+        <div class="holiday-grid">
+            <aside class="holiday-panel">
+                <div class="holiday-panel-head">
+                    <h2>Calendars</h2>
+                    <form method="GET">
+                        <select name="year" class="glass-input" onchange="this.form.submit()">
+                            {% for year in available_years %}
+                            <option value="{{ year }}" {% if year == selected_year %}selected{% endif %}>{{ year }}</option>
+                            {% endfor %}
+                        </select>
+                    </form>
+                </div>
+                <div class="holiday-panel-body">
+                    <div class="calendar-list">
+                        {% for calendar in year_calendars %}
+                        <a href="{% url 'leaves:holiday_calendars' %}?year={{ selected_year }}&calendar={{ calendar.id }}" class="calendar-link {% if selected_calendar and selected_calendar.id == calendar.id %}active{% endif %}">
+                            <div>
+                                <div class="calendar-name">{{ calendar.name }}</div>
+                                <div class="calendar-meta">{{ calendar.branch|default:"All branches" }}{% if calendar.location_fk %} | {{ calendar.location_fk.name }}{% endif %}</div>
+                            </div>
+                            {% if calendar.is_default %}
+                            <span class="default-pill"><i class="fas fa-check"></i> Default</span>
+                            {% endif %}
+                        </a>
+                        {% empty %}
+                        <div class="empty-state">
+                            <div>
+                                <i class="fas fa-calendar-plus"></i>
+                                <h3 style="margin: 0 0 6px; color: var(--text-main);">No calendar for {{ selected_year }}</h3>
+                                <p style="margin: 0;">Create or copy a calendar.</p>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </aside>
+
+            <main class="form-stack">
+                <section class="holiday-panel">
+                    <div class="holiday-panel-head">
+                        <h2>Create Calendar</h2>
+                    </div>
+                    <div class="holiday-panel-body">
+                        <form method="POST" class="form-stack">
+                            {% csrf_token %}
+                            <input type="hidden" name="action" value="create_calendar">
+                            <div class="form-grid-2">
+                                <div class="form-group">
+                                    <label class="form-label">Calendar Name</label>
+                                    <input type="text" name="name" class="glass-input" placeholder="India Holiday Calendar" required>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Year</label>
+                                    <input type="number" name="year" class="glass-input" min="2000" max="2100" value="{{ selected_year }}" required>
+                                </div>
+                            </div>
+                            <div class="form-grid-2">
+                                <div class="form-group">
+                                    <label class="form-label">Branch</label>
+                                    <input type="text" name="branch" class="glass-input" placeholder="All branches">
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Location</label>
+                                    <select name="location" class="glass-input">
+                                        <option value="">All locations</option>
+                                        {% for location in locations %}
+                                        <option value="{{ location.id }}">{{ location.name }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="toggle-row">
+                                <label><input type="checkbox" name="is_default"> Default for year</label>
+                            </div>
+                            <button type="submit" class="punch-btn"><i class="fas fa-plus"></i> Create Calendar</button>
+                        </form>
+                    </div>
+                </section>
+
+                <section class="holiday-panel">
+                    <div class="holiday-panel-head">
+                        <h2>Copy Previous Year</h2>
+                    </div>
+                    <div class="holiday-panel-body">
+                        <form method="POST" class="form-stack">
+                            {% csrf_token %}
+                            <input type="hidden" name="action" value="copy_calendar">
+                            <div class="form-grid-2">
+                                <div class="form-group">
+                                    <label class="form-label">Source Calendar</label>
+                                    <select name="source_calendar" class="glass-input" required>
+                                        {% for calendar in all_calendars %}
+                                        <option value="{{ calendar.id }}">{{ calendar.name }} - {{ calendar.year }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Target Year</label>
+                                    <input type="number" name="target_year" class="glass-input" min="2000" max="2100" value="{{ current_year|add:1 }}" required>
+                                </div>
+                            </div>
+                            <div class="form-grid-2">
+                                <div class="form-group">
+                                    <label class="form-label">Target Calendar Name</label>
+                                    <input type="text" name="target_name" class="glass-input" placeholder="India Holiday Calendar 2027">
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Options</label>
+                                    <div class="toggle-row" style="min-height: 46px;">
+                                        <label><input type="checkbox" name="make_default"> Default for target year</label>
+                                    </div>
+                                </div>
+                            </div>
+                            <button type="submit" class="punch-btn" {% if not all_calendars %}disabled{% endif %}><i class="fas fa-copy"></i> Copy Calendar</button>
+                        </form>
+                    </div>
+                </section>
+
+                <section class="holiday-panel">
+                    <div class="holiday-panel-head">
+                        <div>
+                            <h2>{% if selected_calendar %}{{ selected_calendar.name }}{% else %}Holiday Setup{% endif %}</h2>
+                            {% if selected_calendar %}
+                            <div class="calendar-meta">{{ selected_calendar.year }} | {{ selected_calendar.branch|default:"All branches" }}</div>
+                            {% endif %}
+                        </div>
+                        {% if selected_calendar and not selected_calendar.is_default %}
+                        <form method="POST">
+                            {% csrf_token %}
+                            <input type="hidden" name="action" value="set_default">
+                            <input type="hidden" name="calendar" value="{{ selected_calendar.id }}">
+                            <button type="submit" class="mini-btn"><i class="fas fa-check"></i> Make Default</button>
+                        </form>
+                        {% endif %}
+                    </div>
+                    <div class="holiday-panel-body">
+                        {% if selected_calendar %}
+                        <div class="stat-row">
+                            <div class="stat-card"><span>Total</span><strong>{{ holiday_stats.total }}</strong></div>
+                            <div class="stat-card"><span>Public</span><strong>{{ holiday_stats.public }}</strong></div>
+                            <div class="stat-card"><span>Optional</span><strong>{{ holiday_stats.optional }}</strong></div>
+                            <div class="stat-card"><span>Paid</span><strong>{{ holiday_stats.paid }}</strong></div>
+                        </div>
+
+                        <form method="POST" enctype="multipart/form-data" class="form-stack" style="margin-bottom: 22px;">
+                            {% csrf_token %}
+                            <input type="hidden" name="action" value="import_holidays">
+                            <input type="hidden" name="calendar" value="{{ selected_calendar.id }}">
+                            <div class="form-grid-2">
+                                <div class="form-group">
+                                    <label class="form-label">CSV Import</label>
+                                    <input type="file" name="csv_file" class="glass-input" accept=".csv" required>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Format</label>
+                                    <input type="text" class="glass-input" value="name,date,holiday_type,is_optional,is_paid" disabled>
+                                </div>
+                            </div>
+                            <button type="submit" class="punch-btn"><i class="fas fa-file-arrow-up"></i> Import Holidays</button>
+                        </form>
+
+                        <form method="POST" class="form-stack" id="holidayForm" style="margin-bottom: 22px;">
+                            {% csrf_token %}
+                            <input type="hidden" name="action" value="save_holiday">
+                            <input type="hidden" name="calendar" value="{{ selected_calendar.id }}">
+                            <input type="hidden" name="holiday_id" id="holidayId">
+                            <div class="form-grid-2">
+                                <div class="form-group">
+                                    <label class="form-label">Holiday Name</label>
+                                    <input type="text" name="holiday_name" id="holidayName" class="glass-input" placeholder="Diwali" required>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Date</label>
+                                    <input type="date" name="holiday_date" id="holidayDate" class="glass-input" required>
+                                </div>
+                            </div>
+                            <div class="form-grid-2">
+                                <div class="form-group">
+                                    <label class="form-label">Holiday Type</label>
+                                    <select name="holiday_type" id="holidayType" class="glass-input">
+                                        <option value="NATIONAL">National</option>
+                                        <option value="REGIONAL">Regional</option>
+                                        <option value="COMPANY" selected>Company</option>
+                                        <option value="OPTIONAL">Optional</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Location</label>
+                                    <select name="holiday_location" id="holidayLocation" class="glass-input">
+                                        <option value="">Calendar location</option>
+                                        {% for location in locations %}
+                                        <option value="{{ location.id }}">{{ location.name }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="toggle-row">
+                                <label><input type="checkbox" name="is_paid" id="holidayPaid" checked> Paid holiday</label>
+                                <label><input type="checkbox" name="is_optional" id="holidayOptional"> Optional holiday</label>
+                            </div>
+                            <div class="toggle-row">
+                                <button type="submit" class="punch-btn" id="holidaySubmit"><i class="fas fa-calendar-plus"></i> Add Holiday</button>
+                                <button type="button" class="mini-btn" id="resetHolidayForm"><i class="fas fa-rotate-left"></i> Reset</button>
+                            </div>
+                        </form>
+
+                        <div class="holiday-table-wrap">
+                            <table class="holiday-table">
+                                <thead>
+                                    <tr>
+                                        <th>Date</th>
+                                        <th>Holiday</th>
+                                        <th>Type</th>
+                                        <th>Scope</th>
+                                        <th style="text-align: right;">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for holiday in holidays %}
+                                    <tr>
+                                        <td><strong>{{ holiday.date|date:"d M Y" }}</strong><div class="calendar-meta">{{ holiday.date|date:"l" }}</div></td>
+                                        <td>{{ holiday.name }}</td>
+                                        <td>
+                                            <span class="type-pill {% if holiday.is_optional %}optional{% else %}public{% endif %}">
+                                                {% if holiday.is_optional %}Optional{% else %}{{ holiday.holiday_type|title }}{% endif %}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            {% if holiday.is_paid %}<span class="type-pill paid">Paid</span>{% endif %}
+                                            <div class="calendar-meta">{{ holiday.location_fk.name|default:"Calendar scope" }}</div>
+                                        </td>
+                                        <td>
+                                            <div class="table-actions">
+                                                <button type="button" class="icon-btn edit-holiday"
+                                                    data-id="{{ holiday.id }}"
+                                                    data-name="{{ holiday.name }}"
+                                                    data-date="{{ holiday.date|date:'Y-m-d' }}"
+                                                    data-type="{{ holiday.holiday_type }}"
+                                                    data-paid="{% if holiday.is_paid %}1{% else %}0{% endif %}"
+                                                    data-optional="{% if holiday.is_optional %}1{% else %}0{% endif %}"
+                                                    data-location="{{ holiday.location_fk_id|default:'' }}"
+                                                    title="Edit">
+                                                    <i class="fas fa-pen"></i>
+                                                </button>
+                                                <form method="POST">
+                                                    {% csrf_token %}
+                                                    <input type="hidden" name="action" value="delete_holiday">
+                                                    <input type="hidden" name="holiday_id" value="{{ holiday.id }}">
+                                                    <button type="submit" class="icon-btn danger" title="Delete">
+                                                        <i class="fas fa-trash"></i>
+                                                    </button>
+                                                </form>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {% empty %}
+                                    <tr>
+                                        <td colspan="5">
+                                            <div class="empty-state">
+                                                <div>
+                                                    <i class="fas fa-calendar-plus"></i>
+                                                    <h3 style="margin: 0 0 6px; color: var(--text-main);">No holidays added</h3>
+                                                    <p style="margin: 0;">Add holidays manually or import a CSV.</p>
+                                                </div>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        {% else %}
+                        <div class="empty-state">
+                            <div>
+                                <i class="fas fa-calendar-days"></i>
+                                <h3 style="margin: 0 0 6px; color: var(--text-main);">Select or create a calendar</h3>
+                                <p style="margin: 0;">Holiday controls will unlock after a calendar exists for the selected year.</p>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                </section>
+            </main>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const form = document.getElementById('holidayForm');
+    if (!form) return;
+
+    const holidayId = document.getElementById('holidayId');
+    const holidayName = document.getElementById('holidayName');
+    const holidayDate = document.getElementById('holidayDate');
+    const holidayType = document.getElementById('holidayType');
+    const holidayLocation = document.getElementById('holidayLocation');
+    const holidayPaid = document.getElementById('holidayPaid');
+    const holidayOptional = document.getElementById('holidayOptional');
+    const holidaySubmit = document.getElementById('holidaySubmit');
+    const resetButton = document.getElementById('resetHolidayForm');
+
+    function resetForm() {
+        holidayId.value = '';
+        holidayName.value = '';
+        holidayDate.value = '';
+        holidayType.value = 'COMPANY';
+        holidayLocation.value = '';
+        holidayPaid.checked = true;
+        holidayOptional.checked = false;
+        holidaySubmit.innerHTML = '<i class="fas fa-calendar-plus"></i> Add Holiday';
+    }
+
+    document.querySelectorAll('.edit-holiday').forEach(function (button) {
+        button.addEventListener('click', function () {
+            holidayId.value = button.dataset.id || '';
+            holidayName.value = button.dataset.name || '';
+            holidayDate.value = button.dataset.date || '';
+            holidayType.value = button.dataset.type || 'COMPANY';
+            holidayLocation.value = button.dataset.location || '';
+            holidayPaid.checked = button.dataset.paid === '1';
+            holidayOptional.checked = button.dataset.optional === '1';
+            holidaySubmit.innerHTML = '<i class="fas fa-floppy-disk"></i> Update Holiday';
+            form.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        });
+    });
+
+    resetButton.addEventListener('click', resetForm);
+});
+</script>
+{% endblock %}

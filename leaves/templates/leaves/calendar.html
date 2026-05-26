@@ -275,6 +275,9 @@
             <a href="{% url 'leaves:pending_approvals' %}" class="punch-btn" style="background: rgba(255,255,255,0.1); color: var(--text-main); border: 1px solid var(--border-light);">
                 <i class="fas fa-tasks"></i> Approvals
             </a>
+            <a href="{% url 'leaves:holiday_calendars' %}?year={{ selected_year }}" class="punch-btn" style="background: rgba(255,255,255,0.1); color: var(--text-main); border: 1px solid var(--border-light);">
+                <i class="fas fa-calendar-days"></i> Holiday Calendars
+            </a>
             {% endif %}
             <a href="{% url 'leaves:dashboard' %}" class="punch-btn">
                 <i class="fas fa-calendar-plus"></i> Apply Leave
@@ -290,7 +293,7 @@
         </div>
         <div class="mini-stat">
             <div class="mini-stat-val">{{ holidays|length }}</div>
-            <div class="mini-stat-label">Holidays This Year</div>
+            <div class="mini-stat-label">Holidays {{ selected_year }}</div>
         </div>
         <div class="mini-stat" style="background: linear-gradient(135deg, #2563eb, #7c3aed); border: none;">
             <div class="mini-stat-val" style="color: #fff;">Live</div>
@@ -302,6 +305,17 @@
     <div class="calendar-layout">
         <!-- Sidebar -->
         <div class="cal-sidebar">
+            <div class="sidebar-card">
+                <div class="sidebar-title">Calendar Year</div>
+                <form method="GET">
+                    <select name="year" class="glass-input" onchange="this.form.submit()">
+                        {% for year in available_years %}
+                        <option value="{{ year }}" {% if year == selected_year %}selected{% endif %}>{{ year }}</option>
+                        {% endfor %}
+                    </select>
+                </form>
+            </div>
+
             <!-- Legend -->
             <div class="sidebar-card">
                 <div class="sidebar-title">Legend</div>

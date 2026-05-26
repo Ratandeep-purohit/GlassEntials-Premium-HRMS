@@ -3,16 +3,14 @@ from datetime import date
 from decimal import Decimal
 from django.db import transaction
 from django.db.models import Q
-from django.utils import timezone
 from .formula_runner import evaluate_formula
 from .statutory import calculate_statutory_deductions
+from .attendance_days import PayrollAttendanceService
 from ..models import (
     PayrollRun, EmployeePayslip, PayslipItem, 
     SalaryStructure, SalaryStructureItem, SalaryComponent,
     LoanInstallment, Arrear, PayrollTDSSyncLog
 )
-from attendance.models import Attendance
-from leaves.models import LeaveRequest
 
 class PayrollProcessor:
     """
@@ -57,15 +55,9 @@ class PayrollProcessor:
             if s.employee_id not in self.active_structures:
                 self.active_structures[s.employee_id] = s
                 
-        # 2. LOP Days (Attendance)
-        from django.db.models import Count
-        lop_counts = Attendance.objects.filter(
-            employee__organization=org,
-            date__month=self.month,
-            date__year=self.year,
-            status__is_paid=False
-        ).values('employee_id').annotate(count=Count('id'))
-        self.lop_by_employee = {item['employee_id']: Decimal(str(item['count'])) for item in lop_counts}
+        # 2. Attendance, leave and payroll-impact days
+        self.attendance_service = PayrollAttendanceService(org, self.month, self.year)
+        self.day_summary_by_employee = self.attendance_service.build()
         
         # 3. Global Salary Components
         self.components_by_code = {
@@ -162,19 +154,22 @@ class PayrollProcessor:
         if not structure:
             return None
 
-        # 2. Calculate Attendance / LOP
-        lop_days = self._get_lop_days(employee)
-        paid_days = Decimal(str(self.total_days)) - lop_days
+        # 2. Calculate attendance, leave and LOP impact
+        day_summary = self._get_day_summary(employee)
+        working_days = int(day_summary.working_days)
+        paid_days = day_summary.paid_days
+        lop_days = day_summary.lop_days
 
         # 3. Initialize Payslip
         payslip = EmployeePayslip.objects.create(
             organization=self.payroll_run.organization,
             payroll_run=self.payroll_run,
             employee=employee,
-            total_working_days=self.total_days,
+            total_working_days=working_days,
             paid_days=paid_days,
             lop_days=lop_days,
-            status=EmployeePayslip.Status.DRAFT
+            status=EmployeePayslip.Status.DRAFT,
+            remarks=day_summary.remarks,
         )
 
         # 4. Process Earnings & Deductions from Structure
@@ -183,7 +178,12 @@ class PayrollProcessor:
             'gross': structure.gross_salary,
             'ctc': structure.ctc,
             'paid_days': paid_days,
-            'total_days': Decimal(str(self.total_days))
+            'total_days': day_summary.working_days,
+            'calendar_days': Decimal(str(self.total_days)),
+            'lop_days': lop_days,
+            'attendance_paid_days': day_summary.attendance_paid_days,
+            'paid_leave_days': day_summary.paid_leave_days,
+            'lop_leave_days': day_summary.lop_leave_days,
         }
 
         gross_earnings = Decimal("0.00")
@@ -204,8 +204,8 @@ class PayrollProcessor:
                 value = Decimal("0.00")
 
             # Apply LOP if applicable
-            if comp.is_calculated_on_attendance and self.total_days > 0:
-                value = (value * paid_days / Decimal(str(self.total_days)))
+            if comp.is_calculated_on_attendance and day_summary.working_days > 0:
+                value = (value * paid_days / day_summary.working_days)
 
             # Save PayslipItem
             amount = value.quantize(Decimal("0.01"))
@@ -347,6 +347,7 @@ class PayrollProcessor:
         
         payslip.status = EmployeePayslip.Status.GENERATED
         payslip.save()
+        self._post_leave_payroll_impacts(employee)
 
         return payslip
 
@@ -392,9 +393,23 @@ class PayrollProcessor:
         PayrollTDSSyncLog.objects.filter(payroll_run=self.payroll_run).delete()
         editable_payslips.delete()
 
-    def _get_lop_days(self, employee):
-        """Calculate Loss of Pay days for the month."""
-        return self.lop_by_employee.get(employee.id, Decimal("0.00"))
+    def _get_day_summary(self, employee):
+        """Return payroll-ready attendance/leave days for an employee."""
+        return self.day_summary_by_employee.get(employee.id, self.attendance_service.default_summary())
+
+    def _post_leave_payroll_impacts(self, employee):
+        """Link consumed leave impacts to the payroll run for traceability."""
+        from leaves.models import LeavePayrollImpact
+
+        LeavePayrollImpact.objects.filter(
+            employee=employee,
+            month=self.month,
+            year=self.year,
+            status__in=["PENDING", "ADJUSTED"],
+        ).update(
+            payroll_run=self.payroll_run,
+            status="POSTED",
+        )
 
     def _get_financial_year(self):
         """Returns string like '2024-2025' based on payroll month and year."""

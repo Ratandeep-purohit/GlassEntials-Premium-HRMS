@@ -1,5 +1,35 @@
 from django.contrib import admin
-from .models import Location, LeaveType, LeavePolicy, LeaveBalance, LeaveRequest, ApprovalWorkflow, LeaveAccrualLog, Holiday
+from .models import (
+    ApprovalWorkflow,
+    Holiday,
+    HolidayCalendar,
+    LeaveAccrualLog,
+    LeaveAccrualRule,
+    LeaveApproval,
+    LeaveAttachment,
+    LeaveAttendanceEvent,
+    LeaveAuditLog,
+    LeaveBalance,
+    LeaveBalanceSnapshot,
+    LeaveCarryForwardLog,
+    LeaveCarryForwardRule,
+    LeaveCategory,
+    LeaveDurationRule,
+    LeaveEligibilityRule,
+    LeaveEncashment,
+    LeaveIntegrationRule,
+    LeavePayrollImpact,
+    LeavePolicy,
+    LeaveProofRule,
+    LeaveRequest,
+    LeaveRestrictionRule,
+    LeaveSandwichRule,
+    LeaveTransaction,
+    LeaveType,
+    LeaveWorkflow,
+    LeaveWorkflowStep,
+    Location,
+)
 
 @admin.register(Location)
 class LocationAdmin(admin.ModelAdmin):
@@ -8,8 +38,8 @@ class LocationAdmin(admin.ModelAdmin):
 
 @admin.register(LeaveType)
 class LeaveTypeAdmin(admin.ModelAdmin):
-    list_display = ('name', 'code', 'is_paid', 'is_statutory', 'organization')
-    list_filter = ('organization', 'is_paid', 'is_statutory')
+    list_display = ('name', 'code', 'category', 'status', 'policy_version', 'is_paid', 'is_requestable', 'organization')
+    list_filter = ('organization', 'category', 'status', 'is_paid', 'is_statutory')
     search_fields = ('name', 'code')
 
 @admin.register(LeavePolicy)
@@ -40,6 +70,28 @@ class LeaveAccrualLogAdmin(admin.ModelAdmin):
 
 @admin.register(Holiday)
 class HolidayAdmin(admin.ModelAdmin):
-    list_display = ('name', 'date', 'location_fk', 'is_optional', 'organization')
-    list_filter = ('organization', 'is_optional', 'date', 'location_fk')
+    list_display = ('name', 'date', 'holiday_type', 'location_fk', 'is_optional', 'organization')
+    list_filter = ('organization', 'holiday_type', 'is_optional', 'date', 'location_fk')
     search_fields = ('name',)
+
+admin.site.register(LeaveCategory)
+admin.site.register(LeaveAccrualRule)
+admin.site.register(LeaveCarryForwardRule)
+admin.site.register(LeaveEligibilityRule)
+admin.site.register(LeaveRestrictionRule)
+admin.site.register(LeaveDurationRule)
+admin.site.register(LeaveSandwichRule)
+admin.site.register(LeaveProofRule)
+admin.site.register(LeaveIntegrationRule)
+admin.site.register(LeaveTransaction)
+admin.site.register(LeaveBalanceSnapshot)
+admin.site.register(LeaveAttachment)
+admin.site.register(LeaveWorkflow)
+admin.site.register(LeaveWorkflowStep)
+admin.site.register(LeaveApproval)
+admin.site.register(HolidayCalendar)
+admin.site.register(LeaveEncashment)
+admin.site.register(LeaveCarryForwardLog)
+admin.site.register(LeaveAttendanceEvent)
+admin.site.register(LeavePayrollImpact)
+admin.site.register(LeaveAuditLog)

@@ -1,11 +1,9 @@
 from django.core.management.base import BaseCommand
-from leaves.models import LeaveType, LeavePolicy, Holiday, Location
+from leaves.models import LeaveType, LeavePolicy, Location
 from accounts.models import Organization
-from django.utils import timezone
-from datetime import date
 
 class Command(BaseCommand):
-    help = 'Seeds initial leave types and sample holidays for all organizations'
+    help = 'Seeds initial leave types for all organizations. Holidays must be created through Holiday Calendars.'
 
     def handle(self, *args, **options):
         organizations = Organization.objects.all()
@@ -27,28 +25,6 @@ class Command(BaseCommand):
             {'name': 'Short Leave', 'code': 'SHL', 'is_paid': True, 'is_statutory': False, 'description': '2-hour permission for personal errands. Limited to twice per month.', 'max_balance': 2.0, 'carry_forward': 0.0},
             {'name': 'Restricted Holiday', 'code': 'RH', 'is_paid': True, 'is_statutory': False, 'description': 'Optional holidays that can be claimed (Max 2 per year).', 'max_balance': 2.0, 'carry_forward': 0.0},
         ]
-
-
-        holidays_data = [
-            {'name': 'New Year Day', 'date': date(2026, 1, 1), 'is_optional': False},
-            {'name': 'Republic Day', 'date': date(2026, 1, 26), 'is_optional': False},
-            {'name': 'Holi', 'date': date(2026, 3, 14), 'is_optional': False},
-            {'name': 'Good Friday', 'date': date(2026, 4, 3), 'is_optional': False},
-            {'name': 'Eid-ul-Fitr', 'date': date(2026, 4, 10), 'is_optional': False},
-            {'name': 'Independence Day', 'date': date(2026, 8, 15), 'is_optional': False},
-            {'name': 'Gandhi Jayanti', 'date': date(2026, 10, 2), 'is_optional': False},
-            {'name': 'Dussehra', 'date': date(2026, 10, 21), 'is_optional': False},
-            {'name': 'Diwali', 'date': date(2026, 11, 8), 'is_optional': False},
-            {'name': 'Christmas', 'date': date(2026, 12, 25), 'is_optional': False},
-            # Optional Holidays (RH)
-            {'name': 'Lohri', 'date': date(2026, 1, 13), 'is_optional': True},
-            {'name': 'Makar Sankranti', 'date': date(2026, 1, 14), 'is_optional': True},
-            {'name': 'Guru Nanak Birthday', 'date': date(2026, 11, 24), 'is_optional': True},
-            {'name': 'Karaka Chaturthi (Karwa Chauth)', 'date': date(2026, 10, 29), 'is_optional': True},
-            {'name': 'Govardhan Puja', 'date': date(2026, 11, 9), 'is_optional': True},
-            {'name': 'Bhai Dooj', 'date': date(2026, 11, 10), 'is_optional': True},
-        ]
-
 
         for org in organizations:
             self.stdout.write(f'Seeding data for organization: {org.name}')
@@ -87,20 +63,7 @@ class Command(BaseCommand):
                 )
                 self.stdout.write(f'  Processed Leave Type: {lt.name}')
 
-            # Seed Holidays
-            for h_data in holidays_data:
-                holiday, created = Holiday.objects.update_or_create(
-                    organization=org,
-                    name=h_data['name'],
-                    date=h_data['date'],
-                    defaults={
-                        'location_fk': location,
-                        'is_optional': h_data.get('is_optional', False)
-                    }
-                )
-                if created:
-                    self.stdout.write(f'  Created Holiday: {holiday.name} ({holiday.date})')
+            self.stdout.write('  Skipped holidays. Create/import them from Leaves > Holiday Calendars.')
 
 
         self.stdout.write(self.style.SUCCESS('Successfully seeded leave data.'))
-
