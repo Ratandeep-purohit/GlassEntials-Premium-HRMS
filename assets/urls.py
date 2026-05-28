@@ -14,6 +14,8 @@ urlpatterns = [
     path('requests/', views.manage_requests_view, name='manage_requests'),
     path('requests/action/<int:request_id>/', views.request_action_view, name='request_action'),
     path('categories/', views.manage_categories_view, name='manage_categories'),
+    path('categories/edit/<int:category_id>/', views.edit_category_view, name='edit_category'),
+    path('categories/delete/<int:category_id>/', views.delete_category_view, name='delete_category'),
 
     # Employee Views
     path('my-assets/', views.my_assets_view, name='my_assets'),

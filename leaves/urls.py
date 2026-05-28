@@ -20,8 +20,10 @@ urlpatterns = [
     path('compoff-action/<int:compoff_id>/', views.compoff_action_view, name='compoff_action'),
     path('cancel-action/<int:leave_id>/', views.cancel_approval_action_view, name='cancel_action'),
     path('create-leave/', views.manage_leave_types_view, name='create_leave'),
+    path('create-leave/import-template/', views.download_leave_policy_import_template, name='leave_policy_import_template'),
     path('assign-leaves/', views.assign_leave_balances_view, name='assign_leaves'),
     path('holiday-calendars/', views.manage_holiday_calendars_view, name='holiday_calendars'),
+    path('holiday-calendars/export/', views.export_holidays_csv_view, name='export_holidays_csv'),
 
     
     # Policy & Settings

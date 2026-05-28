@@ -16,9 +16,10 @@ from employees.models import Employee, Department
 from .models import (
     SalaryComponent, SalaryStructure, SalaryStructureItem, 
     PayrollRun, EmployeePayslip, PayslipItem, EmployeeLoan, 
-    LoanInstallment, Arrear
+    LoanInstallment, Arrear, PayrollTDSSyncLog
 )
 from payroll.engine.formula_runner import evaluate_formula
+from payroll.engine.preview import PayrollPreviewBuilder
 from payroll.engine.processor import PayrollProcessor
 
 
@@ -108,15 +109,15 @@ def create_payroll_run(request):
                 messages.error(request, "Invalid department selected.")
                 return redirect('payroll')
         
-        # Check if already exists
-        if PayrollRun.objects.filter(
+        existing_run = PayrollRun.objects.filter(
             Q(organization=organization) | Q(organization__isnull=True),
             month=month,
             year=year,
             department=department
-        ).exists():
-            messages.error(request, "A payroll run for this period and department already exists.")
-            return redirect('payroll')
+        ).first()
+        if existing_run:
+            messages.info(request, "Payroll run already exists. Review the preview before processing.")
+            return redirect('payroll_preview', run_id=existing_run.id)
             
         try:
             run = PayrollRun.objects.create(
@@ -126,11 +127,34 @@ def create_payroll_run(request):
                 department=department,
                 status=PayrollRun.Status.DRAFT
             )
-            messages.success(request, f"Successfully initialized payroll run for {run.get_month_display()} {year}.")
+            messages.success(request, f"Successfully initialized payroll run for {run.get_month_display()} {year}. Review it before processing.")
+            return redirect('payroll_preview', run_id=run.id)
         except Exception as e:
             messages.error(request, f"Error initializing payroll run: {e}")
             
     return redirect('payroll')
+
+@login_required
+def payroll_preview(request, run_id):
+    if not (request.user.is_staff or request.user.is_superuser):
+        return redirect('my_payslips')
+
+    organization = request.user.organization
+    try:
+        run = PayrollRun.objects.get(
+            Q(organization=organization) | Q(organization__isnull=True),
+            id=run_id
+        )
+    except PayrollRun.DoesNotExist:
+        messages.error(request, "Payroll run not found.")
+        return redirect('payroll')
+
+    preview = PayrollPreviewBuilder(run).build()
+    context = {
+        'payroll_run': run,
+        'preview': preview,
+    }
+    return render(request, 'payroll_preview.html', context)
 
 @login_required
 def run_payroll(request, run_id):
@@ -150,14 +174,91 @@ def run_payroll(request, run_id):
     if run.is_locked:
         messages.error(request, "Cannot run payroll on a locked/finalized batch.")
         return redirect('payroll')
+
+    if request.method != 'POST':
+        messages.info(request, "Review the payroll preview before processing.")
+        return redirect('payroll_preview', run_id=run.id)
         
     try:
         processor = PayrollProcessor(run.id)
         count = processor.process()
         messages.success(request, f"Successfully processed payroll for {count} employees.")
+        return redirect('payslip_list', run_id=run.id)
     except Exception as e:
         messages.error(request, f"Error processing payroll: {e}")
         
+    return redirect('payroll_preview', run_id=run.id)
+
+
+@login_required
+def delete_payroll_run(request, run_id):
+    if not (request.user.is_staff or request.user.is_superuser):
+        return redirect('my_payslips')
+
+    organization = request.user.organization
+    try:
+        run = PayrollRun.objects.get(
+            Q(organization=organization) | Q(organization__isnull=True),
+            id=run_id,
+        )
+    except PayrollRun.DoesNotExist:
+        messages.error(request, "Payroll run not found.")
+        return redirect('payroll')
+
+    if request.method != 'POST':
+        messages.error(request, "Invalid delete request.")
+        return redirect('payroll')
+
+    if run.is_locked:
+        messages.error(request, "Finalized or paid payroll runs cannot be deleted.")
+        return redirect('payroll')
+
+    locked_payslip_exists = run.payslips.filter(
+        status__in=[EmployeePayslip.Status.FINALIZED, EmployeePayslip.Status.PAID]
+    ).exists()
+    if locked_payslip_exists:
+        messages.error(request, "This payroll run contains locked payslips and cannot be deleted.")
+        return redirect('payroll')
+
+    period_label = f"{run.get_month_display()} {run.year}"
+    department_label = run.department.name if run.department else "All Departments"
+
+    try:
+        with transaction.atomic():
+            editable_payslip_ids = list(run.payslips.values_list('id', flat=True))
+
+            if editable_payslip_ids:
+                LoanInstallment.objects.filter(
+                    payslip_id__in=editable_payslip_ids,
+                    status=LoanInstallment.InstallmentStatus.DEDUCTED,
+                ).update(
+                    status=LoanInstallment.InstallmentStatus.PENDING,
+                    payslip=None,
+                )
+
+                Arrear.objects.filter(
+                    Q(processed_payslip_id__in=editable_payslip_ids)
+                    | Q(processed_in_payroll=run)
+                ).update(
+                    status=Arrear.ArrearStatus.PENDING,
+                    processed_in_payroll=None,
+                    processed_payslip=None,
+                )
+
+            PayrollTDSSyncLog.objects.filter(payroll_run=run).delete()
+
+            from leaves.models import LeavePayrollImpact
+            LeavePayrollImpact.objects.filter(payroll_run=run).update(
+                payroll_run=None,
+                status='PENDING',
+            )
+
+            run.delete()
+
+        messages.success(request, f"Payroll run for {period_label} ({department_label}) deleted successfully.")
+    except Exception as e:
+        messages.error(request, f"Error deleting payroll run: {e}")
+
     return redirect('payroll')
 
 @login_required

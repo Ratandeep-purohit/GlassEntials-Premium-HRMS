@@ -1,4 +1,6 @@
+from django.db import transaction
 from django.utils.dateparse import parse_date
+from django.utils.datastructures import MultiValueDict
 
 from employees.models import Department, Designation
 from leaves.models import (
@@ -21,6 +23,148 @@ from .utils import as_decimal, as_int, checkbox
 
 
 class LeavePolicyWorkbenchService:
+    EXCEL_IMPORT_COLUMNS = [
+        "name",
+        "code",
+        "category_name",
+        "category_code",
+        "status",
+        "description",
+        "color_tag",
+        "financial_year_start_month",
+        "effective_from",
+        "effective_to",
+        "policy_version",
+        "max_balance",
+        "negative_balance_limit",
+        "is_paid",
+        "is_statutory",
+        "is_requestable",
+        "allow_negative_balance",
+        "accrual_frequency",
+        "accrual_enabled",
+        "accrual_rate",
+        "accrual_day",
+        "max_yearly_accrual",
+        "max_balance_cap",
+        "prorate_on_joining",
+        "prorate_on_exit",
+        "rounding_mode",
+        "eligible_gender",
+        "min_service_days",
+        "probation_allowed",
+        "confirmation_required",
+        "employee_filter_mode",
+        "employment_types",
+        "work_locations",
+        "min_duration",
+        "max_duration",
+        "max_consecutive_days",
+        "backdate_allowed",
+        "max_backdate_days",
+        "future_date_allowed",
+        "max_future_days",
+        "block_during_payroll_lock",
+        "carry_forward_allowed",
+        "carry_forward_limit",
+        "max_carry_forward_days",
+        "carry_expiry_month",
+        "carry_expiry_day",
+        "lapse_remaining",
+        "proof_required",
+        "required_after_days",
+        "allowed_file_types",
+        "max_file_size_mb",
+        "approval_route",
+        "approval_mode",
+        "approval_sla_hours",
+        "delegation_allowed",
+        "attendance_sync_enabled",
+        "prevent_attendance_conflict",
+        "adjust_late_marks",
+        "payroll_sync_enabled",
+        "generate_lop",
+        "negative_balance_deduction",
+        "enable_encashment",
+    ]
+
+    EXCEL_REQUIRED_COLUMNS = {"name", "code", "max_balance"}
+    BOOLEAN_COLUMNS = {
+        "is_paid",
+        "is_statutory",
+        "is_requestable",
+        "allow_negative_balance",
+        "accrual_enabled",
+        "prorate_on_joining",
+        "prorate_on_exit",
+        "probation_allowed",
+        "confirmation_required",
+        "backdate_allowed",
+        "future_date_allowed",
+        "block_during_payroll_lock",
+        "carry_forward_allowed",
+        "lapse_remaining",
+        "proof_required",
+        "delegation_allowed",
+        "attendance_sync_enabled",
+        "prevent_attendance_conflict",
+        "adjust_late_marks",
+        "payroll_sync_enabled",
+        "generate_lop",
+        "negative_balance_deduction",
+        "enable_encashment",
+    }
+    LIST_COLUMNS = {"employment_types"}
+    DEFAULT_IMPORT_VALUES = {
+        "category_name": "Paid Leave",
+        "category_code": "PAID",
+        "status": "ACTIVE",
+        "color_tag": "#2563eb",
+        "financial_year_start_month": "4",
+        "policy_version": "1",
+        "negative_balance_limit": "0",
+        "is_paid": "on",
+        "is_requestable": "on",
+        "accrual_frequency": "MONTHLY",
+        "accrual_enabled": "on",
+        "accrual_rate": "0",
+        "accrual_day": "1",
+        "max_yearly_accrual": "0",
+        "max_balance_cap": "0",
+        "prorate_on_joining": "on",
+        "prorate_on_exit": "on",
+        "rounding_mode": "NONE",
+        "eligible_gender": "ANY",
+        "min_service_days": "0",
+        "probation_allowed": "on",
+        "employee_filter_mode": "ALL",
+        "min_duration": "0.5",
+        "max_duration": "0",
+        "max_consecutive_days": "0",
+        "backdate_allowed": "on",
+        "max_backdate_days": "0",
+        "future_date_allowed": "on",
+        "max_future_days": "365",
+        "block_during_payroll_lock": "on",
+        "carry_forward_limit": "0",
+        "max_carry_forward_days": "0",
+        "carry_expiry_month": "3",
+        "carry_expiry_day": "31",
+        "lapse_remaining": "on",
+        "required_after_days": "0",
+        "allowed_file_types": "pdf,jpg,jpeg,png",
+        "max_file_size_mb": "5",
+        "approval_route": "MANAGER_HR",
+        "approval_mode": "ANY_ONE",
+        "approval_sla_hours": "24",
+        "delegation_allowed": "on",
+        "attendance_sync_enabled": "on",
+        "prevent_attendance_conflict": "on",
+        "adjust_late_marks": "on",
+        "payroll_sync_enabled": "on",
+        "generate_lop": "on",
+    }
+
     @staticmethod
     def save_from_post(*, organization, user, data, request=None):
         name = (data.get("name") or "").strip()
@@ -237,6 +381,151 @@ class LeavePolicyWorkbenchService:
             request=request,
         )
         return leave_type, created
+
+    @classmethod
+    @transaction.atomic
+    def import_excel(cls, *, organization, user, uploaded_file, request=None):
+        if not uploaded_file:
+            raise ValueError("Select an Excel file to import.")
+
+        filename = (uploaded_file.name or "").lower()
+        if not filename.endswith(".xlsx"):
+            raise ValueError("Upload a .xlsx Excel file.")
+
+        from openpyxl import load_workbook
+
+        workbook = load_workbook(uploaded_file, read_only=True, data_only=True)
+        worksheet = workbook.active
+        header_row = next(worksheet.iter_rows(min_row=1, max_row=1, values_only=True), None)
+        headers = [cls._normalize_header(value) for value in (header_row or [])]
+        if not headers or not any(headers):
+            raise ValueError("Excel file must include a header row.")
+
+        header_set = {header for header in headers if header}
+        missing = cls.EXCEL_REQUIRED_COLUMNS - header_set
+        if missing:
+            raise ValueError(f"Excel file is missing required column(s): {', '.join(sorted(missing))}.")
+
+        imported = 0
+        errors = []
+        for row_number, values in enumerate(worksheet.iter_rows(min_row=2, values_only=True), start=2):
+            raw_row = {
+                headers[index]: values[index]
+                for index in range(min(len(headers), len(values)))
+                if headers[index]
+            }
+            if not any(value not in [None, ""] for value in raw_row.values()):
+                continue
+
+            try:
+                row_data = cls._row_to_multivalue_dict(raw_row)
+                cls.save_from_post(
+                    organization=organization,
+                    user=user,
+                    data=row_data,
+                    request=request,
+                )
+                imported += 1
+            except Exception as exc:
+                errors.append(f"Row {row_number}: {exc}")
+
+        if errors:
+            raise ValueError(" ".join(errors[:5]))
+        if imported == 0:
+            raise ValueError("No leave policies were found in the Excel file.")
+
+        return imported
+
+    @classmethod
+    def sample_rows(cls):
+        return [
+            {
+                "name": "Casual Leave",
+                "code": "CL",
+                "category_name": "Paid Leave",
+                "category_code": "PAID",
+                "status": "ACTIVE",
+                "description": "General personal leave.",
+                "max_balance": "12",
+                "is_paid": "yes",
+                "is_requestable": "yes",
+                "accrual_frequency": "MONTHLY",
+                "accrual_enabled": "yes",
+                "accrual_rate": "1",
+                "max_yearly_accrual": "12",
+                "min_service_days": "0",
+                "carry_forward_allowed": "no",
+                "carry_forward_limit": "0",
+                "proof_required": "no",
+                "approval_route": "MANAGER_HR",
+                "attendance_sync_enabled": "yes",
+                "payroll_sync_enabled": "yes",
+            },
+            {
+                "name": "Sick Leave",
+                "code": "SL",
+                "category_name": "Paid Leave",
+                "category_code": "PAID",
+                "status": "ACTIVE",
+                "description": "Medical leave for illness.",
+                "max_balance": "10",
+                "is_paid": "yes",
+                "is_requestable": "yes",
+                "accrual_frequency": "MONTHLY",
+                "accrual_enabled": "yes",
+                "accrual_rate": "0.83",
+                "max_yearly_accrual": "10",
+                "min_service_days": "0",
+                "carry_forward_allowed": "no",
+                "proof_required": "yes",
+                "required_after_days": "2",
+                "approval_route": "MANAGER_HR",
+                "attendance_sync_enabled": "yes",
+                "payroll_sync_enabled": "yes",
+            },
+        ]
+
+    @staticmethod
+    def _normalize_header(value):
+        return str(value or "").strip().lower().replace(" ", "_")
+
+    @classmethod
+    def _row_to_multivalue_dict(cls, raw_row):
+        normalized = dict(cls.DEFAULT_IMPORT_VALUES)
+        for key, value in raw_row.items():
+            if value in [None, ""]:
+                continue
+            normalized[key] = cls._normalize_cell_value(key, value)
+
+        values = {}
+        for key, value in normalized.items():
+            if key in cls.LIST_COLUMNS:
+                values[key] = cls._split_list(value)
+            else:
+                values[key] = [str(value)]
+        return MultiValueDict(values)
+
+    @classmethod
+    def _normalize_cell_value(cls, key, value):
+        if key in cls.BOOLEAN_COLUMNS:
+            return "on" if cls._truthy(value) else ""
+        if hasattr(value, "date") and callable(value.date):
+            return value.date().isoformat()
+        if hasattr(value, "isoformat"):
+            return value.isoformat()
+        return str(value).strip()
+
+    @staticmethod
+    def _truthy(value):
+        if isinstance(value, bool):
+            return value
+        return str(value).strip().lower() in {"1", "true", "yes", "y", "on"}
+
+    @staticmethod
+    def _split_list(value):
+        if isinstance(value, (list, tuple)):
+            return [str(item).strip() for item in value if str(item).strip()]
+        return [item.strip() for item in str(value or "").split(",") if item.strip()]
 
     @staticmethod
     def _save_workflow(*, organization, leave_type, user, data):

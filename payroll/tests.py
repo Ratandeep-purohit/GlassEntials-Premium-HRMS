@@ -3,7 +3,7 @@ from django.test import TestCase, Client
 from django.urls import reverse
 from django.contrib.auth import get_user_model
 from accounts.models import Organization
-from datetime import date, timedelta
+from datetime import date, time, timedelta
 from django.utils import timezone
 from employees.models import Employee
 from attendance.models import Attendance, AttendanceStatus
@@ -19,6 +19,45 @@ from payroll.engine.processor import PayrollProcessor
 from payroll.engine.tax_calculator import TaxCalculatorEngine
 
 User = get_user_model()
+
+
+class PayrollRunDeleteTests(TestCase):
+    def setUp(self):
+        self.org = Organization.objects.create(name="Payroll Delete Org")
+        self.admin_user = User.objects.create_user(
+            username="payroll_admin",
+            email="payroll.admin@example.com",
+            password="password123",
+            is_staff=True,
+            organization=self.org,
+        )
+        self.admin_client = Client()
+        self.admin_client.login(username="payroll_admin", password="password123")
+
+    def test_admin_can_delete_draft_payroll_run(self):
+        run = PayrollRun.objects.create(
+            organization=self.org,
+            month=timezone.now().month,
+            year=timezone.now().year,
+        )
+
+        response = self.admin_client.post(reverse('delete_payroll_run', args=[run.id]))
+
+        self.assertRedirects(response, reverse('payroll'))
+        self.assertFalse(PayrollRun.objects.filter(id=run.id).exists())
+
+    def test_admin_cannot_delete_finalized_payroll_run(self):
+        run = PayrollRun.objects.create(
+            organization=self.org,
+            month=timezone.now().month,
+            year=timezone.now().year,
+            status=PayrollRun.Status.FINALIZED,
+        )
+
+        response = self.admin_client.post(reverse('delete_payroll_run', args=[run.id]))
+
+        self.assertRedirects(response, reverse('payroll'))
+        self.assertTrue(PayrollRun.objects.filter(id=run.id).exists())
 
 
 class PayrollAttendanceIntegrationTests(TestCase):
@@ -154,6 +193,34 @@ class PayrollAttendanceIntegrationTests(TestCase):
         self.assertIn("Paid leave: 2.00", payslip.remarks)
         self.assertIn("LOP leave: 1.00", payslip.remarks)
         self.assertEqual(payslip.items.get(component=self.basic_component).amount, expected_amount)
+
+    def test_payroll_counts_punch_attendance_without_status(self):
+        working_dates = self._weekdays(2026, 4)
+        for attendance_date in working_dates:
+            Attendance.objects.create(
+                organization=self.org,
+                employee=self.employee,
+                date=attendance_date,
+                clock_in=time(9, 30),
+                clock_out=time(18, 30),
+                total_work_hours=Decimal("9.00"),
+                total_break_minutes=60,
+                net_work_hours=Decimal("8.00"),
+            )
+
+        payroll_run = PayrollRun.objects.create(
+            organization=self.org,
+            month=4,
+            year=2026,
+        )
+
+        processed_count = PayrollProcessor(payroll_run.id).process()
+
+        self.assertEqual(processed_count, 1)
+        payslip = EmployeePayslip.objects.get(payroll_run=payroll_run, employee=self.employee)
+        self.assertEqual(payslip.paid_days, Decimal(str(len(working_dates))).quantize(Decimal("0.01")))
+        self.assertEqual(payslip.lop_days, Decimal("0.00"))
+        self.assertEqual(payslip.items.get(component=self.basic_component).amount, Decimal("22000.00"))
 
     @staticmethod
     def _weekdays(year, month):

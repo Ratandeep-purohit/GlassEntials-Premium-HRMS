@@ -40,8 +40,56 @@
         color: var(--text-main);
     }
 
+    .year-filter-form {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 6px 8px 6px 12px;
+        border: 1px solid #dbeafe;
+        border-radius: 999px;
+        background: linear-gradient(135deg, #eff6ff 0%, #f8fafc 100%);
+        box-shadow: 0 10px 24px rgba(37, 99, 235, 0.08);
+    }
+
+    .year-filter-label {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        color: #2563eb;
+        font-size: 11px;
+        font-weight: 900;
+        text-transform: uppercase;
+        letter-spacing: 0.6px;
+        white-space: nowrap;
+    }
+
+    .year-filter-select {
+        width: 92px;
+        min-height: 36px;
+        border: 0;
+        border-radius: 999px;
+        background: #fff;
+        color: var(--text-main);
+        font-weight: 900;
+        padding: 0 14px;
+        box-shadow: inset 0 0 0 1px #bfdbfe;
+    }
+
+    .holiday-head-actions {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+    }
+
     .holiday-panel-body {
         padding: 22px;
+    }
+
+    .holiday-panel .glass-input {
+        width: 100%;
+        box-sizing: border-box;
     }
 
     .calendar-list {
@@ -151,8 +199,19 @@
 
     .form-grid-2 {
         display: grid;
-        grid-template-columns: 1fr 1fr;
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
         gap: 14px;
+    }
+
+    .form-group {
+        min-width: 0;
+    }
+
+    .csv-import-grid {
+        display: grid;
+        grid-template-columns: minmax(220px, 0.75fr) minmax(0, 1.25fr);
+        gap: 14px;
+        align-items: end;
     }
 
     .toggle-row {
@@ -245,6 +304,51 @@
         text-decoration: none;
     }
 
+    .mini-btn.export {
+        border-color: #bfdbfe;
+        color: #2563eb;
+        background: #eff6ff;
+    }
+
+    .csv-format-box {
+        border: 1px solid #dbeafe;
+        background: #f8fbff;
+        border-radius: 14px;
+        padding: 12px 14px;
+        overflow: hidden;
+    }
+
+    .csv-format-title {
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        color: #2563eb;
+        font-size: 11px;
+        font-weight: 900;
+        text-transform: uppercase;
+        letter-spacing: 0.6px;
+        margin-bottom: 8px;
+    }
+
+    .csv-format-code {
+        display: block;
+        white-space: normal;
+        overflow-wrap: anywhere;
+        color: #334155;
+        font-size: 12px;
+        font-weight: 800;
+        line-height: 1.65;
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+    }
+
+    .csv-format-note {
+        color: var(--text-secondary);
+        font-size: 12px;
+        font-weight: 700;
+        line-height: 1.55;
+        margin: 8px 0 0;
+    }
+
     .empty-state {
         border: 1px dashed #cbd5e1;
         border-radius: 18px;
@@ -271,6 +375,7 @@
 
     @media (max-width: 1040px) {
         .holiday-grid,
+        .csv-import-grid,
         .form-grid-2,
         .stat-row {
             grid-template-columns: 1fr;
@@ -301,8 +406,9 @@
             <aside class="holiday-panel">
                 <div class="holiday-panel-head">
                     <h2>Calendars</h2>
-                    <form method="GET">
-                        <select name="year" class="glass-input" onchange="this.form.submit()">
+                    <form method="GET" class="year-filter-form">
+                        <span class="year-filter-label"><i class="fas fa-calendar-week"></i> Year</span>
+                        <select name="year" class="year-filter-select" onchange="this.form.submit()">
                             {% for year in available_years %}
                             <option value="{{ year }}" {% if year == selected_year %}selected{% endif %}>{{ year }}</option>
                             {% endfor %}
@@ -423,6 +529,10 @@
                             <div class="calendar-meta">{{ selected_calendar.year }} | {{ selected_calendar.branch|default:"All branches" }}</div>
                             {% endif %}
                         </div>
+                        <div class="holiday-head-actions">
+                            <a href="{% url 'leaves:export_holidays_csv' %}?year={{ selected_year }}{% if selected_calendar %}&calendar={{ selected_calendar.id }}{% endif %}" class="mini-btn export">
+                                <i class="fas fa-file-csv"></i> Export CSV
+                            </a>
                         {% if selected_calendar and not selected_calendar.is_default %}
                         <form method="POST">
                             {% csrf_token %}
@@ -431,6 +541,7 @@
                             <button type="submit" class="mini-btn"><i class="fas fa-check"></i> Make Default</button>
                         </form>
                         {% endif %}
+                        </div>
                     </div>
                     <div class="holiday-panel-body">
                         {% if selected_calendar %}
@@ -445,14 +556,18 @@
                             {% csrf_token %}
                             <input type="hidden" name="action" value="import_holidays">
                             <input type="hidden" name="calendar" value="{{ selected_calendar.id }}">
-                            <div class="form-grid-2">
+                            <div class="csv-import-grid">
                                 <div class="form-group">
                                     <label class="form-label">CSV Import</label>
                                     <input type="file" name="csv_file" class="glass-input" accept=".csv" required>
                                 </div>
                                 <div class="form-group">
                                     <label class="form-label">Format</label>
-                                    <input type="text" class="glass-input" value="name,date,holiday_type,is_optional,is_paid" disabled>
+                                    <div class="csv-format-box">
+                                        <div class="csv-format-title"><i class="fas fa-table"></i> Import columns</div>
+                                        <code class="csv-format-code">name,date,holiday_type,is_optional,is_paid,location_id</code>
+                                        <p class="csv-format-note">Export CSV includes all calendar, holiday, location, paid/optional, and audit fields.</p>
+                                    </div>
                                 </div>
                             </div>
                             <button type="submit" class="punch-btn"><i class="fas fa-file-arrow-up"></i> Import Holidays</button>

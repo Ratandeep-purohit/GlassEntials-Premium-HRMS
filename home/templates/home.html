@@ -21,7 +21,6 @@
     <div class="orb orb-2" style="opacity: 0.03; bottom: -100px; right: -100px;"></div>
 
     <!-- Flash Messages -->
-    {% include 'includes/_messages.html' %}
 
     <!-- Header Navigation -->
     {% include 'includes/navbar.html' %}
@@ -240,20 +239,37 @@
                 <div class="bento-card" id="pending-approvals-section">
                     <div class="bento-header">
                         <h2 class="bento-title">Pending Approvals</h2>
-                        {% if pending_approvals %}
-                        <span style="background: rgba(239,68,68,0.1); color: #ef4444; font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 99px;">{{ pending_approvals|length }}</span>
+                        {% if pending_approval_total %}
+                        <span style="background: rgba(239,68,68,0.1); color: #ef4444; font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 99px;">{{ pending_approval_total }}</span>
                         {% endif %}
                     </div>
-                    {% for pending_user in pending_approvals %}
+                    {% for approval in pending_approval_items %}
                     <div class="announce-item" style="display: flex; justify-content: space-between; align-items: center;">
-                        <div>
-                            <span class="item-tag" style="background: rgba(239,68,68,0.1); color: #ef4444;">New</span>
-                            <h3 class="item-h">{{ pending_user.username }}</h3>
-                            <div class="item-meta">{{ pending_user.email }}</div>
+                        <div style="min-width: 0;">
+                            <span class="item-tag"
+                                {% if approval.tone == 'red' %}style="background: rgba(239,68,68,0.1); color: #ef4444;"
+                                {% elif approval.tone == 'green' %}style="background: rgba(16,185,129,0.1); color: #059669;"
+                                {% elif approval.tone == 'purple' %}style="background: rgba(124,58,237,0.1); color: #7c3aed;"
+                                {% elif approval.tone == 'amber' %}style="background: rgba(245,158,11,0.1); color: #d97706;"
+                                {% elif approval.tone == 'cyan' %}style="background: rgba(14,165,233,0.1); color: #0284c7;"
+                                {% elif approval.tone == 'slate' %}style="background: rgba(100,116,139,0.12); color: #475569;"
+                                {% else %}style="background: rgba(37,99,235,0.1); color: var(--accent);"{% endif %}>
+                                {{ approval.badge }}
+                            </span>
+                            <h3 class="item-h">{{ approval.title }}</h3>
+                            <div class="item-meta">{{ approval.meta }}</div>
                         </div>
-                        <div style="display: flex; gap: 6px; flex-shrink: 0;">
-                            <a href="{% url 'approve_employee' pending_user.id %}" style="background: #10b981; color: white; padding: 5px 10px; border-radius: 6px; text-decoration: none; font-size: 11px; font-weight: 700;">✓</a>
-                            <a href="{% url 'reject_employee' pending_user.id %}" style="background: #ef4444; color: white; padding: 5px 10px; border-radius: 6px; text-decoration: none; font-size: 11px; font-weight: 700;">✕</a>
+                        <div style="display: flex; gap: 6px; flex-shrink: 0; align-items: center;">
+                            {% if approval.approve_url and approval.reject_url %}
+                            <a href="{{ approval.approve_url }}" title="Approve" style="background: #10b981; color: white; width: 28px; height: 28px; border-radius: 8px; text-decoration: none; font-size: 12px; font-weight: 800; display: inline-flex; align-items: center; justify-content: center;">
+                                <i class="fas fa-check"></i>
+                            </a>
+                            <a href="{{ approval.reject_url }}" title="Reject" style="background: #ef4444; color: white; width: 28px; height: 28px; border-radius: 8px; text-decoration: none; font-size: 12px; font-weight: 800; display: inline-flex; align-items: center; justify-content: center;">
+                                <i class="fas fa-xmark"></i>
+                            </a>
+                            {% else %}
+                            <a href="{{ approval.link }}" style="background: rgba(37,99,235,0.1); color: var(--accent); padding: 7px 11px; border-radius: 9px; text-decoration: none; font-size: 11px; font-weight: 800; white-space: nowrap;">Review</a>
+                            {% endif %}
                         </div>
                     </div>
                     {% empty %}
@@ -348,6 +364,51 @@
                     </div>
                 </div>
                 {% endif %}
+
+                <!-- On Leave Today -->
+                <div class="bento-card" style="border: 1px solid rgba(37, 99, 235, 0.1);">
+                    <div class="bento-header">
+                        <h2 class="bento-title">On Leave Today</h2>
+                        {% if on_leave_today_total %}
+                        <span style="background: rgba(37,99,235,0.1); color: var(--accent); font-size: 11px; font-weight: 800; padding: 2px 8px; border-radius: 99px;">{{ on_leave_today_total }}</span>
+                        {% endif %}
+                    </div>
+                    <div class="compact-list" style="max-height: 240px; overflow-y: auto; padding-right: 4px;">
+                        {% for leave in on_leave_today %}
+                        <div class="compact-item" style="display: flex; align-items: center; gap: 10px; background: #fff; border: 1px solid var(--border-light);">
+                            <div class="user-mini" style="background: rgba(37,99,235,0.1); color: var(--accent);">
+                                {% if leave.employee.profile_img %}
+                                <img src="{{ leave.employee.profile_img.url }}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">
+                                {% else %}
+                                {{ leave.employee.first_name|slice:":1"|upper }}
+                                {% endif %}
+                            </div>
+                            <div class="user-d" style="flex: 1; min-width: 0;">
+                                <span class="user-n" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block;">{{ leave.employee.first_name }} {{ leave.employee.last_name }}</span>
+                                <span class="user-s" style="display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                                    {{ leave.leave_type.name }}{% if leave.employee.department %} - {{ leave.employee.department.name }}{% endif %}
+                                </span>
+                            </div>
+                            <div style="text-align: right; flex-shrink: 0;">
+                                <span class="status-pill" style="background: rgba(37,99,235,0.08); color: var(--accent);">{{ leave.total_days }}d</span>
+                                <div style="font-size: 10px; font-weight: 700; color: var(--text-secondary); margin-top: 4px;">
+                                    {% if leave.start_date == leave.end_date %}
+                                    {{ leave.start_date|date:"M d" }}
+                                    {% else %}
+                                    {{ leave.start_date|date:"M d" }} - {{ leave.end_date|date:"M d" }}
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        {% empty %}
+                        <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 24px 0; gap: 8px; color: var(--text-secondary); text-align: center;">
+                            <i class="fas fa-user-check" style="font-size: 28px; color: #10b981; opacity: 0.75;"></i>
+                            <span style="font-size: 13px; font-weight: 700;">No one is on leave today</span>
+                            <span style="font-size: 11px;">Approved leaves for today will appear here</span>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
 
                 <!-- Payslip Card -->
                 <div class="bento-card" style="background: linear-gradient(135deg, #2563eb, #7c3aed); color: #fff; border: none;">

@@ -367,6 +367,7 @@
 
         /* Action buttons */
         .pr-actions { display: flex; gap: 10px; justify-content: flex-end; }
+        .pr-actions form { margin: 0; }
         .pr-btn {
             display: inline-flex;
             align-items: center;
@@ -408,6 +409,17 @@
             color: #cbd5e1;
             border-color: #e2e8f0;
             cursor: not-allowed;
+        }
+        .pr-btn-delete {
+            background: #fef2f2;
+            color: #dc2626;
+            border-color: #fecaca;
+        }
+        .pr-btn-delete:hover {
+            background: #dc2626;
+            color: #fff;
+            border-color: #dc2626;
+            box-shadow: 0 4px 14px rgba(220,38,38,.24);
         }
 
         /* ── Empty state ────────────────────────── */
@@ -561,7 +573,6 @@
         <div class="pr-bg-blob pr-bg-blob-2"></div>
     </div>
 
-    {% include 'includes/_messages.html' %}
     {% include 'includes/navbar.html' %}
 
     <div class="pr-workspace">
@@ -678,8 +689,8 @@
                             <td>
                                 <div class="pr-actions">
                                     {% if not run.is_locked %}
-                                    <a href="{% url 'run_payroll' run.id %}" class="pr-btn pr-btn-run">
-                                        <i class="fas fa-play"></i> Run
+                                    <a href="{% url 'payroll_preview' run.id %}" class="pr-btn pr-btn-run">
+                                        <i class="fas fa-table-list"></i> Review
                                     </a>
                                     {% else %}
                                     <button class="pr-btn pr-btn-locked" disabled>
@@ -689,6 +700,14 @@
                                     <a href="{% url 'payslip_list' run.id %}" class="pr-btn pr-btn-view">
                                         <i class="fas fa-eye"></i> View
                                     </a>
+                                    {% if not run.is_locked %}
+                                    <form method="POST" action="{% url 'delete_payroll_run' run.id %}" onsubmit="return confirm('Delete this payroll run? Draft payslips and editable payroll outputs will be removed.');">
+                                        {% csrf_token %}
+                                        <button type="submit" class="pr-btn pr-btn-delete">
+                                            <i class="fas fa-trash"></i> Delete
+                                        </button>
+                                    </form>
+                                    {% endif %}
                                 </div>
                             </td>
                         </tr>
@@ -722,7 +741,7 @@
 
             <div class="pr-modal-head">
                 <h2 class="pr-modal-title">New Payroll Run</h2>
-                <p class="pr-modal-sub">Initialize a payroll batch for a selected period.</p>
+                <p class="pr-modal-sub">Select a period and review employee-wise payroll before processing.</p>
                 <div class="pr-divider"></div>
             </div>
 
@@ -768,7 +787,7 @@
                 </div>
                 <div class="pr-modal-foot">
                     <button type="submit" class="pr-submit-btn">
-                        Initialize Payroll Run <i class="fas fa-arrow-right"></i>
+                        Preview Payroll Run <i class="fas fa-arrow-right"></i>
                     </button>
                 </div>
             </form>

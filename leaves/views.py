@@ -1,8 +1,12 @@
+import csv
+
+from django.http import HttpResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.db.models import Sum
 from django.urls import reverse
+from django.utils.text import slugify
 from django.utils import timezone
 from decimal import Decimal, InvalidOperation
 from .models import (
@@ -168,7 +172,18 @@ def manage_leave_types_view(request):
     organization = request.user.organization
 
     if request.method == 'POST':
+        action = request.POST.get('action', 'save_policy')
         try:
+            if action == 'import_leave_policies':
+                imported_count = LeavePolicyWorkbenchService.import_excel(
+                    organization=organization,
+                    user=request.user,
+                    uploaded_file=request.FILES.get('excel_file'),
+                    request=request,
+                )
+                messages.success(request, f"Imported {imported_count} leave policy/policies successfully.")
+                return redirect('leaves:create_leave')
+
             leave_type, created = LeavePolicyWorkbenchService.save_from_post(
                 organization=organization,
                 user=request.user,
@@ -195,6 +210,70 @@ def manage_leave_types_view(request):
         'departments': Department.objects.filter(organization=organization, is_active=True, is_deleted=False).order_by('name'),
         'designations': Designation.objects.filter(organization=organization, is_active=True, is_deleted=False).order_by('name'),
     })
+
+
+@login_required
+def download_leave_policy_import_template(request):
+    if not _require_staff(request):
+        return redirect('leaves:dashboard')
+
+    from openpyxl import Workbook
+    from openpyxl.styles import Alignment, Font, PatternFill
+
+    workbook = Workbook()
+    worksheet = workbook.active
+    worksheet.title = "Leave Policies"
+    columns = LeavePolicyWorkbenchService.EXCEL_IMPORT_COLUMNS
+    worksheet.append(columns)
+
+    for row in LeavePolicyWorkbenchService.sample_rows():
+        worksheet.append([row.get(column, "") for column in columns])
+
+    header_fill = PatternFill("solid", fgColor="2563EB")
+    header_font = Font(color="FFFFFF", bold=True)
+    for cell in worksheet[1]:
+        cell.fill = header_fill
+        cell.font = header_font
+        cell.alignment = Alignment(horizontal="center")
+
+    for column_cells in worksheet.columns:
+        column_letter = column_cells[0].column_letter
+        max_length = max(len(str(cell.value or "")) for cell in column_cells)
+        worksheet.column_dimensions[column_letter].width = min(max(max_length + 3, 14), 34)
+
+    instructions = workbook.create_sheet("Instructions")
+    instructions.append(["Column", "Required", "What to enter"])
+    required_columns = LeavePolicyWorkbenchService.EXCEL_REQUIRED_COLUMNS
+    boolean_columns = LeavePolicyWorkbenchService.BOOLEAN_COLUMNS
+    for column in columns:
+        if column in boolean_columns:
+            note = "Use yes/no, true/false, 1/0, or on/off."
+        elif column == "employment_types":
+            note = "Comma separated. Example: Full Time,Contract"
+        elif column in {"effective_from", "effective_to"}:
+            note = "Date format YYYY-MM-DD. Optional."
+        elif column == "approval_route":
+            note = "MANAGER_HR, MANAGER, HR, DEPT_HEAD_HR, or AUTO."
+        elif column == "accrual_frequency":
+            note = "NONE, MONTHLY, QUARTERLY, HALF_YEARLY, YEARLY, JOINING_DATE, or MANUAL."
+        else:
+            note = "Text or number based on the column name."
+        instructions.append([column, "Yes" if column in required_columns else "No", note])
+
+    for cell in instructions[1]:
+        cell.fill = header_fill
+        cell.font = header_font
+        cell.alignment = Alignment(horizontal="center")
+    instructions.column_dimensions["A"].width = 34
+    instructions.column_dimensions["B"].width = 12
+    instructions.column_dimensions["C"].width = 72
+
+    response = HttpResponse(
+        content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
+    response['Content-Disposition'] = 'attachment; filename="leave_policy_import_template.xlsx"'
+    workbook.save(response)
+    return response
 
 
 @login_required
@@ -839,6 +918,88 @@ def manage_holiday_calendars_view(request):
         'holiday_stats': holiday_stats,
         'current_year': current_year,
     })
+
+
+@login_required
+def export_holidays_csv_view(request):
+    if not _require_staff(request):
+        return redirect('leaves:dashboard')
+
+    organization = request.user.organization
+    current_year = timezone.now().year
+    try:
+        selected_year = int(request.GET.get('year') or current_year)
+    except (TypeError, ValueError):
+        selected_year = current_year
+
+    holidays = Holiday.objects.filter(
+        organization=organization,
+        calendar__isnull=False,
+    ).select_related(
+        'calendar',
+        'calendar__location_fk',
+        'location_fk',
+    ).order_by('calendar__name', 'date', 'name')
+
+    calendar_id = request.GET.get('calendar')
+    if calendar_id:
+        calendar_obj = get_object_or_404(HolidayCalendar, id=calendar_id, organization=organization)
+        holidays = holidays.filter(calendar=calendar_obj)
+        filename_scope = f"{slugify(calendar_obj.name) or 'holiday-calendar'}-{calendar_obj.year}"
+    else:
+        holidays = holidays.filter(calendar__year=selected_year)
+        filename_scope = f"holiday-calendars-{selected_year}"
+
+    headers = [
+        'calendar_id',
+        'calendar_name',
+        'calendar_year',
+        'calendar_branch',
+        'calendar_location_id',
+        'calendar_location_name',
+        'calendar_is_default',
+        'id',
+        'name',
+        'date',
+        'day',
+        'holiday_type',
+        'is_optional',
+        'is_paid',
+        'location_id',
+        'location_name',
+        'created_at',
+        'updated_at',
+    ]
+
+    response = HttpResponse(content_type='text/csv; charset=utf-8')
+    response['Content-Disposition'] = f'attachment; filename="{filename_scope}-holidays.csv"'
+
+    writer = csv.writer(response)
+    writer.writerow(headers)
+    for holiday in holidays:
+        calendar_obj = holiday.calendar
+        writer.writerow([
+            calendar_obj.id,
+            calendar_obj.name,
+            calendar_obj.year,
+            calendar_obj.branch,
+            calendar_obj.location_fk_id or '',
+            calendar_obj.location_fk.name if calendar_obj.location_fk else '',
+            'true' if calendar_obj.is_default else 'false',
+            holiday.id,
+            holiday.name,
+            holiday.date.isoformat(),
+            holiday.date.strftime('%A'),
+            holiday.holiday_type,
+            'true' if holiday.is_optional else 'false',
+            'true' if holiday.is_paid else 'false',
+            holiday.location_fk_id or '',
+            holiday.location_fk.name if holiday.location_fk else '',
+            timezone.localtime(holiday.created_at).isoformat() if holiday.created_at else '',
+            timezone.localtime(holiday.updated_at).isoformat() if holiday.updated_at else '',
+        ])
+
+    return response
 
 
 @login_required

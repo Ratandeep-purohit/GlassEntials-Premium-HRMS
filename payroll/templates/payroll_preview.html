@@ -1,0 +1,406 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Payroll Preview | GlassEntials HRMS</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Manrope:wght@700;800&display=swap">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link rel="stylesheet" href="{% static 'css/landing.css' %}?v=3.0">
+    <link rel="stylesheet" href="{% static 'css/home.css' %}?v=3.1">
+    <link rel="stylesheet" href="{% static 'css/dashboard.css' %}?v=3.0">
+    <style>
+        body {
+            background: #f4f7fb;
+            font-family: 'Inter', system-ui, sans-serif;
+            color: #0f172a;
+        }
+
+        .pv-wrap {
+            max-width: 1540px;
+            margin: 92px auto 0;
+            padding: 36px 4% 80px;
+        }
+
+        .pv-top {
+            display: flex;
+            justify-content: space-between;
+            gap: 24px;
+            align-items: flex-start;
+            margin-bottom: 24px;
+        }
+
+        .pv-back {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: #64748b;
+            text-decoration: none;
+            font-size: 13px;
+            font-weight: 700;
+            margin-bottom: 14px;
+        }
+
+        .pv-title {
+            font-family: 'Manrope', sans-serif;
+            margin: 0 0 8px;
+            font-size: 32px;
+            font-weight: 800;
+        }
+
+        .pv-sub {
+            margin: 0;
+            color: #64748b;
+            font-size: 15px;
+        }
+
+        .pv-actions {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            justify-content: flex-end;
+        }
+
+        .pv-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            min-height: 44px;
+            padding: 0 18px;
+            border-radius: 12px;
+            border: 1px solid #dbe3ef;
+            background: #fff;
+            color: #334155;
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 800;
+            cursor: pointer;
+            box-shadow: 0 8px 22px rgba(15, 23, 42, 0.06);
+        }
+
+        .pv-btn-primary {
+            border: none;
+            color: #fff;
+            background: linear-gradient(135deg, #2563eb, #7c3aed);
+        }
+
+        .pv-btn:disabled {
+            opacity: 0.45;
+            cursor: not-allowed;
+        }
+
+        .pv-summary {
+            display: grid;
+            grid-template-columns: repeat(5, minmax(150px, 1fr));
+            gap: 14px;
+            margin-bottom: 24px;
+        }
+
+        .pv-metric {
+            background: #fff;
+            border: 1px solid #e2e8f0;
+            border-radius: 16px;
+            padding: 18px;
+            box-shadow: 0 10px 30px rgba(15, 23, 42, 0.05);
+        }
+
+        .pv-metric-label {
+            font-size: 11px;
+            font-weight: 800;
+            color: #64748b;
+            text-transform: uppercase;
+            margin-bottom: 8px;
+        }
+
+        .pv-metric-value {
+            font-family: 'Manrope', sans-serif;
+            font-size: 23px;
+            font-weight: 800;
+        }
+
+        .pv-section {
+            background: #fff;
+            border: 1px solid #e2e8f0;
+            border-radius: 18px;
+            overflow: hidden;
+            box-shadow: 0 14px 40px rgba(15, 23, 42, 0.06);
+        }
+
+        .pv-section-head {
+            display: flex;
+            justify-content: space-between;
+            gap: 16px;
+            align-items: center;
+            padding: 22px 26px;
+            border-bottom: 1px solid #e2e8f0;
+            background: #fbfdff;
+        }
+
+        .pv-section-title {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 0;
+            font-size: 17px;
+            font-weight: 800;
+        }
+
+        .pv-table-wrap {
+            overflow-x: auto;
+        }
+
+        .pv-table {
+            width: 100%;
+            min-width: 1180px;
+            border-collapse: collapse;
+        }
+
+        .pv-table th {
+            padding: 14px 18px;
+            background: #f8fafc;
+            color: #64748b;
+            text-align: left;
+            font-size: 11px;
+            font-weight: 800;
+            text-transform: uppercase;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .pv-table td {
+            padding: 18px;
+            border-bottom: 1px solid #f1f5f9;
+            vertical-align: top;
+            font-size: 13px;
+        }
+
+        .pv-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .pv-employee {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .pv-emp-name {
+            font-weight: 800;
+            color: #0f172a;
+        }
+
+        .pv-muted {
+            color: #64748b;
+            font-size: 12px;
+        }
+
+        .pv-money {
+            font-family: 'Manrope', sans-serif;
+            font-weight: 800;
+            font-size: 15px;
+            white-space: nowrap;
+        }
+
+        .pv-net {
+            color: #2563eb;
+            font-size: 17px;
+        }
+
+        .pv-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 10px;
+            border-radius: 999px;
+            font-size: 11px;
+            font-weight: 800;
+            white-space: nowrap;
+        }
+
+        .pv-ready { background: #dcfce7; color: #15803d; }
+        .pv-review { background: #fef3c7; color: #b45309; }
+        .pv-blocked { background: #fee2e2; color: #b91c1c; }
+
+        .pv-warnings {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .pv-warning {
+            color: #b45309;
+            font-size: 12px;
+            font-weight: 700;
+        }
+
+        .pv-empty {
+            padding: 60px 24px;
+            text-align: center;
+            color: #64748b;
+        }
+
+        @media (max-width: 1100px) {
+            .pv-summary { grid-template-columns: repeat(2, 1fr); }
+            .pv-top { flex-direction: column; }
+            .pv-actions { justify-content: flex-start; }
+        }
+    </style>
+</head>
+<body>
+    {% include 'includes/navbar.html' %}
+
+    <main class="pv-wrap">
+        <div class="pv-top">
+            <div>
+                <a href="{% url 'payroll' %}" class="pv-back">
+                    <i class="fas fa-arrow-left"></i> Back to Payroll
+                </a>
+                <h1 class="pv-title">Review Payroll</h1>
+                <p class="pv-sub">
+                    {{ payroll_run.get_month_display }} {{ payroll_run.year }} -
+                    {{ payroll_run.department|default:"All Departments" }}
+                </p>
+            </div>
+            <div class="pv-actions">
+                <a href="{% url 'payroll' %}?openModal=true" class="pv-btn">
+                    <i class="fas fa-sliders"></i> Change Period
+                </a>
+                {% if payroll_run.is_locked %}
+                <a href="{% url 'payslip_list' payroll_run.id %}" class="pv-btn pv-btn-primary">
+                    <i class="fas fa-eye"></i> View Payslips
+                </a>
+                {% else %}
+                <form method="POST" action="{% url 'run_payroll' payroll_run.id %}">
+                    {% csrf_token %}
+                    <button type="submit" class="pv-btn pv-btn-primary" {% if preview.eligible_count == 0 %}disabled{% endif %}>
+                        <i class="fas fa-circle-play"></i> Confirm &amp; Run Payroll
+                    </button>
+                </form>
+                {% endif %}
+            </div>
+        </div>
+
+        <section class="pv-summary">
+            <div class="pv-metric">
+                <div class="pv-metric-label">Employees</div>
+                <div class="pv-metric-value">{{ preview.total_employees }}</div>
+            </div>
+            <div class="pv-metric">
+                <div class="pv-metric-label">Ready</div>
+                <div class="pv-metric-value">{{ preview.eligible_count }}</div>
+            </div>
+            <div class="pv-metric">
+                <div class="pv-metric-label">Earnings</div>
+                <div class="pv-metric-value">Rs. {{ preview.total_gross }}</div>
+            </div>
+            <div class="pv-metric">
+                <div class="pv-metric-label">Deductions</div>
+                <div class="pv-metric-value">Rs. {{ preview.total_deductions }}</div>
+            </div>
+            <div class="pv-metric">
+                <div class="pv-metric-label">Net Payroll</div>
+                <div class="pv-metric-value">Rs. {{ preview.total_net }}</div>
+            </div>
+        </section>
+
+        <section class="pv-section">
+            <div class="pv-section-head">
+                <h2 class="pv-section-title">
+                    <i class="fas fa-table-list"></i> Employee Payroll Preview
+                </h2>
+                <div class="pv-muted">
+                    {{ preview.warning_count }} warning{{ preview.warning_count|pluralize }} -
+                    {{ preview.blocked_count }} blocked
+                </div>
+            </div>
+
+            {% if preview.rows %}
+            <div class="pv-table-wrap">
+                <table class="pv-table">
+                    <thead>
+                        <tr>
+                            <th>Employee</th>
+                            <th>Department</th>
+                            <th>Salary Structure</th>
+                            <th>Attendance</th>
+                            <th>Earnings</th>
+                            <th>Deductions</th>
+                            <th>Net Salary</th>
+                            <th>Status</th>
+                            <th>Notes</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for row in preview.rows %}
+                        <tr>
+                            <td>
+                                <div class="pv-employee">
+                                    <span class="pv-emp-name">{{ row.employee.first_name }} {{ row.employee.last_name }}</span>
+                                    <span class="pv-muted">{{ row.employee.employee_id }}</span>
+                                </div>
+                            </td>
+                            <td>
+                                {{ row.employee.department|default:"-" }}
+                                <div class="pv-muted">{{ row.employee.designation|default:"" }}</div>
+                            </td>
+                            <td>
+                                {% if row.structure %}
+                                <strong>Rs. {{ row.structure.gross_salary }}</strong>
+                                <div class="pv-muted">Effective {{ row.structure.effective_date|date:"d M Y" }}</div>
+                                {% else %}
+                                <span class="pv-muted">Not configured</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <strong>{{ row.day_summary.paid_days }}</strong> paid / {{ row.day_summary.working_days }} working
+                                <div class="pv-muted">
+                                    LOP {{ row.day_summary.lop_days }} - Present {{ row.day_summary.attendance_paid_days }} - Leave {{ row.day_summary.paid_leave_days }}
+                                </div>
+                            </td>
+                            <td>
+                                <span class="pv-money">Rs. {{ row.earnings }}</span>
+                                <div class="pv-muted">{{ row.earning_components }} component{{ row.earning_components|pluralize }}</div>
+                            </td>
+                            <td>
+                                <span class="pv-money">Rs. {{ row.deductions }}</span>
+                                <div class="pv-muted">{{ row.deduction_components }} component{{ row.deduction_components|pluralize }}</div>
+                            </td>
+                            <td><span class="pv-money pv-net">Rs. {{ row.net_salary }}</span></td>
+                            <td>
+                                {% if row.status_label == "Ready" %}
+                                <span class="pv-chip pv-ready"><i class="fas fa-check"></i> Ready</span>
+                                {% elif row.status_label == "Review" %}
+                                <span class="pv-chip pv-review"><i class="fas fa-triangle-exclamation"></i> Review</span>
+                                {% else %}
+                                <span class="pv-chip pv-blocked"><i class="fas fa-ban"></i> Blocked</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if row.warnings %}
+                                <div class="pv-warnings">
+                                    {% for warning in row.warnings %}
+                                    <span class="pv-warning">{{ warning }}</span>
+                                    {% endfor %}
+                                </div>
+                                {% else %}
+                                <span class="pv-muted">Looks good</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="pv-empty">
+                <i class="fas fa-users-slash" style="font-size: 34px; margin-bottom: 14px;"></i>
+                <h3>No employees found for this payroll scope.</h3>
+                <p>Select another department or add active employees before running payroll.</p>
+            </div>
+            {% endif %}
+        </section>
+    </main>
+</body>
+</html>

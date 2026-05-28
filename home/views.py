@@ -1,11 +1,146 @@
 from django.shortcuts import render , redirect
 from django.contrib.auth.decorators import login_required
 from django.db.models import Q
+from django.urls import reverse
 from django.utils import timezone
 from accounts.models import CustomUser , Organization
 from employees.models import Employee
 from attendance.models import Attendance
 from announcements.views import visible_announcements_for
+
+
+def _dashboard_approval_items(organization):
+    items = []
+
+    def add_item(*, title, meta, badge, link, timestamp, tone="blue", approve_url=None, reject_url=None):
+        items.append({
+            "title": title,
+            "meta": meta,
+            "badge": badge,
+            "link": link,
+            "timestamp": timestamp,
+            "tone": tone,
+            "approve_url": approve_url,
+            "reject_url": reject_url,
+        })
+
+    pending_users = CustomUser.objects.filter(
+        organization=organization,
+        is_approved=False,
+        is_active=True,
+    ).order_by("-date_joined")
+    for user in pending_users:
+        add_item(
+            title=f"{user.username}",
+            meta=f"{user.email} requested account access",
+            badge="Login",
+            link=reverse("approve_employee", args=[user.id]),
+            approve_url=reverse("approve_employee", args=[user.id]),
+            reject_url=reverse("reject_employee", args=[user.id]),
+            timestamp=user.date_joined,
+            tone="red",
+        )
+
+    from attendance.models import AttendanceCorrection, OvertimeRequest
+    from leaves.models import CompOffRequest, LeaveRequest
+    from payroll.models import DeclarationProof, EmployeeLoan
+
+    pending_leaves = LeaveRequest.objects.filter(
+        organization=organization,
+        status__in=["PENDING", "MANAGER_APPROVED", "CANCEL_REQUESTED"],
+    ).select_related("employee", "leave_type").order_by("-created_at")
+    for leave in pending_leaves:
+        if leave.status == "CANCEL_REQUESTED":
+            badge = "Leave Cancel"
+            meta = f"{leave.employee.first_name} requested cancellation for {leave.leave_type.name}"
+        else:
+            badge = "Leave"
+            meta = f"{leave.employee.first_name} requested {leave.total_days} day(s) of {leave.leave_type.name}"
+        add_item(
+            title=f"{leave.employee.first_name} {leave.employee.last_name}",
+            meta=meta,
+            badge=badge,
+            link=reverse("leaves:pending_approvals"),
+            timestamp=leave.created_at,
+            tone="blue",
+        )
+
+    pending_compoffs = CompOffRequest.objects.filter(
+        organization=organization,
+        status="PENDING",
+    ).select_related("employee").order_by("-created_at")
+    for compoff in pending_compoffs:
+        add_item(
+            title=f"{compoff.employee.first_name} {compoff.employee.last_name}",
+            meta=f"Comp-off credit for {compoff.worked_date:%d %b %Y}",
+            badge="Comp Off",
+            link=reverse("leaves:pending_approvals"),
+            timestamp=compoff.created_at,
+            tone="purple",
+        )
+
+    pending_corrections = AttendanceCorrection.objects.filter(
+        employee__organization=organization,
+        status="PENDING",
+    ).select_related("employee", "attendance").order_by("-created_at")
+    for correction in pending_corrections:
+        add_item(
+            title=f"{correction.employee.first_name} {correction.employee.last_name}",
+            meta=f"Attendance correction for {correction.attendance.date:%d %b %Y}",
+            badge="Attendance",
+            link=reverse("manage_corrections"),
+            timestamp=correction.created_at,
+            tone="amber",
+        )
+
+    pending_overtimes = OvertimeRequest.objects.filter(
+        employee__organization=organization,
+        status="PENDING",
+    ).select_related("employee").order_by("-created_at")
+    for overtime in pending_overtimes:
+        add_item(
+            title=f"{overtime.employee.first_name} {overtime.employee.last_name}",
+            meta=f"Requested {overtime.hours_requested} overtime hour(s)",
+            badge="Overtime",
+            link=reverse("overtime_dashboard"),
+            timestamp=overtime.created_at,
+            tone="cyan",
+        )
+
+    pending_loans = EmployeeLoan.objects.filter(
+        organization=organization,
+        status=EmployeeLoan.LoanStatus.PENDING_APPROVAL,
+    ).select_related("employee").order_by("-created_at")
+    for loan in pending_loans:
+        add_item(
+            title=f"{loan.employee.first_name} {loan.employee.last_name}",
+            meta=f"{loan.get_loan_type_display()} loan request for Rs. {loan.principal_amount}",
+            badge="Loan",
+            link=reverse("admin_loans"),
+            timestamp=loan.created_at,
+            tone="green",
+        )
+
+    pending_proofs = DeclarationProof.objects.filter(
+        declaration__tax_profile__employee__organization=organization,
+        verification_status=DeclarationProof.VerificationStatus.PENDING,
+    ).select_related(
+        "declaration__tax_profile__employee",
+        "declaration__category",
+    ).order_by("-created_at")
+    for proof in pending_proofs:
+        employee = proof.declaration.tax_profile.employee
+        add_item(
+            title=f"{employee.first_name} {employee.last_name}",
+            meta=f"Tax proof pending for {proof.declaration.category.name}",
+            badge="Tax Proof",
+            link=reverse("admin_tax_review"),
+            timestamp=proof.created_at,
+            tone="slate",
+        )
+
+    items.sort(key=lambda item: item["timestamp"] or timezone.now(), reverse=True)
+    return items, len(items)
 
 @login_required
 def home_view(request):
@@ -39,8 +174,11 @@ def home_view(request):
     # Also fetch recent employees
     recent_employees = Employee.objects.filter(organization=organization, is_deleted=False).order_by('-created_at')[:5]
     
-    # Fetch pending approvals
-    pending_approvals = CustomUser.objects.filter(organization=organization, is_approved=False, is_active=True).order_by('-date_joined')
+    # Fetch HR/Admin action inbox across employee request modules.
+    pending_approval_items = []
+    pending_approval_total = 0
+    if request.user.is_staff:
+        pending_approval_items, pending_approval_total = _dashboard_approval_items(organization)
 
     # Find the employee record for the current user
     current_employee = Employee.objects.filter(email=request.user.email, organization=organization, is_active=True, is_deleted=False).first()
@@ -114,6 +252,22 @@ def home_view(request):
 
     filtered_holidays = list(upcoming_holiday_query[:5])
 
+    on_leave_today_query = LeaveRequest.objects.filter(
+        organization=organization,
+        employee__is_active=True,
+        employee__is_deleted=False,
+        status='APPROVED',
+        start_date__lte=today,
+        end_date__gte=today,
+    ).select_related(
+        'employee',
+        'employee__department',
+        'employee__designation',
+        'leave_type',
+    ).order_by('employee__first_name', 'employee__last_name')
+    on_leave_today_total = on_leave_today_query.count()
+    on_leave_today = list(on_leave_today_query)
+
     # Employee specific metrics
     my_present_days = 0
     my_pending_leaves = 0
@@ -147,7 +301,8 @@ def home_view(request):
         'recent_employees': recent_employees,
         'present_today': present_today,
         'pending_leaves': pending_leaves,
-        'pending_approvals': pending_approvals,
+        'pending_approval_items': pending_approval_items,
+        'pending_approval_total': pending_approval_total,
         'today_attendance': today_attendance,
         'on_break': on_break,
         'organization': organization,
@@ -155,6 +310,8 @@ def home_view(request):
         'greeting': greeting,
         'upcoming_leaves': upcoming_leaves,
         'upcoming_holidays': filtered_holidays,
+        'on_leave_today': on_leave_today,
+        'on_leave_today_total': on_leave_today_total,
         'latest_payslip': latest_payslip,
         'my_present_days': my_present_days,
         'my_pending_leaves': my_pending_leaves,

@@ -5,6 +5,7 @@ from django.core.files.uploadedfile import SimpleUploadedFile
 from django.urls import reverse
 from decimal import Decimal
 from datetime import timedelta, date
+from io import BytesIO
 
 from accounts.models import CustomUser, Organization 
 from employees.models import Employee, Department
@@ -273,6 +274,54 @@ class EnterpriseLeaveModuleTests(TestCase):
             LeaveBalance.objects.filter(employee=self.employee, leave_type=leave_type, year=2026).exists()
         )
 
+    def test_admin_can_import_leave_policies_from_excel(self):
+        self.client.login(username="hr", password="password")
+        from openpyxl import Workbook
+        from leaves.services.policy_workbench import LeavePolicyWorkbenchService
+
+        workbook = Workbook()
+        worksheet = workbook.active
+        columns = LeavePolicyWorkbenchService.EXCEL_IMPORT_COLUMNS
+        worksheet.append(columns)
+        row = {
+            "name": "Casual Leave",
+            "code": "CLX",
+            "category_name": "Paid Leave",
+            "category_code": "PAID",
+            "status": "ACTIVE",
+            "max_balance": "12",
+            "is_paid": "yes",
+            "is_requestable": "yes",
+            "accrual_frequency": "MONTHLY",
+            "accrual_enabled": "yes",
+            "accrual_rate": "1",
+            "approval_route": "MANAGER_HR",
+            "attendance_sync_enabled": "yes",
+            "payroll_sync_enabled": "yes",
+        }
+        worksheet.append([row.get(column, "") for column in columns])
+
+        output = BytesIO()
+        workbook.save(output)
+        output.seek(0)
+        excel_file = SimpleUploadedFile(
+            "leave_policies.xlsx",
+            output.read(),
+            content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        )
+
+        response = self.client.post(reverse('leaves:create_leave'), {
+            'action': 'import_leave_policies',
+            'excel_file': excel_file,
+        })
+
+        self.assertRedirects(response, reverse('leaves:create_leave'))
+        leave_type = LeaveType.objects.get(organization=self.org, code="CLX")
+        policy = LeavePolicy.objects.get(organization=self.org, leave_type=leave_type)
+        self.assertEqual(leave_type.name, "Casual Leave")
+        self.assertEqual(leave_type.status, "ACTIVE")
+        self.assertEqual(policy.max_balance, Decimal("12.00"))
+
     def test_admin_can_manage_yearly_holiday_calendar(self):
         self.client.login(username="hr", password="password")
 
@@ -357,6 +406,38 @@ class EnterpriseLeaveModuleTests(TestCase):
             f"{reverse('leaves:holiday_calendars')}?year=2027&calendar={target_calendar.id}"
         )
         self.assertTrue(Holiday.objects.filter(calendar=target_calendar, name='Diwali', date=date(2027, 10, 29)).exists())
+
+    def test_admin_can_export_holiday_calendar_csv_with_all_fields(self):
+        self.client.login(username="hr", password="password")
+        calendar_obj = HolidayCalendar.objects.create(
+            organization=self.org,
+            name='India Holidays',
+            year=2026,
+            branch='Head Office',
+            is_default=True,
+        )
+        Holiday.objects.create(
+            organization=self.org,
+            calendar=calendar_obj,
+            name='Republic Day',
+            date=date(2026, 1, 26),
+            holiday_type='NATIONAL',
+            is_paid=True,
+            is_optional=False,
+        )
+
+        response = self.client.get(reverse('leaves:export_holidays_csv'), {
+            'year': '2026',
+            'calendar': str(calendar_obj.id),
+        })
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response['Content-Type'], 'text/csv; charset=utf-8')
+        csv_body = response.content.decode('utf-8')
+        self.assertIn('calendar_id,calendar_name,calendar_year,calendar_branch,calendar_location_id,calendar_location_name,calendar_is_default,id,name,date,day,holiday_type,is_optional,is_paid,location_id,location_name,created_at,updated_at', csv_body)
+        self.assertIn('India Holidays', csv_body)
+        self.assertIn('Republic Day', csv_body)
+        self.assertIn('2026-01-26', csv_body)
 
     def test_leave_cancellation_restore(self):
         """Test that approved cancellation restores balance"""

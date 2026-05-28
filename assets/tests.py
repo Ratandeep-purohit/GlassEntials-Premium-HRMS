@@ -82,6 +82,24 @@ class AssetModuleTests(TestCase):
         messages = list(get_messages(response.wsgi_request))
         self.assertTrue(any("Category 'Laptop' has been restored." in str(m) for m in messages))
 
+        # 5. Edit the category
+        response = self.admin_client.post(reverse('assets:edit_category', args=[cat.id]), {
+            'name': 'Workstation Laptop',
+            'icon': 'fa-laptop'
+        })
+        self.assertRedirects(response, reverse('assets:manage_categories'))
+        cat.refresh_from_db()
+        self.assertEqual(cat.name, 'Workstation Laptop')
+        self.assertEqual(cat.icon, 'fa-laptop')
+
+        # 6. Soft-delete from the management page
+        response = self.admin_client.post(reverse('assets:delete_category', args=[cat.id]))
+        self.assertRedirects(response, reverse('assets:manage_categories'))
+        cat = AssetCategory.all_objects.get(id=cat.id)
+        self.assertTrue(cat.is_deleted)
+        self.assertFalse(cat.is_active)
+        self.assertIsNotNone(cat.deleted_at)
+
     def test_add_asset_view(self):
         # Create category
         cat = AssetCategory.objects.create(organization=self.org, name="Furniture", icon="fa-chair")

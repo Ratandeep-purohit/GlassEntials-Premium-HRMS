@@ -4,6 +4,8 @@ from dataclasses import dataclass
 from datetime import date, timedelta
 from decimal import Decimal
 
+from django.db.models import Q
+
 from attendance.models import Attendance
 from leaves.models import LeavePayrollImpact, LeaveRequest
 from leaves.services.holiday_calendar_service import HolidayCalendarService
@@ -122,17 +124,22 @@ class PayrollAttendanceService:
                 employee__organization=self.organization,
                 date__range=(self.period_start, self.period_end),
                 date__in=self.working_dates,
-                status__is_attendance_counted=True,
+            )
+            .filter(
+                Q(status__is_attendance_counted=True)
+                | Q(status__isnull=True, clock_in__isnull=False)
             )
             .select_related("status")
-            .values("employee_id", "date", "status__payable_day_value")
+            .values("employee_id", "date", "status_id", "status__payable_day_value")
         )
 
         day_values = {}
         for row in rows:
             employee_id = row["employee_id"]
             attendance_date = row["date"]
-            payable = self._money_days(row["status__payable_day_value"] or ZERO)
+            # Legacy/manual punch rows may not have an AttendanceStatus. If a
+            # clock-in exists and no status was set, count it as a full paid day.
+            payable = ONE if not row["status_id"] else self._money_days(row["status__payable_day_value"] or ZERO)
             payable = max(min(payable, ONE), ZERO)
             key = (employee_id, attendance_date)
             day_values[key] = max(day_values.get(key, ZERO), payable)

@@ -42,6 +42,7 @@ class PayrollProcessor:
 
         # PREFETCH DATA #
         org = self.payroll_run.organization
+        period_start = date(self.year, self.month, 1)
         period_end = date(self.year, self.month, self.total_days)
         
         # 1. Salary Structures
@@ -49,6 +50,8 @@ class PayrollProcessor:
             organization=org,
             is_active=True,
             effective_date__lte=period_end
+        ).filter(
+            Q(end_date__isnull=True) | Q(end_date__gte=period_start)
         ).order_by('employee_id', '-effective_date').prefetch_related('items__component')
         self.active_structures = {}
         for s in structures:

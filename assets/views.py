@@ -2,6 +2,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.db.models import Count, Q
+from django.urls import reverse
 from django.utils import timezone
 from django.db import IntegrityError, transaction
 from django.core.exceptions import ValidationError
@@ -330,7 +331,7 @@ def request_action_view(request, request_id):
 def manage_categories_view(request):
     if not request.user.is_staff:
         return redirect('assets:my_assets')
-        
+
     if request.method == 'POST':
         name = request.POST.get('name', '').strip()
         icon = request.POST.get('icon', 'fa-box').strip()
@@ -373,9 +374,97 @@ def manage_categories_view(request):
             messages.error(request, f"An unexpected error occurred: {e}")
             
         return redirect('assets:manage_categories')
-        
-    categories = AssetCategory.objects.filter(organization=request.user.organization)
-    return render(request, 'assets/manage_categories.html', {'categories': categories})
+
+    edit_category = None
+    edit_id = request.GET.get('edit')
+    if edit_id:
+        edit_category = get_object_or_404(
+            AssetCategory,
+            id=edit_id,
+            organization=request.user.organization,
+        )
+
+    categories = AssetCategory.objects.filter(
+        organization=request.user.organization
+    ).annotate(
+        asset_count=Count('assets', filter=Q(assets__is_deleted=False), distinct=True),
+        request_count=Count('requests', filter=Q(requests__is_deleted=False), distinct=True),
+    ).order_by('name')
+
+    return render(request, 'assets/manage_categories.html', {
+        'categories': categories,
+        'edit_category': edit_category,
+    })
+
+
+@login_required
+def edit_category_view(request, category_id):
+    if not request.user.is_staff:
+        return redirect('assets:my_assets')
+
+    category = get_object_or_404(
+        AssetCategory,
+        id=category_id,
+        organization=request.user.organization,
+    )
+
+    if request.method != 'POST':
+        return redirect(f"{reverse('assets:manage_categories')}?edit={category.id}")
+
+    name = request.POST.get('name', '').strip()
+    icon = request.POST.get('icon', 'fa-box').strip() or 'fa-box'
+
+    if not name:
+        messages.error(request, "Category name is required.")
+        return redirect(f"{reverse('assets:manage_categories')}?edit={category.id}")
+
+    duplicate = AssetCategory.all_objects.filter(
+        organization=request.user.organization,
+        name__iexact=name,
+    ).exclude(id=category.id).first()
+    if duplicate:
+        messages.error(request, f"Another category named '{name}' already exists.")
+        return redirect(f"{reverse('assets:manage_categories')}?edit={category.id}")
+
+    try:
+        category.name = name
+        category.icon = icon
+        category.updated_by = request.user
+        category.save()
+        messages.success(request, "Category updated successfully.")
+    except IntegrityError:
+        messages.error(request, "A database conflict occurred. This category name might already exist.")
+        return redirect(f"{reverse('assets:manage_categories')}?edit={category.id}")
+    except Exception as e:
+        messages.error(request, f"An unexpected error occurred: {e}")
+        return redirect(f"{reverse('assets:manage_categories')}?edit={category.id}")
+
+    return redirect('assets:manage_categories')
+
+
+@login_required
+def delete_category_view(request, category_id):
+    if not request.user.is_staff:
+        return redirect('assets:my_assets')
+
+    category = get_object_or_404(
+        AssetCategory,
+        id=category_id,
+        organization=request.user.organization,
+    )
+
+    if request.method != 'POST':
+        messages.error(request, "Invalid delete request.")
+        return redirect('assets:manage_categories')
+
+    category.is_deleted = True
+    category.is_active = False
+    category.deleted_at = timezone.now()
+    category.deleted_by = request.user
+    category.save(update_fields=['is_deleted', 'is_active', 'deleted_at', 'deleted_by', 'updated_at'])
+    messages.success(request, f"Category '{category.name}' deleted successfully. Existing asset history is preserved.")
+
+    return redirect('assets:manage_categories')
 
 
 # --- Employee Views ---
