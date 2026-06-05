@@ -3,6 +3,7 @@ from django.contrib.auth.decorators import login_required
 from django.db.models import Q
 from django.urls import reverse
 from django.utils import timezone
+from datetime import timedelta
 from accounts.models import CustomUser , Organization
 from employees.models import Employee
 from attendance.models import Attendance
@@ -272,6 +273,7 @@ def home_view(request):
     my_present_days = 0
     my_pending_leaves = 0
     my_approved_leaves = 0
+    last_5_attendance = []
     
     if current_employee:
         first_day_of_month = today.replace(day=1)
@@ -290,6 +292,44 @@ def home_view(request):
             employee=current_employee,
             status='APPROVED'
         ).count()
+
+        recent_dates = [today - timedelta(days=offset) for offset in range(5)]
+        recent_attendance = Attendance.objects.filter(
+            employee=current_employee,
+            date__range=(recent_dates[-1], today),
+        )
+        recent_attendance_map = {attendance.date: attendance for attendance in recent_attendance}
+
+        for attendance_date in recent_dates:
+            attendance = recent_attendance_map.get(attendance_date)
+            if attendance and attendance.clock_in and attendance.clock_out:
+                status_label = "Completed"
+                status_type = "completed"
+            elif attendance and attendance.clock_in and attendance_date == today:
+                status_label = "Working"
+                status_type = "working"
+            elif attendance and attendance.clock_in:
+                status_label = "Missed Out"
+                status_type = "missing"
+            elif attendance_date == today:
+                status_label = "Not Marked"
+                status_type = "pending"
+            elif attendance_date.weekday() >= 5:
+                status_label = "Weekly Off"
+                status_type = "weekend"
+            else:
+                status_label = "Absent"
+                status_type = "absent"
+
+            last_5_attendance.append({
+                "date": attendance_date,
+                "attendance": attendance,
+                "clock_in": attendance.clock_in if attendance else None,
+                "clock_out": attendance.clock_out if attendance else None,
+                "work_time": attendance.current_work_time if attendance else "--",
+                "status_label": status_label,
+                "status_type": status_type,
+            })
 
     dashboard_announcements = visible_announcements_for(request.user)[:3]
 
@@ -316,6 +356,7 @@ def home_view(request):
         'my_present_days': my_present_days,
         'my_pending_leaves': my_pending_leaves,
         'my_approved_leaves': my_approved_leaves,
+        'last_5_attendance': last_5_attendance,
         'dashboard_announcements': dashboard_announcements,
     }
 

@@ -34,6 +34,7 @@ urlpatterns = [
     path('leaves/', include('leaves.urls')),
     path('assets/', include('assets.urls')),
     path('announcements/', include('announcements.urls')),
+    path('letters/', include('letters.urls')),
 ]
 
 if settings.DEBUG:

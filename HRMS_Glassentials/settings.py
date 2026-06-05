@@ -75,6 +75,7 @@ INSTALLED_APPS = [
     'leaves',
     'assets',
     'announcements',
+    'letters.apps.LettersConfig',
 ]
 
 

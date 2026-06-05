@@ -1,0 +1,794 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% if edit_letter %}Edit Letter{% else %}Create Letter{% endif %} | GlassEntials HRMS</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Manrope:wght@700;800&display=swap">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link rel="stylesheet" href="{% static 'css/landing.css' %}?v=3.0">
+    <link rel="stylesheet" href="{% static 'css/home.css' %}?v=4.3">
+    <style>
+        body { background: #f8fafc; overflow-x: hidden; color: #0f172a; }
+        .lb-page { max-width: 1540px; margin: 118px auto 64px; padding: 0 clamp(16px, 4vw, 56px); }
+        .lb-top { display: flex; align-items: center; justify-content: space-between; gap: 18px; margin-bottom: 20px; }
+        .lb-title { font-family: 'Manrope', sans-serif; font-size: clamp(28px, 3vw, 38px); font-weight: 800; margin: 0 0 8px; letter-spacing: 0; }
+        .lb-subtitle { margin: 0; color: #64748b; font-size: 15px; font-weight: 600; }
+        .lb-secondary { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 46px; padding: 0 17px; border-radius: 12px; border: 1px solid #dbe4ef; background: #fff; color: #0f172a; text-decoration: none; font-weight: 800; white-space: nowrap; }
+        .lb-secondary:hover { color: #2563eb; border-color: #bfdbfe; background: #eff6ff; text-decoration: none; }
+        .lb-grid { display: grid; grid-template-columns: minmax(360px, 520px) minmax(520px, 1fr); gap: 22px; align-items: start; }
+        .lb-card { background: #fff; border: 1px solid #e5eaf2; border-radius: 16px; box-shadow: 0 18px 50px rgba(15, 23, 42, .05); min-width: 0; }
+        .lb-card-head { padding: 22px 24px; border-bottom: 1px solid #edf2f7; display: flex; align-items: center; justify-content: space-between; gap: 14px; }
+        .lb-card-head h2 { margin: 0; display: flex; align-items: center; gap: 10px; font-size: 19px; font-weight: 800; }
+        .lb-card-head h2 i { width: 36px; height: 36px; border-radius: 11px; display: inline-flex; align-items: center; justify-content: center; color: #2563eb; background: #eff6ff; font-size: 14px; }
+        .lb-count { color: #64748b; font-size: 12px; font-weight: 900; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 999px; padding: 7px 11px; }
+        .lb-form { padding: 24px; }
+        .lb-section-title { font-size: 12px; color: #64748b; text-transform: uppercase; font-weight: 900; border-top: 1px solid #edf2f7; padding-top: 18px; margin: 20px 0 14px; }
+        .lb-section-title:first-child { border-top: 0; padding-top: 0; margin-top: 0; }
+        .lb-row { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+        .lb-group { margin-bottom: 14px; min-width: 0; }
+        .lb-label { display: block; font-size: 12px; font-weight: 900; color: #64748b; margin-bottom: 8px; text-transform: uppercase; }
+        .jl-input, .jl-select, .jl-textarea { width: 100%; min-width: 0; box-sizing: border-box; border: 1px solid #dbe4ef; background: #f8fafc; border-radius: 12px; padding: 12px 14px; font-family: inherit; font-size: 14px; font-weight: 650; color: #0f172a; outline: none; }
+        .jl-textarea { min-height: 130px; resize: vertical; line-height: 1.6; }
+        .jl-input:focus, .jl-select:focus, .jl-textarea:focus { background: #fff; border-color: #2563eb; box-shadow: 0 0 0 4px rgba(37, 99, 235, .08); }
+        .lb-error { color: #dc2626; font-size: 12px; font-weight: 800; margin-top: 6px; }
+        .lb-actions { display: flex; gap: 12px; align-items: center; margin-top: 20px; }
+        .lb-save { flex: 1; min-height: 50px; border: 0; border-radius: 12px; background: #2563eb; color: #fff; font-weight: 900; font-size: 15px; cursor: pointer; box-shadow: 0 12px 26px rgba(37, 99, 235, .22); }
+        .lb-save:hover { background: #1d4ed8; }
+        .lb-preview-shell { position: sticky; top: 112px; }
+        .lb-preview-card { padding: 22px; }
+        .letter-paper { background: #fff; border: 1px solid #dbe4ef; border-radius: 8px; padding: clamp(24px, 4vw, 46px); min-height: 860px; box-shadow: 0 22px 70px rgba(15, 23, 42, .08); font-family: 'Plus Jakarta Sans', sans-serif; }
+        .letter-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 24px; border-bottom: 2px solid #e5eaf2; padding-bottom: 16px; margin-bottom: 24px; }
+        .letter-brand { display: flex; align-items: flex-start; min-width: 0; }
+        .letter-logo { display: block; width: 188px; max-width: 100%; height: auto; max-height: 70px; margin: 0; object-fit: contain; }
+        .letter-company { font-family: 'Manrope', sans-serif; font-size: 27px; font-weight: 800; margin: 0 0 6px; letter-spacing: 0; }
+        .letter-muted { color: #64748b; font-size: 12px; font-weight: 750; line-height: 1.7; }
+        .letter-number { text-align: right; min-width: 180px; }
+        .letter-number strong { display: block; font-size: 14px; margin-bottom: 8px; }
+        .letter-subject { font-size: 17px; font-weight: 900; margin: 22px 0; text-decoration: underline; text-underline-offset: 4px; }
+        .letter-body { font-size: 14px; line-height: 1.85; color: #1f2937; }
+        .letter-body p { margin: 0 0 16px; }
+        .letter-chip-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); border: 1px solid #e5eaf2; border-radius: 8px; overflow: hidden; margin: 22px 0; }
+        .letter-chip { padding: 13px 14px; border-bottom: 1px solid #e5eaf2; min-height: 64px; }
+        .letter-chip:nth-child(odd) { border-right: 1px solid #e5eaf2; }
+        .letter-chip:nth-last-child(-n+2) { border-bottom: 0; }
+        .letter-chip span { display: block; color: #64748b; font-size: 10px; font-weight: 900; text-transform: uppercase; margin-bottom: 5px; }
+        .letter-chip strong { display: block; font-size: 13px; color: #0f172a; }
+        .letter-terms { margin: 18px 0 0; padding-left: 18px; }
+        .letter-terms li { margin-bottom: 9px; }
+        .letter-extra { display: none; border-left: 3px solid #2563eb; background: #f8fafc; padding: 14px 16px; border-radius: 8px; margin: 20px 0; white-space: pre-wrap; }
+        .custom-letter-panel { display: none; border: 1px solid #dbe4ef; border-radius: 14px; background: #f8fafc; padding: 16px; margin-bottom: 16px; }
+        .custom-letter-panel.active { display: block; }
+        .custom-field-row { display: grid; grid-template-columns: minmax(0, .9fr) minmax(0, 1.3fr) auto; gap: 10px; align-items: center; margin-bottom: 10px; }
+        .custom-field-remove { width: 42px; height: 42px; border-radius: 10px; border: 1px solid #fecaca; color: #ef4444; background: #fff; cursor: pointer; }
+        .custom-add-btn { min-height: 42px; border-radius: 11px; border: 1px solid #bfdbfe; color: #2563eb; background: #eff6ff; font-weight: 900; padding: 0 14px; cursor: pointer; }
+        .custom-preview-fields { display: none; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin: 22px 0; }
+        .custom-preview-fields.active { display: grid; }
+        .custom-preview-field { border: 1px solid #e5eaf2; border-radius: 8px; padding: 12px 14px; background: #f8fafc; min-height: 58px; }
+        .custom-preview-field span { display: block; color: #64748b; font-size: 10px; font-weight: 900; text-transform: uppercase; margin-bottom: 5px; }
+        .custom-preview-field strong { display: block; color: #0f172a; font-size: 13px; white-space: pre-wrap; }
+        .custom-main-content { display: none; white-space: pre-wrap; margin: 20px 0; }
+        .custom-main-content.active { display: block; }
+        .letter-sign { margin-top: 42px; display: grid; grid-template-columns: 1fr 1fr; gap: 24px; align-items: end; }
+        .letter-line { width: 220px; max-width: 100%; border-top: 1px solid #0f172a; padding-top: 9px; margin-top: 42px; }
+        .letter-placeholder { color: #94a3b8; font-style: italic; }
+        @media print {
+            .platform-header, .lb-top, .lb-form-card { display: none !important; }
+            body { background: #fff; }
+            .lb-page { margin: 0; padding: 0; max-width: none; }
+            .lb-grid { display: block; }
+            .lb-preview-shell { position: static; }
+            .lb-preview-card { border: 0; box-shadow: none; padding: 0; }
+            .lb-card-head { display: none; }
+            .letter-paper { border: 0; box-shadow: none; min-height: auto; border-radius: 0; }
+        }
+        @media (max-width: 1180px) {
+            .lb-grid { grid-template-columns: 1fr; }
+            .lb-preview-shell { position: static; }
+        }
+        @media (max-width: 720px) {
+            .lb-page { margin-top: 102px; padding: 0 14px; }
+            .lb-top { align-items: flex-start; flex-direction: column; }
+            .lb-secondary, .lb-save { width: 100%; }
+            .lb-row, .letter-chip-grid, .letter-sign { grid-template-columns: 1fr; }
+            .custom-field-row, .custom-preview-fields { grid-template-columns: 1fr; }
+            .letter-chip, .letter-chip:nth-child(odd) { border-right: 0; }
+            .letter-chip:nth-last-child(2) { border-bottom: 1px solid #e5eaf2; }
+            .letter-head { flex-direction: column; gap: 14px; }
+            .letter-number { text-align: left; }
+            .lb-actions { flex-direction: column; align-items: stretch; }
+        }
+    </style>
+</head>
+<body>
+    {% include 'includes/navbar.html' %}
+
+    <main class="lb-page">
+        <div class="lb-top">
+            <div>
+                <h1 class="lb-title">{% if edit_letter %}Edit Letter{% else %}Create Letter{% endif %}</h1>
+                <p class="lb-subtitle">Select a letter type, fill the fields, and preview the final letter instantly.</p>
+            </div>
+            <a href="{% url 'letters:manage' %}" class="lb-secondary"><i class="fas fa-arrow-left"></i> Back to Letters</a>
+        </div>
+
+        <div class="lb-grid">
+            <section class="lb-card lb-form-card">
+                <div class="lb-card-head">
+                    <h2><i class="fas fa-pen-nib"></i> Letter Details</h2>
+                    <span class="lb-count">{{ next_letter_number }}</span>
+                </div>
+
+                <form class="lb-form" method="POST" action="{% if edit_letter %}{% url 'letters:edit' edit_letter.id %}{% else %}{% url 'letters:create' %}{% endif %}">
+                    {% csrf_token %}
+                    {% if form.non_field_errors %}
+                    <div class="lb-error" style="margin-bottom: 14px;">{{ form.non_field_errors }}</div>
+                    {% endif %}
+
+                    <div class="lb-section-title">Letter Type</div>
+                    <div class="lb-group">
+                        <label class="lb-label">Which Letter?</label>
+                        {{ form.letter_type }}
+                        {% for error in form.letter_type.errors %}<div class="lb-error">{{ error }}</div>{% endfor %}
+                    </div>
+
+                    <div class="lb-section-title">Candidate</div>
+                    <div class="lb-group">
+                        <label class="lb-label">Employee / Candidate</label>
+                        {{ form.employee }}
+                        {% for error in form.employee.errors %}<div class="lb-error">{{ error }}</div>{% endfor %}
+                    </div>
+                    <div class="lb-row">
+                        <div class="lb-group">
+                            <label class="lb-label">Candidate Name</label>
+                            {{ form.candidate_name }}
+                            {% for error in form.candidate_name.errors %}<div class="lb-error">{{ error }}</div>{% endfor %}
+                        </div>
+                        <div class="lb-group">
+                            <label class="lb-label">Status</label>
+                            {{ form.status }}
+                            {% for error in form.status.errors %}<div class="lb-error">{{ error }}</div>{% endfor %}
+                        </div>
+                    </div>
+                    <div class="lb-row">
+                        <div class="lb-group">
+                            <label class="lb-label">Email</label>
+                            {{ form.candidate_email }}
+                            {% for error in form.candidate_email.errors %}<div class="lb-error">{{ error }}</div>{% endfor %}
+                        </div>
+                        <div class="lb-group">
+                            <label class="lb-label">Phone</label>
+                            {{ form.candidate_phone }}
+                            {% for error in form.candidate_phone.errors %}<div class="lb-error">{{ error }}</div>{% endfor %}
+                        </div>
+                    </div>
+
+                    <div class="lb-section-title">Letter Details</div>
+                    <div class="lb-row">
+                        <div class="lb-group">
+                            <label class="lb-label">Issue Date</label>
+                            {{ form.issue_date }}
+                            {% for error in form.issue_date.errors %}<div class="lb-error">{{ error }}</div>{% endfor %}
+                        </div>
+                        <div class="lb-group">
+                            <label class="lb-label">Joining / Effective Date</label>
+                            {{ form.joining_date }}
+                            {% for error in form.joining_date.errors %}<div class="lb-error">{{ error }}</div>{% endfor %}
+                        </div>
+                    </div>
+                    <div class="lb-row">
+                        <div class="lb-group">
+                            <label class="lb-label">Designation</label>
+                            {{ form.designation }}
+                            {% for error in form.designation.errors %}<div class="lb-error">{{ error }}</div>{% endfor %}
+                        </div>
+                        <div class="lb-group">
+                            <label class="lb-label">Department</label>
+                            {{ form.department }}
+                            {% for error in form.department.errors %}<div class="lb-error">{{ error }}</div>{% endfor %}
+                        </div>
+                    </div>
+                    <div class="lb-row">
+                        <div class="lb-group">
+                            <label class="lb-label">Employment Type</label>
+                            {{ form.employment_type }}
+                            {% for error in form.employment_type.errors %}<div class="lb-error">{{ error }}</div>{% endfor %}
+                        </div>
+                        <div class="lb-group">
+                            <label class="lb-label">Annual CTC</label>
+                            {{ form.annual_ctc }}
+                            {% for error in form.annual_ctc.errors %}<div class="lb-error">{{ error }}</div>{% endfor %}
+                        </div>
+                    </div>
+                    <div class="lb-row">
+                        <div class="lb-group">
+                            <label class="lb-label">Work Location</label>
+                            {{ form.work_location }}
+                            {% for error in form.work_location.errors %}<div class="lb-error">{{ error }}</div>{% endfor %}
+                        </div>
+                        <div class="lb-group">
+                            <label class="lb-label">Reporting Manager</label>
+                            {{ form.reporting_manager }}
+                            {% for error in form.reporting_manager.errors %}<div class="lb-error">{{ error }}</div>{% endfor %}
+                        </div>
+                    </div>
+                    <div class="lb-row">
+                        <div class="lb-group">
+                            <label class="lb-label">Probation Period</label>
+                            {{ form.probation_period }}
+                            {% for error in form.probation_period.errors %}<div class="lb-error">{{ error }}</div>{% endfor %}
+                        </div>
+                        <div class="lb-group">
+                            <label class="lb-label">Subject</label>
+                            {{ form.subject }}
+                            {% for error in form.subject.errors %}<div class="lb-error">{{ error }}</div>{% endfor %}
+                        </div>
+                    </div>
+
+                    <div class="lb-section-title">Extra Terms</div>
+                    <div class="lb-group">
+                        <label class="lb-label">Additional Notes</label>
+                        {{ form.body }}
+                        {% for error in form.body.errors %}<div class="lb-error">{{ error }}</div>{% endfor %}
+                    </div>
+
+                    <div class="custom-letter-panel" data-custom-letter-panel>
+                        <div class="lb-section-title" style="border-top: 0; padding-top: 0; margin-top: 0;">Custom Dynamic Fields</div>
+                        <p style="margin: -4px 0 14px; color: #64748b; font-size: 12px; font-weight: 700;">
+                            Add any fields you want to show on the custom letter, such as employee code, period, reason, amount, location, or policy reference.
+                        </p>
+                        <div data-custom-field-list>
+                            {% for field in custom_fields %}
+                            <div class="custom-field-row">
+                                <input class="jl-input" type="text" name="custom_field_label[]" value="{{ field.label }}" placeholder="Field label">
+                                <input class="jl-input" type="text" name="custom_field_value[]" value="{{ field.value }}" placeholder="Field value">
+                                <button class="custom-field-remove" type="button" title="Remove field"><i class="fas fa-trash"></i></button>
+                            </div>
+                            {% empty %}
+                            <div class="custom-field-row">
+                                <input class="jl-input" type="text" name="custom_field_label[]" placeholder="Field label">
+                                <input class="jl-input" type="text" name="custom_field_value[]" placeholder="Field value">
+                                <button class="custom-field-remove" type="button" title="Remove field"><i class="fas fa-trash"></i></button>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        <button class="custom-add-btn" type="button" data-add-custom-field>
+                            <i class="fas fa-plus"></i> Add Field
+                        </button>
+                    </div>
+
+                    <div class="lb-section-title">Signature</div>
+                    <div class="lb-row">
+                        <div class="lb-group">
+                            <label class="lb-label">Signature Name</label>
+                            {{ form.signature_name }}
+                            {% for error in form.signature_name.errors %}<div class="lb-error">{{ error }}</div>{% endfor %}
+                        </div>
+                        <div class="lb-group">
+                            <label class="lb-label">Signature Title</label>
+                            {{ form.signature_title }}
+                            {% for error in form.signature_title.errors %}<div class="lb-error">{{ error }}</div>{% endfor %}
+                        </div>
+                    </div>
+
+                    <div class="lb-actions">
+                        <button class="lb-save" type="submit"><i class="fas fa-floppy-disk"></i> Save Letter</button>
+                        <a href="{% url 'letters:manage' %}" class="lb-secondary">Cancel</a>
+                    </div>
+                </form>
+            </section>
+
+            <aside class="lb-preview-shell">
+                <section class="lb-card lb-preview-card">
+                    <div class="lb-card-head">
+                        <h2><i class="fas fa-file-lines"></i> Live Preview</h2>
+                        <button class="lb-secondary" type="button" onclick="window.print()"><i class="fas fa-print"></i> Print</button>
+                    </div>
+
+                    <article class="letter-paper">
+                        <header class="letter-head">
+                            <div class="letter-brand">
+                                <img src="{% static 'img/logo-letterhead.png' %}" alt="GlassEntials Logo" class="letter-logo">
+                            </div>
+                            <div class="letter-number">
+                                <div class="letter-muted">Letter No.</div>
+                                <strong>{{ next_letter_number }}</strong>
+                                <div class="letter-muted">Issue Date</div>
+                                <strong data-letter-preview="issueDate">[Issue Date]</strong>
+                            </div>
+                        </header>
+
+                        <div class="letter-body">
+                            <p>
+                                To,<br>
+                                <strong data-letter-preview="candidateName">[Candidate Name]</strong><br>
+                                <span data-letter-preview="candidateEmail">[Email]</span><br>
+                                <span data-letter-preview="candidatePhone">[Phone]</span>
+                            </p>
+
+                            <div class="letter-subject">Subject: <span data-letter-preview="subject">Offer Letter</span></div>
+
+                            <p>Dear <strong data-letter-preview="candidateName">[Candidate Name]</strong>,</p>
+
+                            <p data-standard-letter>
+                                <span data-letter-copy="openingPrefix">We are pleased to offer you the position of</span>
+                                <strong data-letter-preview="designation">[Designation]</strong>
+                                in the <strong data-letter-preview="department">[Department]</strong>
+                                department at <strong>{{ organization.name|default:"our company" }}</strong>.
+                                <span data-letter-copy="joiningLead">Your proposed date of joining is</span>
+                                <strong data-letter-preview="joiningDate">[Joining Date]</strong>.
+                            </p>
+
+                            <p data-standard-letter>
+                                <span data-letter-copy="workLead">You will be based at</span> <strong data-letter-preview="workLocation">[Work Location]</strong>
+                                <span data-letter-copy="managerLead">and will report to</span> <strong data-letter-preview="reportingManager">[Reporting Manager]</strong>.
+                                <span data-letter-copy="employmentLead">Your employment type will be</span>
+                                <strong data-letter-preview="employmentType">[Employment Type]</strong>.
+                            </p>
+
+                            <div class="letter-chip-grid" data-standard-letter>
+                                <div class="letter-chip"><span>Letter Type</span><strong data-letter-preview="letterType">Offer Letter</strong></div>
+                                <div class="letter-chip"><span>Annual CTC</span><strong data-letter-preview="annualCtc">[Annual CTC]</strong></div>
+                                <div class="letter-chip"><span>Probation</span><strong data-letter-preview="probationPeriod">[Probation Period]</strong></div>
+                                <div class="letter-chip"><span>Effective Date</span><strong data-letter-preview="joiningDate">[Joining Date]</strong></div>
+                                <div class="letter-chip"><span>Designation</span><strong data-letter-preview="designation">[Designation]</strong></div>
+                                <div class="letter-chip"><span>Department</span><strong data-letter-preview="department">[Department]</strong></div>
+                            </div>
+
+                            <div class="custom-main-content" data-custom-main-content>
+                                <span data-letter-preview="body">Write your custom letter content here.</span>
+                            </div>
+
+                            <div class="custom-preview-fields" data-custom-preview-fields></div>
+
+                            <p data-letter-copy="rulesLead" data-standard-letter>The offer will be governed by the following standard conditions:</p>
+                            <ul class="letter-terms" data-letter-terms data-standard-letter>
+                                <li>This offer is subject to successful verification of identity, education, employment history, and references.</li>
+                                <li>Salary, benefits, leave, attendance, confidentiality, and code of conduct rules will be governed by company policy.</li>
+                                <li>Any statutory deductions, tax deductions, or compliance deductions will be processed as applicable by law.</li>
+                                <li>You are expected to submit required joining documents before or on the date of joining.</li>
+                            </ul>
+
+                            <div class="letter-extra" data-letter-preview-section="body" data-standard-letter>
+                                <strong>Additional Terms</strong><br>
+                                <span data-letter-preview="body"></span>
+                            </div>
+
+                            <p data-standard-letter>
+                                <span data-letter-copy="closingLead">Please sign and return a copy of this letter as acceptance of the offer.</span>
+                                <span data-letter-copy="closingTail">We look forward to welcoming you to {{ organization.name|default:"our company" }}.</span>
+                            </p>
+                        </div>
+
+                        <footer class="letter-sign">
+                            <div>
+                                <div class="letter-muted">For {{ organization.name|default:"Company" }}</div>
+                                <div class="letter-line">
+                                    <strong data-letter-preview="signatureName">[Signature Name]</strong><br>
+                                    <span class="letter-muted" data-letter-preview="signatureTitle">[Signature Title]</span>
+                                </div>
+                            </div>
+                            <div>
+                                <div class="letter-muted">Accepted by Candidate</div>
+                                <div class="letter-line">
+                                    <strong data-letter-preview="candidateName">[Candidate Name]</strong><br>
+                                    <span class="letter-muted">Signature and Date</span>
+                                </div>
+                            </div>
+                        </footer>
+                    </article>
+                </section>
+            </aside>
+        </div>
+    </main>
+
+    {{ employee_defaults|json_script:"employee-defaults" }}
+    <script>
+        (function () {
+            const employeeDefaultsNode = document.getElementById('employee-defaults');
+            const employeeDefaults = employeeDefaultsNode ? JSON.parse(employeeDefaultsNode.textContent) : {};
+            const employeeSelect = document.getElementById('id_employee');
+            const letterTypeField = document.querySelector('[data-preview-field="letterType"]');
+            const subjectField = document.getElementById('id_subject');
+            const bodyField = document.getElementById('id_body');
+            const customPanel = document.querySelector('[data-custom-letter-panel]');
+            const customList = document.querySelector('[data-custom-field-list]');
+            const addCustomFieldButton = document.querySelector('[data-add-custom-field]');
+            const customPreviewFields = document.querySelector('[data-custom-preview-fields]');
+            const customMainContent = document.querySelector('[data-custom-main-content]');
+            const standardLetterBlocks = document.querySelectorAll('[data-standard-letter]');
+            const fields = document.querySelectorAll('[data-preview-field]');
+            const fallbacks = {
+                letterType: 'Offer Letter',
+                candidateName: '[Candidate Name]',
+                candidateEmail: '[Email]',
+                candidatePhone: '[Phone]',
+                issueDate: '[Issue Date]',
+                joiningDate: '[Joining Date]',
+                employmentType: '[Employment Type]',
+                department: '[Department]',
+                designation: '[Designation]',
+                workLocation: '[Work Location]',
+                reportingManager: '[Reporting Manager]',
+                annualCtc: '[Annual CTC]',
+                probationPeriod: '[Probation Period]',
+                subject: 'Offer Letter',
+                body: '',
+                signatureName: '[Signature Name]',
+                signatureTitle: '[Signature Title]'
+            };
+            const copyByType = {
+                OFFER: {
+                    subject: 'Offer Letter',
+                    openingPrefix: 'We are pleased to offer you the position of',
+                    joiningLead: 'Your proposed date of joining is',
+                    workLead: 'You will be based at',
+                    managerLead: 'and will report to',
+                    employmentLead: 'Your employment type will be',
+                    rulesLead: 'The offer will be governed by the following standard conditions:',
+                    closingLead: 'Please sign and return a copy of this letter as acceptance of the offer.',
+                    closingTail: 'We look forward to welcoming you to {{ organization.name|default:"our company"|escapejs }}.',
+                    terms: [
+                        'This offer is subject to successful verification of identity, education, employment history, and references.',
+                        'Salary, benefits, leave, attendance, confidentiality, and code of conduct rules will be governed by company policy.',
+                        'Any statutory deductions, tax deductions, or compliance deductions will be processed as applicable by law.',
+                        'You are expected to submit required joining documents before or on the date of joining.'
+                    ]
+                },
+                APPOINTMENT: {
+                    subject: 'Appointment Letter',
+                    openingPrefix: 'We are pleased to appoint you as',
+                    joiningLead: 'Your appointment will be effective from',
+                    workLead: 'You will be based at',
+                    managerLead: 'and will report to',
+                    employmentLead: 'Your employment type will be',
+                    rulesLead: 'Your appointment will be governed by the following employment conditions:',
+                    closingLead: 'Please sign and return a copy of this letter as acknowledgement of your appointment.',
+                    closingTail: 'We look forward to welcoming you to {{ organization.name|default:"our company"|escapejs }}.',
+                    terms: [
+                        'Your appointment is subject to company policies, service rules, attendance rules, leave rules, and applicable employment law.',
+                        'Your compensation, benefits, statutory deductions, and tax deductions will be processed as per payroll policy.',
+                        'You are required to maintain confidentiality, protect company information, and follow the code of conduct.',
+                        'The company may verify identity, education, experience, references, and documents submitted by you.'
+                    ]
+                },
+                JOINING: {
+                    subject: 'Joining Letter',
+                    openingPrefix: 'We are pleased to confirm your joining as',
+                    joiningLead: 'Your date of joining is',
+                    workLead: 'You will be based at',
+                    managerLead: 'and will report to',
+                    employmentLead: 'Your employment type will be',
+                    rulesLead: 'Your joining will be governed by the following standard requirements:',
+                    closingLead: 'Please sign and return a copy of this letter as acknowledgement of your joining.',
+                    closingTail: 'We look forward to welcoming you to {{ organization.name|default:"our company"|escapejs }}.',
+                    terms: [
+                        'Please carry required identity, education, experience, bank, and statutory documents on your joining day.',
+                        'Your employment will be governed by company policies, attendance rules, leave rules, payroll rules, and applicable law.',
+                        'You are required to maintain confidentiality and follow the company code of conduct from your date of joining.',
+                        'Your onboarding, induction, and reporting instructions will be coordinated by Human Resources.'
+                    ]
+                },
+                CONFIRMATION: {
+                    subject: 'Confirmation Letter',
+                    openingPrefix: 'We are pleased to confirm your employment as',
+                    joiningLead: 'Your confirmation is effective from',
+                    workLead: 'You will continue to be based at',
+                    managerLead: 'and will report to',
+                    employmentLead: 'Your employment type will remain',
+                    rulesLead: 'Your confirmed employment will continue under the following conditions:',
+                    closingLead: 'Please sign and return a copy of this letter as acknowledgement of your employment confirmation.',
+                    closingTail: 'We look forward to your continued growth with {{ organization.name|default:"our company"|escapejs }}.',
+                    terms: [
+                        'Your employment confirmation is subject to continued compliance with company policies and applicable employment law.',
+                        'Your compensation, benefits, attendance, leave, payroll, and statutory deductions will continue as per company policy.',
+                        'You are required to maintain confidentiality, protect company information, and follow the code of conduct.',
+                        'The company appreciates your contribution and looks forward to your continued growth with the organization.'
+                    ]
+                },
+                PROMOTION: {
+                    subject: 'Promotion Letter',
+                    openingPrefix: 'We are pleased to inform you of your promotion to',
+                    joiningLead: 'Your promotion is effective from',
+                    workLead: 'You will continue to be based at',
+                    managerLead: 'and will report to',
+                    employmentLead: 'Your employment type will remain',
+                    rulesLead: 'Your promotion will be governed by the following conditions:',
+                    closingLead: 'Please sign and return a copy of this letter as acknowledgement of your promotion.',
+                    closingTail: 'We wish you continued success in your new role.',
+                    terms: [
+                        'Your revised role, responsibilities, reporting structure, and compensation will be governed by company policy.',
+                        'Any salary revision or benefit change will be processed through payroll as applicable.',
+                        'Existing confidentiality, conduct, attendance, and leave obligations will continue to apply.',
+                        'Human Resources and your reporting manager will coordinate transition expectations for the new role.'
+                    ]
+                },
+                EXPERIENCE: {
+                    subject: 'Experience Letter',
+                    openingPrefix: 'This is to certify that you were employed as',
+                    joiningLead: 'This certificate is issued on',
+                    workLead: 'As per company records, you were based at',
+                    managerLead: 'and reported to',
+                    employmentLead: 'Your employment type was',
+                    rulesLead: 'This experience certificate is issued under the following basis:',
+                    closingLead: 'This certificate is issued on request for official records.',
+                    closingTail: 'We wish you success in your future endeavors.',
+                    terms: [
+                        'This certificate is based on employment records available with the organization.',
+                        'It certifies role and association details and does not create any financial or legal liability.',
+                        'Any verification request may be handled by Human Resources as per company policy.',
+                        'Confidentiality and information protection obligations continue as applicable.'
+                    ]
+                },
+                RELIEVING: {
+                    subject: 'Relieving Letter',
+                    openingPrefix: 'This is to confirm that you are relieved from your position as',
+                    joiningLead: 'Your relieving date is',
+                    workLead: 'As per company records, you were based at',
+                    managerLead: 'and reported to',
+                    employmentLead: 'Your employment type was',
+                    rulesLead: 'Your relieving will be governed by the following closure conditions:',
+                    closingLead: 'Please complete all clearance and handover requirements as applicable.',
+                    closingTail: 'We thank you for your contribution and wish you success in your future endeavors.',
+                    terms: [
+                        'Final settlement, statutory processing, and payroll closure will be completed as per company policy.',
+                        'Company assets, data, access cards, documents, and credentials must be returned or closed.',
+                        'All handover responsibilities must be completed with your reporting manager or HR.',
+                        'Confidentiality and information protection obligations continue after separation.'
+                    ]
+                },
+                WARNING: {
+                    subject: 'Warning Letter',
+                    openingPrefix: 'This letter serves as a formal warning regarding your conduct or performance in the role of',
+                    joiningLead: 'This warning is effective from',
+                    workLead: 'You are currently based at',
+                    managerLead: 'and report to',
+                    employmentLead: 'Your employment type is',
+                    rulesLead: 'This warning is issued under the following corrective expectations:',
+                    closingLead: 'Please treat this matter seriously and acknowledge receipt of this warning.',
+                    closingTail: 'Immediate and sustained improvement is expected.',
+                    terms: [
+                        'You are expected to take corrective action immediately and comply with company policies.',
+                        'Your manager and Human Resources may review progress and document follow-up actions.',
+                        'Repeated non-compliance may lead to further disciplinary action as per company policy.',
+                        'This warning will be maintained in HR records as applicable.'
+                    ]
+                },
+                CUSTOM: {
+                    subject: 'Custom Letter',
+                    openingPrefix: '',
+                    joiningLead: '',
+                    workLead: '',
+                    managerLead: '',
+                    employmentLead: '',
+                    rulesLead: '',
+                    closingLead: '',
+                    closingTail: '',
+                    terms: []
+                }
+            };
+
+            const employeeMap = {
+                candidate_name: 'id_candidate_name',
+                candidate_email: 'id_candidate_email',
+                candidate_phone: 'id_candidate_phone',
+                joining_date: 'id_joining_date',
+                employment_type: 'id_employment_type',
+                department: 'id_department',
+                designation: 'id_designation',
+                work_location: 'id_work_location',
+                reporting_manager: 'id_reporting_manager'
+            };
+
+            function readField(key) {
+                const field = document.querySelector('[data-preview-field="' + key + '"]');
+                if (!field) return '';
+                if (field.tagName === 'SELECT') {
+                    const selected = field.options[field.selectedIndex];
+                    return selected ? selected.text.trim() : '';
+                }
+                return field.value.trim();
+            }
+
+            function selectedLetterType() {
+                return letterTypeField ? letterTypeField.value : 'OFFER';
+            }
+
+            function isCustomLetter() {
+                return selectedLetterType() === 'CUSTOM';
+            }
+
+            function formatDate(value) {
+                if (!value) return '';
+                const date = new Date(value + 'T00:00:00');
+                if (Number.isNaN(date.getTime())) return value;
+                return date.toLocaleDateString('en-IN', { day: '2-digit', month: 'long', year: 'numeric' });
+            }
+
+            function formatMoney(value) {
+                if (!value) return '';
+                const amount = Number(value);
+                if (Number.isNaN(amount)) return value;
+                return 'INR ' + amount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            }
+
+            function writePreview(key, value) {
+                const finalValue = value || fallbacks[key] || '';
+                document.querySelectorAll('[data-letter-preview="' + key + '"]').forEach(function (node) {
+                    node.textContent = finalValue;
+                    node.classList.toggle('letter-placeholder', !value && Boolean(fallbacks[key]));
+                });
+            }
+
+            function updatePreview() {
+                const type = selectedLetterType();
+                updateLetterCopy(type);
+                updateCustomMode();
+                const data = {};
+                Object.keys(fallbacks).forEach(function (key) {
+                    data[key] = readField(key);
+                });
+
+                data.issueDate = formatDate(data.issueDate);
+                data.joiningDate = formatDate(data.joiningDate);
+                data.annualCtc = formatMoney(data.annualCtc);
+
+                Object.keys(fallbacks).forEach(function (key) {
+                    writePreview(key, data[key]);
+                });
+
+                const extraSection = document.querySelector('[data-letter-preview-section="body"]');
+                if (extraSection) {
+                    extraSection.style.display = data.body && !isCustomLetter() ? 'block' : 'none';
+                }
+
+                updateCustomFieldsPreview();
+            }
+
+            function updateLetterCopy(type) {
+                const copy = copyByType[type] || copyByType.OFFER;
+                Object.keys(copy).forEach(function (key) {
+                    if (key === 'subject' || key === 'terms') return;
+                    document.querySelectorAll('[data-letter-copy="' + key + '"]').forEach(function (node) {
+                        node.textContent = copy[key];
+                    });
+                });
+
+                const termsList = document.querySelector('[data-letter-terms]');
+                if (termsList) {
+                    termsList.innerHTML = '';
+                    copy.terms.forEach(function (term) {
+                        const item = document.createElement('li');
+                        item.textContent = term;
+                        termsList.appendChild(item);
+                    });
+                }
+            }
+
+            function updateCustomMode() {
+                const custom = isCustomLetter();
+                if (customPanel) customPanel.classList.toggle('active', custom);
+                if (customMainContent) customMainContent.classList.toggle('active', custom);
+                if (customPreviewFields) customPreviewFields.classList.toggle('active', custom);
+                standardLetterBlocks.forEach(function (node) {
+                    node.style.display = custom ? 'none' : '';
+                });
+                if (bodyField) {
+                    bodyField.placeholder = custom
+                        ? 'Write the complete custom letter body here. This text becomes the main letter content.'
+                        : 'Optional extra terms or notes. The letter preview is pre-built.';
+                }
+            }
+
+            function customFieldRows() {
+                return customList ? Array.from(customList.querySelectorAll('.custom-field-row')) : [];
+            }
+
+            function updateCustomFieldsPreview() {
+                if (!customPreviewFields) return;
+                customPreviewFields.innerHTML = '';
+                if (!isCustomLetter()) return;
+
+                customFieldRows().forEach(function (row) {
+                    const inputs = row.querySelectorAll('input');
+                    const rawLabel = inputs[0] ? inputs[0].value.trim() : '';
+                    const rawValue = inputs[1] ? inputs[1].value.trim() : '';
+                    if (!rawLabel && !rawValue) return;
+                    const label = rawLabel || 'Custom Field';
+                    const value = rawValue || '-';
+
+                    const field = document.createElement('div');
+                    field.className = 'custom-preview-field';
+                    const labelNode = document.createElement('span');
+                    labelNode.textContent = label;
+                    const valueNode = document.createElement('strong');
+                    valueNode.textContent = value;
+                    field.appendChild(labelNode);
+                    field.appendChild(valueNode);
+                    customPreviewFields.appendChild(field);
+                });
+            }
+
+            function bindCustomFieldRow(row) {
+                row.querySelectorAll('input').forEach(function (input) {
+                    input.addEventListener('input', updatePreview);
+                });
+                const removeButton = row.querySelector('.custom-field-remove');
+                if (removeButton) {
+                    removeButton.addEventListener('click', function () {
+                        if (customFieldRows().length > 1) {
+                            row.remove();
+                        } else {
+                            row.querySelectorAll('input').forEach(function (input) {
+                                input.value = '';
+                            });
+                        }
+                        updatePreview();
+                    });
+                }
+            }
+
+            function addCustomFieldRow() {
+                if (!customList) return;
+                const row = document.createElement('div');
+                row.className = 'custom-field-row';
+                row.innerHTML = [
+                    '<input class="jl-input" type="text" name="custom_field_label[]" placeholder="Field label">',
+                    '<input class="jl-input" type="text" name="custom_field_value[]" placeholder="Field value">',
+                    '<button class="custom-field-remove" type="button" title="Remove field"><i class="fas fa-trash"></i></button>'
+                ].join('');
+                customList.appendChild(row);
+                bindCustomFieldRow(row);
+                row.querySelector('input').focus();
+                updatePreview();
+            }
+
+            function syncSubjectForType() {
+                if (!subjectField) return;
+                const copy = copyByType[selectedLetterType()] || copyByType.OFFER;
+                const knownSubjects = Object.keys(copyByType).map(function (key) {
+                    return copyByType[key].subject;
+                });
+                if (!subjectField.value.trim() || knownSubjects.includes(subjectField.value.trim())) {
+                    subjectField.value = copy.subject;
+                }
+            }
+
+            fields.forEach(function (field) {
+                field.addEventListener('input', updatePreview);
+                field.addEventListener('change', updatePreview);
+            });
+
+            if (letterTypeField) {
+                letterTypeField.addEventListener('change', function () {
+                    syncSubjectForType();
+                    updatePreview();
+                });
+            }
+
+            customFieldRows().forEach(bindCustomFieldRow);
+            if (addCustomFieldButton) {
+                addCustomFieldButton.addEventListener('click', addCustomFieldRow);
+            }
+
+            if (employeeSelect) {
+                employeeSelect.addEventListener('change', function () {
+                    const defaults = employeeDefaults[employeeSelect.value];
+                    if (!defaults) {
+                        updatePreview();
+                        return;
+                    }
+                    Object.keys(employeeMap).forEach(function (key) {
+                        const input = document.getElementById(employeeMap[key]);
+                        if (input) input.value = defaults[key] || '';
+                    });
+                    updatePreview();
+                });
+            }
+
+            updatePreview();
+        })();
+    </script>
+</body>
+</html>

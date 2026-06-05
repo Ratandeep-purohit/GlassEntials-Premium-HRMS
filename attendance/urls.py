@@ -4,6 +4,7 @@ from . import views
 
 urlpatterns = [
     path('', views.attendance_view, name='attendance'),
+    path('visual/', views.attendance_visual_view, name='attendance_visual'),
     path('create-shift/', views.create_shift_view, name='create_shift'),
     path('assign-shift/', views.assign_shift_view, name='assign_shift'),
     path('clock-in-out/', views.clock_in_out_view, name='clock_in_out'),

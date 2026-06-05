@@ -194,6 +194,40 @@
 
     .fc-event:hover { transform: scale(1.02); }
 
+    .fc-daygrid-event {
+        white-space: normal !important;
+    }
+
+    .fc-h-event .fc-event-main,
+    .fc-event-main,
+    .fc-event-title {
+        color: inherit !important;
+        display: block !important;
+        overflow: visible !important;
+    }
+
+    .calendar-event-label {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        min-width: 0;
+        width: 100%;
+        color: inherit;
+        line-height: 1.2;
+    }
+
+    .calendar-event-label i {
+        flex: 0 0 auto;
+        font-size: 10px;
+    }
+
+    .calendar-event-label span {
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
     /* Event color classes */
     .event-leave {
         background: rgba(37, 99, 235, 0.12) !important;
@@ -412,6 +446,24 @@ document.addEventListener('DOMContentLoaded', function() {
         eventMouseLeave: function() {
             tooltip.style.display = 'none';
         },
+        eventContent: function(arg) {
+            const label = document.createElement('div');
+            label.className = 'calendar-event-label';
+
+            const icon = document.createElement('i');
+            const eventType = arg.event.extendedProps.type || 'leave';
+            icon.className = eventType === 'holiday'
+                ? (arg.event.extendedProps.isOptional ? 'fas fa-star' : 'fas fa-calendar-day')
+                : 'fas fa-user-clock';
+
+            const text = document.createElement('span');
+            text.textContent = arg.event.title || 'Untitled';
+            label.title = text.textContent;
+
+            label.appendChild(icon);
+            label.appendChild(text);
+            return { domNodes: [label] };
+        },
         events: [
             {% for holiday in holidays %}
             {
@@ -419,6 +471,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 start: '{{ holiday.date|date:"Y-m-d" }}',
                 className: '{% if holiday.is_optional %}event-optional{% else %}event-holiday{% endif %}',
                 allDay: true,
+                extendedProps: {
+                    type: 'holiday',
+                    isOptional: {% if holiday.is_optional %}true{% else %}false{% endif %},
+                    holidayType: '{{ holiday.holiday_type|escapejs }}',
+                    calendarName: '{{ holiday.calendar.name|default:"Holiday Calendar"|escapejs }}'
+                },
             },
             {% endfor %}
             {% for leave in leaves %}
@@ -428,6 +486,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 end: '{{ leave.end_date|date:"Y-m-d" }}',
                 className: 'event-leave',
                 allDay: true,
+                extendedProps: {
+                    type: 'leave'
+                },
             },
             {% endfor %}
         ],

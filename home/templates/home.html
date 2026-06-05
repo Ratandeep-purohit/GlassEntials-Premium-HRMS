@@ -10,7 +10,7 @@
         href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Manrope:wght@600;700;800&display=swap">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <link rel="stylesheet" href="{% static 'css/landing.css' %}?v=3.0">
-    <link rel="stylesheet" href="{% static 'css/home.css' %}?v=3.1">
+    <link rel="stylesheet" href="{% static 'css/home.css' %}?v=4.3">
 
 </head>
 
@@ -28,68 +28,63 @@
     <!-- App Content -->
     <main class="workspace">
 
-        <!-- Welcome Hero -->
-        <section class="hero-banner">
-            <div class="hero-text">
-                <h1>{{ greeting }}, {{ request.user.username }}!</h1>
-                <!--Real date and day-->
-                <p> {{ today_date }} — Your Origination Code is <span
-                        style="font-weight:800">{{origination_code}}</span>
-                </p>
-            </div>
-
-            <div class="clock-in-card">
+        <!-- Profile Card -->
+        <section class="dashboard-overview">
+            <div class="dashboard-profile-row">
+            <div class="employee-attendance-card dashboard-my-day">
                 {% if current_employee %}
-                    <div style="display: flex; align-items: center; gap: 24px;">
-                        <form method="POST" action="{% url 'clock_in_out' %}" style="display: flex; align-items: center; gap: 24px; margin: 0;">
-                            {% csrf_token %}
-                            <div class="timer-info">
-                                {% if today_attendance and today_attendance.clock_in %}
-                                    <div style="display: flex; align-items: center; gap: 8px;">
-                                        <span class="timer-val">{{ today_attendance.clock_in|time:"h:i A" }}</span>
-                                        {% if today_attendance.late_minutes %}
-                                            <span style="display: inline-flex; align-items: center; padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: 700; background: rgba(239, 68, 68, 0.1); color: #ef4444; height: fit-content;">
-                                                <i class="fas fa-exclamation-circle" style="margin-right: 4px; font-size: 9px;"></i> Late by {{ today_attendance.formatted_late_time }}
-                                            </span>
-                                        {% endif %}
-                                    </div>
-                                    <span class="timer-label">Punch In Time</span>
-                                {% else %}
-                                    <span class="timer-val">Not Clocked In</span>
-                                    <span class="timer-label">Today's Attendance</span>
-                                {% endif %}
-                            </div>
-                            {% if not today_attendance or not today_attendance.clock_in %}
-                                <button type="submit" name="action" value="clock_in" class="punch-btn" style="background: var(--success); border-color: var(--success);">Clock In</button>
-                            {% elif not today_attendance.clock_out %}
-                                <button type="submit" name="action" value="clock_out" class="punch-btn">Clock Out</button>
-                            {% else %}
-                                <button type="button" class="punch-btn" disabled style="background: var(--text-secondary); border-color: var(--text-secondary); cursor: not-allowed;">Completed</button>
-                                <div style="font-size: 12px; margin-top: 5px; color: var(--text-secondary);">Out: {{ today_attendance.clock_out|time:"h:i A" }}</div>
-                            {% endif %}
-                        </form>
-
-                        {% if today_attendance and today_attendance.clock_in and not today_attendance.clock_out %}
-                        <div style="width: 1px; height: 40px; background: var(--border-light); opacity: 0.5;"></div>
-                        <form method="POST" action="{% url 'break_toggle' %}" style="margin: 0;">
-                            {% csrf_token %}
-                            {% if on_break %}
-                                <button type="submit" class="punch-btn" style="background: var(--accent); border-color: var(--accent); white-space: nowrap;">End Break</button>
-                            {% else %}
-                                <button type="submit" class="punch-btn" style="background: rgba(37,99,235,0.1); color: var(--accent); border: 1px solid var(--accent); white-space: nowrap;">Take Break</button>
-                            {% endif %}
-                        </form>
+                    <div class="employee-attendance-avatar">
+                        {% if current_employee.profile_img %}
+                        <img src="{{ current_employee.profile_img.url }}" alt="{{ current_employee.first_name }} {{ current_employee.last_name }}">
+                        {% else %}
+                        <span>{{ current_employee.first_name|slice:":1"|upper }}{{ current_employee.last_name|slice:":1"|upper }}</span>
                         {% endif %}
                     </div>
-                {% else %}
-                    <div class="timer-info">
-                        <span class="timer-val">No Profile</span>
-                        <span class="timer-label">Link Email to Employee</span>
+                    <div class="employee-attendance-identity">
+                        <div><span>{{ current_employee.employee_id }}</span> - <strong>{{ current_employee.first_name }} {{ current_employee.last_name }}</strong></div>
+                        <p>{{ current_employee.designation.name|default:"Employee" }}</p>
                     </div>
-                    <button class="punch-btn" disabled style="background: var(--text-secondary); border-color: var(--text-secondary); cursor: not-allowed;">Unavailable</button>
+                    <div class="employee-attendance-today">
+                        <span>Today</span>
+                        {% if today_attendance and today_attendance.clock_in and today_attendance.clock_out %}
+                        <strong class="employee-status-chip completed">Completed</strong>
+                        {% elif today_attendance and today_attendance.clock_in %}
+                        <strong class="employee-status-chip present">Present</strong>
+                        {% else %}
+                        <strong class="employee-status-chip absent">Not Marked</strong>
+                        {% endif %}
+                    </div>
+                    <div class="employee-attendance-divider"></div>
+                    <div class="employee-time-grid" id="dashboardAttendanceTimer"
+                        {% if today_attendance and today_attendance.clock_in %}data-date="{{ today_attendance.date|date:'Y-m-d' }}" data-clock-in="{{ today_attendance.clock_in|time:'H:i:s' }}"{% endif %}
+                        {% if today_attendance and today_attendance.clock_out %}data-clock-out="{{ today_attendance.clock_out|time:'H:i:s' }}"{% endif %}>
+                        <span>00</span>
+                        <span>00</span>
+                        <span>00</span>
+                    </div>
+                    <form method="POST" action="{% url 'clock_in_out' %}" class="employee-attendance-action">
+                        {% csrf_token %}
+                        {% if not today_attendance or not today_attendance.clock_in %}
+                        <button type="submit" name="action" value="clock_in">Check-in</button>
+                        {% elif not today_attendance.clock_out %}
+                        <button type="submit" name="action" value="clock_out">Check-out</button>
+                        {% else %}
+                        <button type="button" disabled>Completed</button>
+                        {% endif %}
+                    </form>
+                {% else %}
+                    <div class="employee-attendance-avatar"><span>{{ request.user.username|slice:":1"|upper }}</span></div>
+                    <div class="employee-attendance-identity">
+                        <div><strong>No Employee Profile</strong></div>
+                        <p>Link email to employee</p>
+                    </div>
+                    <div class="employee-time-grid"><span>00</span><span>00</span><span>00</span></div>
+                    <form class="employee-attendance-action">
+                        <button type="button" disabled>Unavailable</button>
+                    </form>
                 {% endif %}
             </div>
-        </section>
+            </div>
 
         <!-- KPI Stat Grid -->
         <style>
@@ -186,9 +181,10 @@
             </div>
             {% endif %}
         </section>
+        </section>
         <!-- Dynamic Content Bento -->
         <style>
-            .bento-grid { grid-template-columns: 1.4fr 1fr 0.8fr; gap: 18px; }
+            .bento-grid { grid-template-columns: 1.2fr 1fr 0.8fr; gap: 18px; align-items: start; }
             .bento-card { padding: 20px !important; }
             .bento-header { margin-bottom: 16px !important; }
             .bento-title { font-size: 15px !important; }
@@ -200,36 +196,76 @@
             .user-n { font-size: 12px !important; }
             .user-s { font-size: 10px !important; }
             .status-pill { font-size: 9px !important; padding: 3px 8px !important; }
+            .attendance-mini-pill {
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                padding: 3px 8px;
+                border-radius: 999px;
+                font-size: 9px;
+                font-weight: 800;
+                white-space: nowrap;
+            }
+            .attendance-mini-pill.completed { background: rgba(34,197,94,0.1); color: #16a34a; }
+            .attendance-mini-pill.working { background: rgba(37,99,235,0.1); color: var(--accent); }
+            .attendance-mini-pill.missing { background: rgba(245,158,11,0.12); color: #d97706; }
+            .attendance-mini-pill.absent { background: rgba(239,68,68,0.1); color: #ef4444; }
+            .attendance-mini-pill.weekend { background: rgba(100,116,139,0.12); color: #64748b; }
+            .attendance-mini-pill.pending { background: rgba(245,158,11,0.12); color: #d97706; }
             @media (max-width: 1100px) { .bento-grid { grid-template-columns: 1fr 1fr; } }
             @media (max-width: 768px) { .bento-grid { grid-template-columns: 1fr; } }
         </style>
         <div class="bento-grid">
             <!-- Announcements (Col 1) -->
-            <div class="bento-card">
-                <div class="bento-header">
-                    <h2 class="bento-title">Announcements</h2>
-                    <a href="{% url 'announcements:list' %}" class="action-link">View all &rarr;</a>
+            <div style="display: flex; flex-direction: column; gap: 18px;">
+                <div class="bento-card">
+                    <div class="bento-header">
+                        <h2 class="bento-title">Announcements</h2>
+                        <a href="{% url 'announcements:list' %}" class="action-link">View all &rarr;</a>
+                    </div>
+                    {% for announcement in dashboard_announcements %}
+                    <a href="{% url 'announcements:detail' announcement.id %}" class="announce-item" style="display: block; text-decoration: none; color: inherit;">
+                        <span class="item-tag"
+                            {% if announcement.category == 'POLICY' %}style="background: rgba(124,58,237,0.1); color: #7c3aed;"
+                            {% elif announcement.category == 'EVENT' %}style="background: rgba(245,158,11,0.1); color: #d97706;"
+                            {% elif announcement.category == 'HR_UPDATE' %}style="background: rgba(34,197,94,0.1); color: #15803d;"
+                            {% elif announcement.category == 'OPERATIONS' %}style="background: rgba(14,165,233,0.1); color: #0369a1;"
+                            {% endif %}>
+                            {{ announcement.get_category_display }}
+                        </span>
+                        <h3 class="item-h">{{ announcement.title }}</h3>
+                        <div class="item-meta">Posted {{ announcement.publish_at|timesince }} ago &middot; {{ announcement.department }}</div>
+                    </a>
+                    {% empty %}
+                    <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 180px; color: var(--text-secondary); text-align: center;">
+                        <i class="fas fa-bullhorn" style="font-size: 28px; color: var(--accent); opacity: 0.75; margin-bottom: 10px;"></i>
+                        <span style="font-size: 13px; font-weight: 700;">No announcements yet</span>
+                        <span style="font-size: 11px; margin-top: 4px;">Company updates will appear here</span>
+                    </div>
+                    {% endfor %}
                 </div>
-                {% for announcement in dashboard_announcements %}
-                <a href="{% url 'announcements:detail' announcement.id %}" class="announce-item" style="display: block; text-decoration: none; color: inherit;">
-                    <span class="item-tag"
-                        {% if announcement.category == 'POLICY' %}style="background: rgba(124,58,237,0.1); color: #7c3aed;"
-                        {% elif announcement.category == 'EVENT' %}style="background: rgba(245,158,11,0.1); color: #d97706;"
-                        {% elif announcement.category == 'HR_UPDATE' %}style="background: rgba(34,197,94,0.1); color: #15803d;"
-                        {% elif announcement.category == 'OPERATIONS' %}style="background: rgba(14,165,233,0.1); color: #0369a1;"
-                        {% endif %}>
-                        {{ announcement.get_category_display }}
-                    </span>
-                    <h3 class="item-h">{{ announcement.title }}</h3>
-                    <div class="item-meta">Posted {{ announcement.publish_at|timesince }} ago &middot; {{ announcement.department }}</div>
-                </a>
-                {% empty %}
-                <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 180px; color: var(--text-secondary); text-align: center;">
-                    <i class="fas fa-bullhorn" style="font-size: 28px; color: var(--accent); opacity: 0.75; margin-bottom: 10px;"></i>
-                    <span style="font-size: 13px; font-weight: 700;">No announcements yet</span>
-                    <span style="font-size: 11px; margin-top: 4px;">Company updates will appear here</span>
+
+                <!-- Payslip Card -->
+                <div class="bento-card" style="background: linear-gradient(135deg, #2563eb, #7c3aed); color: #fff; border: none;">
+                    <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+                        <div style="width: 32px; height: 32px; border-radius: 8px; background: rgba(255,255,255,0.15); display: flex; align-items: center; justify-content: center;">
+                            <i class="fas fa-file-invoice-dollar" style="font-size: 14px;"></i>
+                        </div>
+                        <h2 class="bento-title" style="color: #fff; margin: 0;">Your Payslip</h2>
+                    </div>
+                    {% if latest_payslip %}
+                    <p style="font-size: 12px; opacity: 0.88; margin: 0 0 8px;">{{ latest_payslip.payroll_run.get_month_display }} {{ latest_payslip.payroll_run.year }} payslip is ready.</p>
+                    <div style="font-size: 11px; opacity: 0.78; margin-bottom: 14px;">Net salary: Rs. {{ latest_payslip.net_salary }} - {{ latest_payslip.get_status_display }}</div>
+                    <a href="{% url 'payslip_detail' latest_payslip.id %}" style="background: rgba(255,255,255,0.2); color: #fff; text-decoration: none; padding: 8px 14px; border-radius: 8px; font-weight: 700; font-size: 12px; display: inline-flex; align-items: center; gap: 6px; border: 1px solid rgba(255,255,255,0.3);">
+                        <i class="fas fa-file-export" style="font-size: 11px;"></i> View / Export PDF
+                    </a>
+                    {% else %}
+                    <p style="font-size: 12px; opacity: 0.88; margin: 0 0 14px;">No payslip has been generated for you yet.</p>
+                    <a href="{% url 'my_payslips' %}" style="background: rgba(255,255,255,0.2); color: #fff; text-decoration: none; padding: 8px 14px; border-radius: 8px; font-weight: 700; font-size: 12px; display: inline-flex; align-items: center; gap: 6px; border: 1px solid rgba(255,255,255,0.3);">
+                        <i class="fas fa-folder-open" style="font-size: 11px;"></i> Open Payslips
+                    </a>
+                    {% endif %}
                 </div>
-                {% endfor %}
             </div>
 
             <!-- Middle Column (Col 2) -->
@@ -333,37 +369,6 @@
                         </div>
                     </div>
                 </div>
-            </div>
-
-            <!-- Right Column (Col 3) -->
-            <div style="display: flex; flex-direction: column; gap: 18px;">
-                {% if request.user.is_staff %}
-                <div class="bento-card">
-                    <div class="bento-header">
-                        <h2 class="bento-title">Active Now</h2>
-                    </div>
-                    <div class="compact-list">
-                        {% for emp in recent_employees %}
-                        <a href="{% url 'view_employee' emp.pk %}" class="compact-item" style="text-decoration: none; color: inherit; display: flex; align-items: center; gap: 10px;">
-                            <div class="user-mini">
-                                {% if emp.profile_img %}
-                                <img src="{{ emp.profile_img.url }}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">
-                                {% else %}
-                                {{ emp.first_name|slice:":1"|upper }}
-                                {% endif %}
-                            </div>
-                            <div class="user-d" style="flex: 1; min-width: 0;">
-                                <span class="user-n" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block;">{{ emp.first_name }} {{ emp.last_name }}</span>
-                                <span class="user-s">{{ emp.designation.name|default:"--" }}</span>
-                            </div>
-                            <span class="status-pill">Active</span>
-                        </a>
-                        {% empty %}
-                        <div style="text-align: center; padding: 16px; color: var(--text-secondary); font-size: 12px;">No employees found</div>
-                        {% endfor %}
-                    </div>
-                </div>
-                {% endif %}
 
                 <!-- On Leave Today -->
                 <div class="bento-card" style="border: 1px solid rgba(37, 99, 235, 0.1);">
@@ -409,28 +414,67 @@
                         {% endfor %}
                     </div>
                 </div>
+            </div>
 
-                <!-- Payslip Card -->
-                <div class="bento-card" style="background: linear-gradient(135deg, #2563eb, #7c3aed); color: #fff; border: none;">
-                    <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
-                        <div style="width: 32px; height: 32px; border-radius: 8px; background: rgba(255,255,255,0.15); display: flex; align-items: center; justify-content: center;">
-                            <i class="fas fa-file-invoice-dollar" style="font-size: 14px;"></i>
-                        </div>
-                        <h2 class="bento-title" style="color: #fff; margin: 0;">Your Payslip</h2>
+            <!-- Right Column (Col 3) -->
+            <div style="display: flex; flex-direction: column; gap: 18px;">
+                {% if request.user.is_staff %}
+                <div class="bento-card">
+                    <div class="bento-header">
+                        <h2 class="bento-title">Active Now</h2>
                     </div>
-                    {% if latest_payslip %}
-                    <p style="font-size: 12px; opacity: 0.88; margin: 0 0 8px;">{{ latest_payslip.payroll_run.get_month_display }} {{ latest_payslip.payroll_run.year }} payslip is ready.</p>
-                    <div style="font-size: 11px; opacity: 0.78; margin-bottom: 14px;">Net salary: Rs. {{ latest_payslip.net_salary }} - {{ latest_payslip.get_status_display }}</div>
-                    <a href="{% url 'payslip_detail' latest_payslip.id %}" style="background: rgba(255,255,255,0.2); color: #fff; text-decoration: none; padding: 8px 14px; border-radius: 8px; font-weight: 700; font-size: 12px; display: inline-flex; align-items: center; gap: 6px; border: 1px solid rgba(255,255,255,0.3);">
-                        <i class="fas fa-file-export" style="font-size: 11px;"></i> View / Export PDF
-                    </a>
-                    {% else %}
-                    <p style="font-size: 12px; opacity: 0.88; margin: 0 0 14px;">No payslip has been generated for you yet.</p>
-                    <a href="{% url 'my_payslips' %}" style="background: rgba(255,255,255,0.2); color: #fff; text-decoration: none; padding: 8px 14px; border-radius: 8px; font-weight: 700; font-size: 12px; display: inline-flex; align-items: center; gap: 6px; border: 1px solid rgba(255,255,255,0.3);">
-                        <i class="fas fa-folder-open" style="font-size: 11px;"></i> Open Payslips
-                    </a>
-                    {% endif %}
+                    <div class="compact-list">
+                        {% for emp in recent_employees %}
+                        <a href="{% url 'view_employee' emp.pk %}" class="compact-item" style="text-decoration: none; color: inherit; display: flex; align-items: center; gap: 10px;">
+                            <div class="user-mini">
+                                {% if emp.profile_img %}
+                                <img src="{{ emp.profile_img.url }}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">
+                                {% else %}
+                                {{ emp.first_name|slice:":1"|upper }}
+                                {% endif %}
+                            </div>
+                            <div class="user-d" style="flex: 1; min-width: 0;">
+                                <span class="user-n" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block;">{{ emp.first_name }} {{ emp.last_name }}</span>
+                                <span class="user-s">{{ emp.designation.name|default:"--" }}</span>
+                            </div>
+                            <span class="status-pill">Active</span>
+                        </a>
+                        {% empty %}
+                        <div style="text-align: center; padding: 16px; color: var(--text-secondary); font-size: 12px;">No employees found</div>
+                        {% endfor %}
+                    </div>
                 </div>
+                {% endif %}
+
+                {% if not request.user.is_staff %}
+                <div class="bento-card" style="border: 1px solid rgba(37, 99, 235, 0.1);">
+                    <div class="bento-header">
+                        <h2 class="bento-title">Last 5 Days Attendance</h2>
+                        <a href="{% url 'attendance' %}" class="action-link">View all &rarr;</a>
+                    </div>
+                    <div class="compact-list" style="display: flex; flex-direction: column; gap: 8px;">
+                        {% for row in last_5_attendance %}
+                        <div class="compact-item" style="display: grid; grid-template-columns: minmax(72px, 1fr) auto; gap: 10px; align-items: center; background: #fff; border: 1px solid var(--border-light);">
+                            <div style="min-width: 0;">
+                                <div style="font-size: 12px; font-weight: 800; color: var(--text-main);">{{ row.date|date:"M d" }}</div>
+                                <div style="font-size: 10px; font-weight: 700; color: var(--text-secondary);">{{ row.date|date:"l" }}</div>
+                            </div>
+                            <span class="attendance-mini-pill {{ row.status_type }}">{{ row.status_label }}</span>
+                            <div style="grid-column: 1 / -1; display: flex; justify-content: space-between; gap: 10px; padding-top: 6px; border-top: 1px dashed var(--border-light);">
+                                <span style="font-size: 10px; color: var(--text-secondary);">In: <strong style="color: var(--text-main);">{% if row.clock_in %}{{ row.clock_in|time:"h:i A" }}{% else %}--{% endif %}</strong></span>
+                                <span style="font-size: 10px; color: var(--text-secondary);">Out: <strong style="color: var(--text-main);">{% if row.clock_out %}{{ row.clock_out|time:"h:i A" }}{% else %}--{% endif %}</strong></span>
+                                <span style="font-size: 10px; color: var(--text-secondary);">Total: <strong style="color: var(--text-main);">{{ row.work_time }}</strong></span>
+                            </div>
+                        </div>
+                        {% empty %}
+                        <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 22px 0; gap: 8px; color: var(--text-secondary); text-align: center;">
+                            <i class="fas fa-fingerprint" style="font-size: 24px; color: var(--accent); opacity: 0.75;"></i>
+                            <span style="font-size: 12px; font-weight: 700;">No attendance profile found</span>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
             </div>
         </div>
     </main>
@@ -440,6 +484,36 @@
         &copy; 2026 GlassEntials Premium HRMS · Platform Version 4.0.2
     </footer>
 
+    <script>
+        (function () {
+            const timer = document.getElementById('dashboardAttendanceTimer');
+            if (!timer || !timer.dataset.clockIn) return;
+
+            const boxes = timer.querySelectorAll('span');
+            const start = new Date(`${timer.dataset.date}T${timer.dataset.clockIn}`);
+            const fixedEnd = timer.dataset.clockOut ? new Date(`${timer.dataset.date}T${timer.dataset.clockOut}`) : null;
+
+            function pad(value) {
+                return String(value).padStart(2, '0');
+            }
+
+            function render() {
+                const end = fixedEnd || new Date();
+                let seconds = Math.max(0, Math.floor((end - start) / 1000));
+                const hours = Math.floor(seconds / 3600);
+                seconds -= hours * 3600;
+                const minutes = Math.floor(seconds / 60);
+                seconds -= minutes * 60;
+                boxes[0].textContent = pad(hours);
+                boxes[1].textContent = pad(minutes);
+                boxes[2].textContent = pad(seconds);
+            }
+
+            render();
+            if (!fixedEnd) window.setInterval(render, 1000);
+        })();
+    </script>
+    <script src="{% static 'js/ui-effects.js' %}?v=1.0" defer></script>
     <script src="{% static 'js/landing.js' %}?v=1.0"></script>
 </body>
 

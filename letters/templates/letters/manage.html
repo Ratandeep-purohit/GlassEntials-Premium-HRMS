@@ -1,0 +1,170 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Letters | GlassEntials HRMS</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Manrope:wght@700;800&display=swap">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link rel="stylesheet" href="{% static 'css/landing.css' %}?v=3.0">
+    <link rel="stylesheet" href="{% static 'css/home.css' %}?v=4.3">
+    <link rel="stylesheet" href="{% static 'css/dashboard.css' %}?v=3.0">
+    <style>
+        body { background: #f8fafc; overflow-x: hidden; color: #0f172a; }
+        .lt-page { max-width: 1480px; margin: 118px auto 64px; padding: 0 clamp(18px, 4vw, 56px); }
+        .lt-hero { display: flex; align-items: center; justify-content: space-between; gap: 20px; background: #fff; border: 1px solid #e5eaf2; border-radius: 16px; padding: 26px; box-shadow: 0 18px 50px rgba(15, 23, 42, .05); margin-bottom: 22px; }
+        .lt-title { font-family: 'Manrope', sans-serif; font-size: clamp(28px, 3vw, 38px); font-weight: 800; margin: 0 0 8px; letter-spacing: 0; }
+        .lt-subtitle { margin: 0; color: #64748b; font-size: 15px; font-weight: 600; }
+        .lt-primary { display: inline-flex; align-items: center; justify-content: center; gap: 9px; min-height: 48px; padding: 0 20px; border-radius: 12px; background: #2563eb; color: #fff; text-decoration: none; font-weight: 800; box-shadow: 0 10px 24px rgba(37, 99, 235, .22); white-space: nowrap; border: 0; cursor: pointer; }
+        .lt-primary:hover { background: #1d4ed8; color: #fff; text-decoration: none; }
+        .lt-stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; margin-bottom: 22px; }
+        .lt-stat { background: #fff; border: 1px solid #e5eaf2; border-radius: 14px; padding: 18px; display: flex; align-items: center; justify-content: space-between; gap: 14px; box-shadow: 0 10px 28px rgba(15, 23, 42, .04); }
+        .lt-stat strong { display: block; font-size: 28px; font-family: 'Manrope', sans-serif; line-height: 1; }
+        .lt-stat span { display: block; margin-top: 6px; color: #64748b; font-size: 13px; font-weight: 800; }
+        .lt-stat i { width: 44px; height: 44px; border-radius: 12px; display: inline-flex; align-items: center; justify-content: center; background: #eff6ff; color: #2563eb; }
+        .lt-stat:nth-child(2) i { background: #ecfdf5; color: #059669; }
+        .lt-stat:nth-child(3) i { background: #fff7ed; color: #ea580c; }
+        .lt-stat:nth-child(4) i { background: #f5f3ff; color: #7c3aed; }
+        .lt-panel { background: #fff; border: 1px solid #e5eaf2; border-radius: 16px; overflow: hidden; box-shadow: 0 18px 50px rgba(15, 23, 42, .05); }
+        .lt-panel-head { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 22px 24px; border-bottom: 1px solid #edf2f7; }
+        .lt-panel-head h2 { margin: 0; font-size: 20px; font-weight: 800; }
+        .lt-count { color: #64748b; font-size: 12px; font-weight: 900; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 999px; padding: 7px 11px; }
+        .lt-table-wrap { overflow-x: auto; }
+        .lt-table { width: 100%; border-collapse: collapse; min-width: 920px; }
+        .lt-table th { text-align: left; padding: 14px 24px; color: #64748b; background: #f8fafc; font-size: 12px; font-weight: 900; text-transform: uppercase; border-bottom: 1px solid #e5eaf2; }
+        .lt-table td { padding: 18px 24px; border-bottom: 1px solid #edf2f7; vertical-align: middle; font-size: 14px; }
+        .lt-person { display: flex; align-items: center; gap: 12px; min-width: 240px; }
+        .lt-avatar { width: 42px; height: 42px; border-radius: 12px; background: #e8f0ff; color: #2563eb; display: inline-flex; align-items: center; justify-content: center; font-weight: 900; flex: 0 0 auto; }
+        .lt-person strong { display: block; color: #0f172a; font-size: 15px; margin-bottom: 4px; }
+        .lt-muted { color: #64748b; font-size: 12px; font-weight: 700; }
+        .lt-badge { display: inline-flex; align-items: center; justify-content: center; border-radius: 999px; padding: 7px 10px; font-size: 11px; font-weight: 900; background: #eff6ff; color: #2563eb; white-space: nowrap; }
+        .lt-badge.draft { background: #f1f5f9; color: #475569; }
+        .lt-badge.issued { background: #dcfce7; color: #15803d; }
+        .lt-badge.accepted { background: #ede9fe; color: #6d28d9; }
+        .lt-badge.cancelled { background: #fee2e2; color: #b91c1c; }
+        .lt-actions { display: flex; align-items: center; gap: 8px; }
+        .lt-icon { width: 38px; height: 38px; border-radius: 10px; display: inline-flex; align-items: center; justify-content: center; border: 1px solid #e2e8f0; color: #64748b; background: #fff; text-decoration: none; cursor: pointer; }
+        .lt-icon:hover { border-color: #bfdbfe; color: #2563eb; background: #eff6ff; text-decoration: none; }
+        .lt-danger:hover { border-color: #fecaca; color: #ef4444; background: #fef2f2; }
+        .lt-empty { padding: 70px 24px; text-align: center; color: #64748b; }
+        .lt-empty i { font-size: 42px; color: #94a3b8; margin-bottom: 14px; }
+        .lt-empty h3 { margin: 0 0 8px; color: #0f172a; font-size: 18px; }
+        .lt-empty p { margin: 0 0 18px; font-size: 14px; }
+        @media (max-width: 900px) {
+            .lt-hero { align-items: flex-start; flex-direction: column; }
+            .lt-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        }
+        @media (max-width: 580px) {
+            .lt-page { margin-top: 102px; padding: 0 14px; }
+            .lt-hero { padding: 20px; }
+            .lt-primary { width: 100%; }
+            .lt-stats { grid-template-columns: 1fr; }
+            .lt-panel-head { align-items: flex-start; flex-direction: column; }
+        }
+    </style>
+</head>
+<body>
+    {% include 'includes/navbar.html' %}
+
+    <main class="lt-page">
+        <section class="lt-hero">
+            <div>
+                <h1 class="lt-title">Letters</h1>
+                <p class="lt-subtitle">Create, preview, issue, and keep every HR letter in one place.</p>
+            </div>
+            <a href="{% url 'letters:create' %}" class="lt-primary">
+                <i class="fas fa-plus"></i> Create Letter
+            </a>
+        </section>
+
+        <section class="lt-stats" aria-label="Letter summary">
+            <div class="lt-stat">
+                <div><strong>{{ total_letters }}</strong><span>Total Letters</span></div>
+                <i class="fas fa-file-lines"></i>
+            </div>
+            <div class="lt-stat">
+                <div><strong>{{ issued_letters }}</strong><span>Issued</span></div>
+                <i class="fas fa-paper-plane"></i>
+            </div>
+            <div class="lt-stat">
+                <div><strong>{{ draft_letters }}</strong><span>Drafts</span></div>
+                <i class="fas fa-pen-ruler"></i>
+            </div>
+            <div class="lt-stat">
+                <div><strong>{{ accepted_letters }}</strong><span>Accepted</span></div>
+                <i class="fas fa-circle-check"></i>
+            </div>
+        </section>
+
+        <section class="lt-panel">
+            <div class="lt-panel-head">
+                <h2>Saved Letters</h2>
+                <span class="lt-count">{{ total_letters }} records</span>
+            </div>
+
+            {% if letters %}
+            <div class="lt-table-wrap">
+                <table class="lt-table">
+                    <thead>
+                        <tr>
+                            <th>Candidate</th>
+                            <th>Letter</th>
+                            <th>Role</th>
+                            <th>Joining Date</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for letter in letters %}
+                        <tr>
+                            <td>
+                                <div class="lt-person">
+                                    <span class="lt-avatar">{{ letter.candidate_name|slice:":1"|upper }}</span>
+                                    <div>
+                                        <strong>{{ letter.candidate_name }}</strong>
+                                        <div class="lt-muted">{{ letter.candidate_email|default:"No email" }}</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                <strong>{{ letter.get_letter_type_display }}</strong>
+                                <div class="lt-muted">{{ letter.letter_number }}</div>
+                            </td>
+                            <td>
+                                <strong>{{ letter.designation|default:"-" }}</strong>
+                                <div class="lt-muted">{{ letter.department|default:"Department not set" }}</div>
+                            </td>
+                            <td>
+                                <strong>{{ letter.joining_date|date:"d M Y" }}</strong>
+                                <div class="lt-muted">Issued {{ letter.issue_date|date:"d M Y" }}</div>
+                            </td>
+                            <td><span class="lt-badge {{ letter.status|lower }}">{{ letter.get_status_display }}</span></td>
+                            <td>
+                                <div class="lt-actions">
+                                    <a class="lt-icon" href="{% url 'letters:detail' letter.id %}" title="Preview"><i class="fas fa-eye"></i></a>
+                                    <a class="lt-icon" href="{% url 'letters:edit' letter.id %}" title="Edit"><i class="fas fa-pen"></i></a>
+                                    <form method="POST" action="{% url 'letters:delete' letter.id %}" onsubmit="return confirm('Delete this letter?');">
+                                        {% csrf_token %}
+                                        <button class="lt-icon lt-danger" type="submit" title="Delete"><i class="fas fa-trash"></i></button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="lt-empty">
+                <i class="fas fa-file-circle-plus"></i>
+                <h3>No letters created yet</h3>
+                <p>Create your first offer letter and it will be saved here.</p>
+                <a href="{% url 'letters:create' %}" class="lt-primary"><i class="fas fa-plus"></i> Create Letter</a>
+            </div>
+            {% endif %}
+        </section>
+    </main>
+</body>
+</html>

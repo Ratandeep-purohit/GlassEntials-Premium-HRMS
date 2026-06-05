@@ -74,13 +74,16 @@
         <!-- Attendance Dropdown -->
         <div class="nav-item-dropdown">
             <a href="#"
-                class="nav-pill {% if request.resolver_match.url_name == 'attendance' or request.resolver_match.url_name == 'create_shift' or request.resolver_match.url_name == 'assign_shift' or request.resolver_match.url_name == 'attendance_calendar' or request.resolver_match.url_name == 'attendance_analytics' or request.resolver_match.url_name == 'overtime_dashboard' %}active{% endif %}">
+                class="nav-pill {% if request.resolver_match.url_name == 'attendance' or request.resolver_match.url_name == 'attendance_visual' or request.resolver_match.url_name == 'create_shift' or request.resolver_match.url_name == 'assign_shift' or request.resolver_match.url_name == 'attendance_calendar' or request.resolver_match.url_name == 'attendance_analytics' or request.resolver_match.url_name == 'overtime_dashboard' %}active{% endif %}">
                 <i class="fas fa-fingerprint"></i> Attendance
                 <i class="fas fa-chevron-down"></i>
             </a>
             <div class="dropdown-content">
                 <a href="{% url 'attendance' %}" class="dropdown-item">
                     <i class="fas fa-list-ul"></i> Attendance Dashboard
+                </a>
+                <a href="{% url 'attendance_visual' %}" class="dropdown-item">
+                    <i class="fas fa-table-cells-large"></i> Visual View
                 </a>
                 <a href="{% url 'create_shift' %}" class="dropdown-item">
                     <i class="fas fa-sitemap"></i> Create Shift
@@ -184,13 +187,16 @@
         </div>
         <!-- More Dropdown -->
         <div class="nav-item-dropdown">
-            <a href="#" class="nav-pill {% if request.resolver_match.app_name == 'announcements' %}active{% endif %}">
+            <a href="#" class="nav-pill {% if request.resolver_match.app_name == 'announcements' or request.resolver_match.app_name == 'letters' %}active{% endif %}">
                 <i class="fas fa-layer-group"></i> More
                 <i class="fas fa-chevron-down"></i>
             </a>
             <div class="dropdown-content">
                 <a href="{% url 'announcements:manage' %}" class="dropdown-item">
                     <i class="fas fa-bullhorn"></i> Announcements
+                </a>
+                <a href="{% url 'letters:manage' %}" class="dropdown-item">
+                    <i class="fas fa-file-signature"></i> Create letters
                 </a>
             </div>
         </div>
@@ -211,13 +217,16 @@
         <!-- Attendance Dropdown for Employee -->
         <div class="nav-item-dropdown">
             <a href="#"
-                class="nav-pill {% if request.resolver_match.url_name == 'attendance' or request.resolver_match.url_name == 'attendance_calendar' or request.resolver_match.url_name == 'overtime_dashboard' %}active{% endif %}">
+                class="nav-pill {% if request.resolver_match.url_name == 'attendance' or request.resolver_match.url_name == 'attendance_visual' or request.resolver_match.url_name == 'attendance_calendar' or request.resolver_match.url_name == 'overtime_dashboard' %}active{% endif %}">
                 <i class="fas fa-fingerprint"></i> Attendance
                 <i class="fas fa-chevron-down"></i>
             </a>
             <div class="dropdown-content">
                 <a href="{% url 'attendance' %}" class="dropdown-item">
                     <i class="fas fa-list-ul"></i> Dashboard
+                </a>
+                <a href="{% url 'attendance_visual' %}" class="dropdown-item">
+                    <i class="fas fa-table-cells-large"></i> Visual View
                 </a>
                 <a href="{% url 'attendance_calendar' %}" class="dropdown-item">
                     <i class="fas fa-calendar"></i> My Calendar
@@ -364,6 +373,31 @@
 <script>
     (function () {
         const profileDropdown = document.querySelector('.header-right .profile-dropdown');
+        const navDropdowns = document.querySelectorAll('.nav-item-dropdown');
+
+        navDropdowns.forEach(function (dropdown) {
+            const trigger = dropdown.querySelector(':scope > .nav-pill');
+            const menu = dropdown.querySelector(':scope > .dropdown-content');
+            if (!trigger || !menu || dropdown.classList.contains('profile-dropdown')) return;
+
+            trigger.addEventListener('click', function (event) {
+                if (window.matchMedia('(max-width: 768px)').matches || trigger.getAttribute('href') === '#') {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    navDropdowns.forEach(function (other) {
+                        if (other !== dropdown) other.classList.remove('dropdown-open');
+                    });
+                    dropdown.classList.toggle('dropdown-open');
+                }
+            });
+        });
+
+        document.addEventListener('click', function () {
+            navDropdowns.forEach(function (dropdown) {
+                dropdown.classList.remove('dropdown-open');
+            });
+        });
+
         if (!profileDropdown) return;
 
         const trigger = profileDropdown.querySelector('.profile-trigger');

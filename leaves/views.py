@@ -1,4 +1,5 @@
 import csv
+import calendar as calendar_tools
 
 from django.http import HttpResponse
 from django.shortcuts import render, redirect, get_object_or_404
@@ -79,7 +80,35 @@ def leave_dashboard_view(request):
         messages.error(request, "Employee profile not found. Please contact HR.")
         return redirect('home')
 
-    current_year = timezone.now().year
+    today = timezone.localdate()
+    current_year = today.year
+    try:
+        visual_year = int(request.GET.get('year') or current_year)
+    except (TypeError, ValueError):
+        visual_year = current_year
+    try:
+        visual_month = int(request.GET.get('month') or today.month)
+    except (TypeError, ValueError):
+        visual_month = today.month
+    if visual_month < 1 or visual_month > 12:
+        visual_month = today.month
+    if visual_year < 2000 or visual_year > 2100:
+        visual_year = current_year
+
+    month_last_day = calendar_tools.monthrange(visual_year, visual_month)[1]
+    month_start = datetime(visual_year, visual_month, 1).date()
+    month_end = datetime(visual_year, visual_month, month_last_day).date()
+    visual_month_days = []
+    cursor = month_start
+    while cursor <= month_end:
+        visual_month_days.append({
+            'date': cursor,
+            'day': cursor.day,
+            'weekday': cursor.strftime('%a'),
+            'is_weekend': cursor.weekday() >= 5,
+        })
+        cursor += timedelta(days=1)
+
     balances = list(
         LeaveBalance.objects.filter(
             employee=employee,
@@ -128,6 +157,92 @@ def leave_dashboard_view(request):
             status='PENDING'
         ).order_by('-created_at')[:5]
 
+    visual_employees_qs = Employee.objects.filter(
+        organization=request.user.organization,
+        is_active=True,
+        is_deleted=False,
+    ).select_related('department', 'designation').order_by('first_name', 'last_name')
+    if request.user.is_staff:
+        visual_employees = list(visual_employees_qs[:50])
+    elif employee.department_id:
+        visual_employees = list(visual_employees_qs.filter(department_id=employee.department_id)[:20])
+    else:
+        visual_employees = [employee]
+
+    visual_employee_ids = [item.id for item in visual_employees]
+    holiday_lookup = {}
+    for holiday in Holiday.objects.filter(
+        organization=request.user.organization,
+        calendar__isnull=False,
+        date__gte=month_start,
+        date__lte=month_end,
+    ).select_related('calendar').order_by('date', 'is_optional', 'name'):
+        holiday_lookup.setdefault(holiday.date, holiday)
+
+    leave_lookup = {}
+    visual_leave_requests = LeaveRequest.objects.filter(
+        organization=request.user.organization,
+        employee_id__in=visual_employee_ids,
+        status='APPROVED',
+        start_date__lte=month_end,
+        end_date__gte=month_start,
+    ).select_related('employee', 'leave_type').order_by('start_date', 'employee__first_name')
+    for leave in visual_leave_requests:
+        leave_day = max(leave.start_date, month_start)
+        leave_end = min(leave.end_date, month_end)
+        while leave_day <= leave_end:
+            leave_lookup[(leave.employee_id, leave_day)] = leave
+            leave_day += timedelta(days=1)
+
+    visual_status_counts = {
+        'available': 0,
+        'leave': 0,
+        'half': 0,
+        'holiday': len(holiday_lookup),
+        'weekend': 0,
+    }
+    visual_leave_rows = []
+    for visual_employee in visual_employees:
+        cells = []
+        for day in visual_month_days:
+            day_date = day['date']
+            holiday = holiday_lookup.get(day_date)
+            leave = leave_lookup.get((visual_employee.id, day_date))
+            if holiday:
+                status_class = 'optional' if holiday.is_optional else 'holiday'
+                code = 'O' if holiday.is_optional else 'H'
+                label = 'Optional Holiday' if holiday.is_optional else 'Holiday'
+                tooltip = f"{holiday.name} - {label}"
+            elif leave:
+                is_half = leave.session_type in ('MORNING', 'AFTERNOON', 'SHORT') or leave.total_days < Decimal('1.00')
+                status_class = 'half' if is_half else 'leave'
+                code = 'HF' if is_half else 'L'
+                label = 'Half Day' if is_half else 'Leave'
+                tooltip = f"{visual_employee.first_name} {visual_employee.last_name} - {leave.leave_type.name} ({label})"
+                visual_status_counts['half' if is_half else 'leave'] += 1
+            elif day['is_weekend']:
+                status_class = 'weekend'
+                code = 'W'
+                tooltip = 'Weekend'
+                visual_status_counts['weekend'] += 1
+            else:
+                status_class = 'available'
+                code = 'A'
+                tooltip = 'Available'
+                visual_status_counts['available'] += 1
+
+            cells.append({
+                'date': day_date,
+                'code': code,
+                'status_class': status_class,
+                'tooltip': tooltip,
+            })
+
+        visual_leave_rows.append({
+            'employee': visual_employee,
+            'cells': cells,
+        })
+
     recent_requests = LeaveRequest.objects.filter(employee=employee).order_by('-created_at')[:10]
     recent_compoffs = CompOffRequest.objects.filter(employee=employee).order_by('-created_at')[:10]
     
@@ -160,6 +275,16 @@ def leave_dashboard_view(request):
         'team_compoffs': team_compoffs,
         'leave_types': leave_types,
         'admin_stats': admin_stats,
+        'visual_month_days': visual_month_days,
+        'visual_leave_rows': visual_leave_rows,
+        'visual_status_counts': visual_status_counts,
+        'visual_month_label': month_start.strftime('%B %Y'),
+        'selected_visual_month': visual_month,
+        'selected_visual_year': visual_year,
+        'visual_month_options': [
+            {'value': idx, 'label': calendar_tools.month_abbr[idx]}
+            for idx in range(1, 13)
+        ],
     }
     return render(request, 'leaves/leave_dashboard.html', context)
 
@@ -420,9 +545,6 @@ def assign_leave_balances_view(request):
         'selected_employee': selected_employee,
         'balance_lookup': balance_lookup,
     })
-
-
-
 
 @login_required
 def apply_leave_view(request):
@@ -685,10 +807,6 @@ def pending_approvals_view(request):
         'cancel_requests': cancel_requests,
         'employees_for_export': employees_for_export
     })
-
-
-
-
 
 
 @login_required

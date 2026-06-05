@@ -106,6 +106,318 @@
         }
         .format-option { transition: all 0.2s; border: 2px solid var(--border-light) !important; }
         .format-option.active { border-color: var(--primary) !important; background: rgba(79, 70, 229, 0.05) !important; }
+        .attendance-status-pill {
+            display: inline-flex;
+            align-items: center;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 700;
+            width: fit-content;
+        }
+        .attendance-status-pill.completed { background: rgba(34, 197, 94, 0.1); color: #16a34a; }
+        .attendance-status-pill.working { background: rgba(37, 99, 235, 0.1); color: #2563eb; }
+        .attendance-status-pill.missing { background: rgba(245, 158, 11, 0.12); color: #d97706; }
+        .attendance-status-pill.absent { background: rgba(239, 68, 68, 0.1); color: #ef4444; }
+        .attendance-status-pill.weekend { background: rgba(100, 116, 139, 0.12); color: #64748b; }
+
+        .btn-visual-attendance {
+            height: 44px;
+            padding: 0 20px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            margin: 0;
+            border: 1px solid rgba(37, 99, 235, 0.3);
+            border-radius: 12px;
+            background: rgba(37, 99, 235, 0.08);
+            color: #2563eb;
+            text-decoration: none;
+            font-weight: 800;
+            box-shadow: 0 10px 24px rgba(37, 99, 235, 0.12);
+        }
+        .btn-visual-attendance.active {
+            background: #2563eb;
+            color: #fff;
+            border-color: #2563eb;
+        }
+
+        .attendance-view-switch {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px;
+            margin-bottom: 18px;
+            border: 1px solid rgba(226, 232, 240, 0.95);
+            border-radius: 16px;
+            background: rgba(255, 255, 255, 0.9);
+            box-shadow: 0 12px 34px rgba(15, 23, 42, 0.05);
+        }
+        .attendance-view-switch a {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            min-height: 42px;
+            padding: 0 18px;
+            border-radius: 12px;
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 800;
+            transition: all 0.2s ease;
+        }
+        .attendance-view-switch a:hover {
+            color: #2563eb;
+            background: rgba(37, 99, 235, 0.07);
+        }
+        .attendance-view-switch a.active {
+            color: #fff;
+            background: #2563eb;
+            box-shadow: 0 10px 22px rgba(37, 99, 235, 0.24);
+        }
+
+        .attendance-register-card {
+            margin-bottom: 24px;
+            padding: 0;
+            overflow: hidden;
+            border: 1px solid rgba(226, 232, 240, 0.95);
+            border-radius: 22px;
+            background: rgba(255, 255, 255, 0.96);
+            box-shadow: 0 18px 50px rgba(15, 23, 42, 0.06);
+        }
+        .attendance-register-head {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 18px;
+            padding: 24px;
+            border-bottom: 1px solid var(--border-light);
+        }
+        .attendance-register-title {
+            margin: 0 0 6px;
+            font-size: 20px;
+            font-weight: 800;
+            color: var(--text-primary);
+        }
+        .attendance-register-subtitle {
+            margin: 0;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--text-secondary);
+        }
+        .attendance-register-legend {
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+        .legend-item {
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            font-size: 12px;
+            font-weight: 800;
+            color: var(--text-secondary);
+        }
+        .legend-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 999px;
+            display: inline-block;
+        }
+        .legend-dot.present { background: #22c55e; }
+        .legend-dot.leave { background: #ef4444; }
+        .legend-dot.half { background: #f59e0b; }
+        .legend-dot.absent { background: #fb7185; }
+        .legend-dot.holiday { background: #3b82f6; }
+        .legend-dot.weekend { background: #94a3b8; }
+        .attendance-register-summary {
+            display: grid;
+            grid-template-columns: repeat(6, minmax(110px, 1fr));
+            gap: 12px;
+            padding: 18px 24px;
+            background: linear-gradient(135deg, rgba(248, 250, 252, 0.95), rgba(255, 255, 255, 0.95));
+            border-bottom: 1px solid var(--border-light);
+        }
+        .register-metric {
+            min-height: 62px;
+            padding: 12px 14px;
+            border: 1px solid rgba(226, 232, 240, 0.9);
+            border-radius: 16px;
+            background: #fff;
+        }
+        .register-metric strong {
+            display: block;
+            font-size: 22px;
+            line-height: 1;
+            color: var(--text-primary);
+        }
+        .register-metric span {
+            display: block;
+            margin-top: 6px;
+            font-size: 11px;
+            font-weight: 800;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+        }
+        .attendance-register-scroll {
+            overflow: auto;
+            max-height: 620px;
+            scrollbar-width: thin;
+            background: #fff;
+        }
+        .attendance-register-table {
+            width: max-content;
+            min-width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+        }
+        .attendance-register-table th,
+        .attendance-register-table td {
+            border-bottom: 1px solid rgba(226, 232, 240, 0.8);
+            text-align: center;
+            vertical-align: middle;
+        }
+        .attendance-register-table thead th {
+            position: sticky;
+            top: 0;
+            z-index: 3;
+            min-width: 48px;
+            padding: 14px 10px;
+            background: #f8fafc;
+            color: #475569;
+            font-size: 12px;
+            font-weight: 900;
+        }
+        .attendance-register-table thead th span {
+            display: block;
+            margin-top: 4px;
+            font-size: 10px;
+            color: #94a3b8;
+            font-weight: 800;
+            text-transform: uppercase;
+        }
+        .attendance-register-table th.employee-column,
+        .attendance-register-table td.employee-column {
+            position: sticky;
+            left: 0;
+            z-index: 4;
+            min-width: 240px;
+            max-width: 240px;
+            padding: 14px 16px;
+            text-align: left;
+            background: #fff;
+            box-shadow: 12px 0 20px rgba(15, 23, 42, 0.04);
+        }
+        .attendance-register-table thead th.employee-column {
+            background: #f8fafc;
+            z-index: 5;
+        }
+        .attendance-register-table th.today-column {
+            background: rgba(37, 99, 235, 0.08);
+            color: #2563eb;
+        }
+        .register-employee {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            min-width: 0;
+        }
+        .register-avatar {
+            width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            overflow: hidden;
+            flex: 0 0 auto;
+            display: grid;
+            place-items: center;
+            background: #eaf0ff;
+            color: #2563eb;
+            font-weight: 900;
+            border: 1px solid rgba(37, 99, 235, 0.16);
+        }
+        .register-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .register-employee-name {
+            font-size: 13px;
+            font-weight: 900;
+            color: var(--text-primary);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .register-employee-meta {
+            margin-top: 3px;
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--text-secondary);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .att-chip {
+            display: inline-flex;
+            width: 30px;
+            height: 30px;
+            align-items: center;
+            justify-content: center;
+            border-radius: 9px;
+            font-size: 11px;
+            font-weight: 900;
+            transition: transform 0.15s ease, box-shadow 0.15s ease;
+        }
+        .att-chip:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 18px rgba(15, 23, 42, 0.12);
+        }
+        .att-chip.present { background: #dcfce7; color: #15803d; }
+        .att-chip.leave { background: #fee2e2; color: #dc2626; }
+        .att-chip.half { background: #fef3c7; color: #b45309; }
+        .att-chip.absent { background: #ffe4e6; color: #e11d48; }
+        .att-chip.holiday { background: #dbeafe; color: #1d4ed8; font-size: 10px; }
+        .att-chip.weekend { background: #f1f5f9; color: #64748b; }
+        .att-chip.future { background: #f8fafc; color: #cbd5e1; }
+        @media (max-width: 768px) {
+            .attendance-view-switch {
+                display: flex;
+                width: 100%;
+            }
+            .attendance-view-switch a {
+                flex: 1;
+                padding: 0 10px;
+            }
+            .btn-visual-attendance {
+                width: 100%;
+            }
+            .attendance-register-head {
+                flex-direction: column;
+                padding: 18px;
+            }
+            .attendance-register-summary {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+                padding: 14px 18px;
+            }
+            .attendance-register-table th.employee-column,
+            .attendance-register-table td.employee-column {
+                min-width: 190px;
+                max-width: 190px;
+            }
+            .attendance-register-table thead th {
+                min-width: 42px;
+                padding: 12px 8px;
+            }
+            .att-chip {
+                width: 28px;
+                height: 28px;
+            }
+        }
     </style>
 </head>
 
@@ -131,6 +443,17 @@
                 {% endif %}
             </div>
             <div class="header-actions" style="display: flex; gap: 12px; align-items: center;">
+                {% if view_mode == 'visual' %}
+                <a href="{% url 'attendance' %}?view=list&month={{ selected_month_value }}{% if search_query %}&search={{ search_query|urlencode }}{% endif %}" class="btn-visual-attendance active">
+                    <i class="fas fa-list"></i>
+                    <span>List View</span>
+                </a>
+                {% else %}
+                <a href="{% url 'attendance' %}?view=visual&month={{ selected_month_value }}{% if search_query %}&search={{ search_query|urlencode }}{% endif %}" class="btn-visual-attendance">
+                    <i class="fas fa-table-cells-large"></i>
+                    <span>Visual View</span>
+                </a>
+                {% endif %}
                 {% if request.user.is_staff %}
                 <a href="{% url 'manage_corrections' %}" class="btn-ghost btn-corrections {% if pending_corrections_count > 0 %}pending{% endif %}" style="height: 44px; padding: 0 20px; display: flex; align-items: center; gap: 8px; position: relative;">
                     <i class="fas fa-inbox {% if pending_corrections_count > 0 %}pending{% endif %}" style="font-size: 16px;"></i>
@@ -205,7 +528,7 @@
             <div class="stat-card">
                 <div class="stat-info">
                     <div class="val-primary">{{ present_count }}</div>
-                    <div class="label-primary">Present</div>
+                    <div class="label-primary">Present Entries</div>
                 </div>
                 <div class="stat-header">
                     <div class="stat-icon" style="background: rgba(34, 197, 94, 0.08); color: #16a34a;">
@@ -217,7 +540,7 @@
             <div class="stat-card">
                 <div class="stat-info">
                     <div class="val-primary">{{ absent_count }}</div>
-                    <div class="label-primary">Absent (Estimated)</div>
+                    <div class="label-primary">Absent Days</div>
                 </div>
                 <div class="stat-header">
                     <div class="stat-icon" style="background: rgba(239, 68, 68, 0.08); color: #ef4444;">
@@ -229,7 +552,7 @@
             <div class="stat-card">
                 <div class="stat-info">
                     <div class="val-primary">{{ late_count }}</div>
-                    <div class="label-primary">Late Arrivals</div>
+                    <div class="label-primary">Late Entries</div>
                 </div>
                 <div class="stat-header">
                     <div class="stat-icon" style="background: rgba(245, 158, 11, 0.08); color: #d97706;">
@@ -243,6 +566,7 @@
         <!-- Filters -->
         <div class="card" style="margin-bottom: 24px; padding: 20px;">
             <form method="GET" style="display: flex; gap: 16px; align-items: flex-end; flex-wrap: wrap;">
+                <input type="hidden" name="view" value="{{ view_mode }}">
                 {% if request.user.is_staff %}
                 <div class="form-group" style="margin: 0; flex: 1; min-width: 250px;">
                     <label class="form-label">Search Employee</label>
@@ -253,26 +577,124 @@
                 </div>
                 {% endif %}
                 <div class="form-group" style="margin: 0; width: 200px; flex-shrink: 0;">
-                    <label class="form-label">Filter by Date</label>
-                    <input type="date" name="date" class="form-input" style="width: 100%; box-sizing: border-box;" value="{{ display_date|date:'Y-m-d' }}">
+                    <label class="form-label">Month</label>
+                    <input type="month" name="month" class="form-input" style="width: 100%; box-sizing: border-box;" value="{{ selected_month_value }}">
                 </div>
                 <div style="display: flex; gap: 12px;">
-                    <button type="submit" class="btn-primary" style="height: 46px; padding: 0 24px; width: auto; flex: none;">Filter Logs</button>
-                    <a href="{% url 'attendance' %}" class="btn-secondary" style="height: 46px; padding: 0 24px; display: flex; align-items: center; justify-content: center; text-decoration: none; width: auto; flex: none;">Clear</a>
+                    <button type="submit" class="btn-primary" style="height: 46px; padding: 0 24px; width: auto; flex: none;">Filter Month</button>
+                    <a href="{% url 'attendance' %}?view={{ view_mode }}" class="btn-secondary" style="height: 46px; padding: 0 24px; display: flex; align-items: center; justify-content: center; text-decoration: none; width: auto; flex: none;">Clear</a>
                 </div>
             </form>
         </div>
 
+        <!-- Visual Attendance Register -->
+        {% if view_mode == 'visual' %}
+        <section class="attendance-register-card">
+            <div class="attendance-register-head">
+                <div>
+                    <h3 class="attendance-register-title">Daily Attendance Register</h3>
+                    <p class="attendance-register-subtitle">Month: {{ month_start|date:"F Y" }}</p>
+                </div>
+                <div class="attendance-register-legend" aria-label="Attendance status legend">
+                    <span class="legend-item"><span class="legend-dot present"></span> Present</span>
+                    <span class="legend-item"><span class="legend-dot leave"></span> Leave</span>
+                    <span class="legend-item"><span class="legend-dot half"></span> Half</span>
+                    <span class="legend-item"><span class="legend-dot absent"></span> Absent</span>
+                    <span class="legend-item"><span class="legend-dot holiday"></span> Holiday</span>
+                    <span class="legend-item"><span class="legend-dot weekend"></span> Weekend</span>
+                </div>
+            </div>
+
+            <div class="attendance-register-summary">
+                <div class="register-metric">
+                    <strong>{{ attendance_register_counts.present }}</strong>
+                    <span>Present</span>
+                </div>
+                <div class="register-metric">
+                    <strong>{{ attendance_register_counts.leave }}</strong>
+                    <span>Leave</span>
+                </div>
+                <div class="register-metric">
+                    <strong>{{ attendance_register_counts.half }}</strong>
+                    <span>Half Day</span>
+                </div>
+                <div class="register-metric">
+                    <strong>{{ attendance_register_counts.absent }}</strong>
+                    <span>Absent</span>
+                </div>
+                <div class="register-metric">
+                    <strong>{{ attendance_register_counts.holiday }}</strong>
+                    <span>Holiday</span>
+                </div>
+                <div class="register-metric">
+                    <strong>{{ attendance_register_counts.weekend }}</strong>
+                    <span>Weekend</span>
+                </div>
+            </div>
+
+            <div class="attendance-register-scroll">
+                <table class="attendance-register-table">
+                    <thead>
+                        <tr>
+                            <th class="employee-column">Employee Name</th>
+                            {% for day in attendance_register_days %}
+                            <th class="{% if day.is_today %}today-column{% endif %}">
+                                {{ day.date|date:"d" }}
+                                <span>{{ day.date|date:"D" }}</span>
+                            </th>
+                            {% endfor %}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for row in attendance_register_rows %}
+                        <tr>
+                            <td class="employee-column">
+                                <div class="register-employee">
+                                    <div class="register-avatar">
+                                        {% if row.employee.profile_img %}
+                                            <img src="{{ row.employee.profile_img.url }}" alt="{{ row.employee.first_name }}">
+                                        {% else %}
+                                            {{ row.employee.first_name|slice:":1"|upper }}
+                                        {% endif %}
+                                    </div>
+                                    <div style="min-width: 0;">
+                                        <div class="register-employee-name">{{ row.employee.first_name }} {{ row.employee.last_name }}</div>
+                                        <div class="register-employee-meta">{{ row.employee.employee_id }}{% if row.employee.department %} - {{ row.employee.department.name }}{% endif %}</div>
+                                    </div>
+                                </div>
+                            </td>
+                            {% for cell in row.days %}
+                            <td>
+                                <span class="att-chip {{ cell.class }}" title="{{ cell.title }}" aria-label="{{ cell.label }} on {{ cell.date|date:'d M Y' }}">{{ cell.code }}</span>
+                            </td>
+                            {% endfor %}
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="32" style="padding: 42px 24px; text-align: center; color: var(--text-secondary);">
+                                <i class="fas fa-calendar-xmark" style="font-size: 30px; margin-bottom: 12px; opacity: 0.45;"></i>
+                                <p style="margin: 0; font-weight: 700;">No employees found for this register.</p>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </section>
+        {% endif %}
+
         <!-- Attendance Logs Table -->
+        {% if view_mode == 'list' %}
         <div class="card" style="padding: 0; overflow: hidden;">
             <div style="padding: 20px 24px; border-bottom: 1px solid var(--border-light); display: flex; justify-content: space-between; align-items: center;">
-                <h3 style="font-weight: 700; font-size: 16px;">Attendance Logs ({{ display_date|date:"F d, Y" }})</h3>
+                <h3 style="font-weight: 700; font-size: 16px;">Attendance Logs ({{ month_start|date:"F Y" }})</h3>
             </div>
             
             <div style="overflow-x: auto;">
                 <table style="width: 100%; border-collapse: collapse; text-align: left;">
                     <thead>
                         <tr style="background: #f8fafc; border-bottom: 1px solid var(--border-light);">
+                            <th style="padding: 16px 24px; font-weight: 700; font-size: 12px; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px;">Date</th>
                             <th style="padding: 16px 24px; font-weight: 700; font-size: 12px; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px;">Employee</th>
                             <th style="padding: 16px 24px; font-weight: 700; font-size: 12px; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px;">Department</th>
                             <th style="padding: 16px 24px; font-weight: 700; font-size: 12px; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px;">Clock In</th>
@@ -289,6 +711,12 @@
                     <tbody>
                         {% for log in attendances %}
                         <tr style="border-bottom: 1px solid var(--border-light); transition: background 0.2s;">
+                            <td style="padding: 16px 24px;">
+                                <div style="display: flex; flex-direction: column; gap: 3px;">
+                                    <span style="font-weight: 800; color: var(--text-primary); white-space: nowrap;">{{ log.date|date:"d M Y" }}</span>
+                                    <span style="font-size: 11px; font-weight: 700; color: var(--text-secondary);">{{ log.date|date:"l" }}</span>
+                                </div>
+                            </td>
                             <td style="padding: 16px 24px;">
                                 <div style="display: flex; align-items: center; gap: 12px;">
                                     <div style="width: 40px; height: 40px; border-radius: 50%; background: var(--border-light); display: flex; align-items: center; justify-content: center; font-weight: 700; color: var(--text-primary);">
@@ -354,42 +782,32 @@
                             </td>
                             <td style="padding: 16px 24px;">
                                 <div style="display: flex; flex-direction: column; gap: 4px;">
-                                    {% if log.clock_in and log.clock_out %}
-                                        <span style="display: inline-flex; align-items: center; padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 700; background: rgba(34, 197, 94, 0.1); color: #16a34a; width: fit-content;">
-                                            Completed
-                                        </span>
-                                    {% elif log.clock_in %}
-                                        <span style="display: inline-flex; align-items: center; padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 700; background: rgba(37, 99, 235, 0.1); color: #2563eb; width: fit-content;">
-                                            Working
-                                        </span>
-                                    {% else %}
-                                        <span style="display: inline-flex; align-items: center; padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 700; background: rgba(239, 68, 68, 0.1); color: #ef4444; width: fit-content;">
-                                            Absent
-                                        </span>
-                                    {% endif %}
+                                    <span class="attendance-status-pill {{ log.status_type }}">{{ log.status_label }}</span>
                                 </div>
                             </td>
                             {% if not request.user.is_staff %}
                             <td style="padding: 16px 24px;">
-                                {% if log.corrections.all %}
-                                    {% with c=log.corrections.all.0 %}
+                                {% if log.correction %}
+                                    {% with c=log.correction %}
                                         <span class="correction-status-pill {{ c.status }}">
                                             <i class="fas {% if c.status == 'PENDING' %}fa-clock{% elif c.status == 'APPROVED' %}fa-check{% else %}fa-times{% endif %}" style="margin-right: 4px; font-size: 10px;"></i> {{ c.get_status_display }}
                                         </span>
                                     {% endwith %}
-                                {% else %}
+                                {% elif log.can_request_correction %}
                                     <button type="button" class="btn-fix-time" onclick="openCorrectionModal('{{ log.id }}')">
                                         <i class="fas fa-pen" style="margin-right: 4px;"></i> Fix Time
                                     </button>
+                                {% else %}
+                                    <span style="color: var(--text-secondary); font-size: 12px; font-weight: 700;">--</span>
                                 {% endif %}
                             </td>
                             {% endif %}
                         </tr>
                         {% empty %}
                         <tr>
-                            <td colspan="6" style="padding: 40px 24px; text-align: center; color: var(--text-secondary);">
+                            <td colspan="{% if request.user.is_staff %}9{% else %}10{% endif %}" style="padding: 40px 24px; text-align: center; color: var(--text-secondary);">
                                 <i class="fas fa-inbox" style="font-size: 32px; margin-bottom: 12px; opacity: 0.5;"></i>
-                                <p>No attendance logs found for this date.</p>
+                                <p>No attendance rows found for this month.</p>
                             </td>
                         </tr>
                         {% endfor %}
@@ -397,6 +815,7 @@
                 </table>
             </div>
         </div>
+        {% endif %}
     </main>
 
     <footer

@@ -175,6 +175,253 @@
         font-weight: 800;
         margin-top: 5px;
     }
+
+    .visual-leave-card {
+        background: #fff;
+        border: 1px solid var(--border-light);
+        border-radius: 22px;
+        box-shadow: var(--shadow-subtle);
+        margin: 0 0 32px;
+        overflow: hidden;
+    }
+
+    .visual-leave-head {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 18px;
+        padding: 22px 24px;
+        border-bottom: 1px solid var(--border-light);
+    }
+
+    .visual-leave-title {
+        margin: 0;
+        color: var(--text-main);
+        font-size: 19px;
+        font-weight: 900;
+        letter-spacing: -0.3px;
+    }
+
+    .visual-leave-subtitle {
+        margin-top: 5px;
+        color: var(--text-secondary);
+        font-size: 13px;
+        font-weight: 600;
+    }
+
+    .visual-leave-controls {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+    }
+
+    .visual-leave-controls .glass-input {
+        min-width: 118px;
+        height: 42px;
+        padding: 9px 12px;
+    }
+
+    .visual-summary-grid {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(120px, 1fr));
+        gap: 12px;
+        padding: 16px 24px 0;
+    }
+
+    .visual-summary-card {
+        background: #f8fafc;
+        border: 1px solid var(--border-light);
+        border-radius: 14px;
+        padding: 12px 14px;
+    }
+
+    .visual-summary-value {
+        color: var(--text-main);
+        font-size: 22px;
+        font-weight: 900;
+        line-height: 1;
+    }
+
+    .visual-summary-label {
+        margin-top: 5px;
+        color: var(--text-secondary);
+        font-size: 10px;
+        font-weight: 900;
+        letter-spacing: 0.5px;
+        text-transform: uppercase;
+    }
+
+    .visual-legend {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+        padding: 16px 24px;
+    }
+
+    .visual-legend-item {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        color: var(--text-secondary);
+        font-size: 11px;
+        font-weight: 800;
+    }
+
+    .visual-legend-dot {
+        width: 12px;
+        height: 12px;
+        border-radius: 4px;
+    }
+
+    .visual-register-scroll {
+        overflow-x: auto;
+        padding: 0 0 8px;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .visual-register-table {
+        width: max-content;
+        min-width: 100%;
+        border-collapse: separate;
+        border-spacing: 0;
+    }
+
+    .visual-register-table th,
+    .visual-register-table td {
+        border-top: 1px solid var(--border-light);
+        padding: 10px 8px;
+        text-align: center;
+        white-space: nowrap;
+    }
+
+    .visual-register-table thead th {
+        background: #f8fafc;
+        color: var(--text-secondary);
+        font-size: 11px;
+        font-weight: 900;
+        text-transform: uppercase;
+    }
+
+    .visual-employee-col {
+        position: sticky;
+        left: 0;
+        z-index: 5;
+        width: 210px;
+        min-width: 210px;
+        text-align: left !important;
+        background: #fff !important;
+        box-shadow: 8px 0 18px rgba(15, 23, 42, 0.04);
+    }
+
+    thead .visual-employee-col {
+        background: #f8fafc !important;
+        z-index: 6;
+    }
+
+    .visual-date-head span {
+        display: block;
+        color: var(--text-main);
+        font-size: 13px;
+        font-weight: 900;
+    }
+
+    .visual-date-head small {
+        display: block;
+        margin-top: 3px;
+        color: var(--text-secondary);
+        font-size: 9px;
+        font-weight: 800;
+    }
+
+    .visual-date-head.weekend {
+        background: #f1f5f9;
+    }
+
+    .visual-employee-name {
+        color: var(--text-main);
+        font-size: 13px;
+        font-weight: 900;
+    }
+
+    .visual-employee-meta {
+        margin-top: 3px;
+        color: var(--text-secondary);
+        font-size: 11px;
+        font-weight: 700;
+    }
+
+    .leave-day-chip {
+        width: 30px;
+        height: 30px;
+        border-radius: 9px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 11px;
+        font-weight: 900;
+        border: 1px solid transparent;
+    }
+
+    .leave-day-chip.available {
+        background: #dcfce7;
+        color: #16a34a;
+    }
+
+    .leave-day-chip.leave {
+        background: #fee2e2;
+        color: #dc2626;
+    }
+
+    .leave-day-chip.half {
+        background: #fef3c7;
+        color: #d97706;
+    }
+
+    .leave-day-chip.holiday {
+        background: #dbeafe;
+        color: #2563eb;
+    }
+
+    .leave-day-chip.optional {
+        background: #ede9fe;
+        color: #7c3aed;
+    }
+
+    .leave-day-chip.weekend {
+        background: #f1f5f9;
+        color: #94a3b8;
+    }
+
+    .visual-empty {
+        padding: 28px;
+        color: var(--text-secondary);
+        text-align: center;
+        font-weight: 700;
+    }
+
+    @media (max-width: 768px) {
+        .visual-leave-head {
+            flex-direction: column;
+        }
+
+        .visual-leave-controls,
+        .visual-leave-controls .glass-input,
+        .visual-leave-controls .punch-btn {
+            width: 100%;
+        }
+
+        .visual-summary-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .visual-employee-col {
+            width: 170px;
+            min-width: 170px;
+        }
+    }
 </style>
 {% endblock %}
 
@@ -242,6 +489,89 @@
         </div>
     </div>
     {% endif %}
+
+    <section class="visual-leave-card">
+        <div class="visual-leave-head">
+            <div>
+                <h2 class="visual-leave-title">Visual Leave Register</h2>
+                <div class="visual-leave-subtitle">Team availability matrix for {{ visual_month_label }}</div>
+            </div>
+            <form method="GET" class="visual-leave-controls">
+                <select name="month" class="glass-input" onchange="this.form.submit()">
+                    {% for month in visual_month_options %}
+                    <option value="{{ month.value }}" {% if month.value == selected_visual_month %}selected{% endif %}>{{ month.label }}</option>
+                    {% endfor %}
+                </select>
+                <input type="number" name="year" class="glass-input" value="{{ selected_visual_year }}" min="2000" max="2100" onchange="this.form.submit()">
+                <button type="submit" class="punch-btn" style="height: 42px; padding: 0 16px;">
+                    <i class="fas fa-filter"></i> View
+                </button>
+            </form>
+        </div>
+
+        <div class="visual-summary-grid">
+            <div class="visual-summary-card">
+                <div class="visual-summary-value">{{ visual_leave_rows|length }}</div>
+                <div class="visual-summary-label">Employees</div>
+            </div>
+            <div class="visual-summary-card">
+                <div class="visual-summary-value">{{ visual_status_counts.leave }}</div>
+                <div class="visual-summary-label">Leave Days</div>
+            </div>
+            <div class="visual-summary-card">
+                <div class="visual-summary-value">{{ visual_status_counts.half }}</div>
+                <div class="visual-summary-label">Half Days</div>
+            </div>
+            <div class="visual-summary-card">
+                <div class="visual-summary-value">{{ visual_status_counts.holiday }}</div>
+                <div class="visual-summary-label">Holidays</div>
+            </div>
+        </div>
+
+        <div class="visual-legend">
+            <span class="visual-legend-item"><span class="visual-legend-dot" style="background:#dcfce7;"></span> Available</span>
+            <span class="visual-legend-item"><span class="visual-legend-dot" style="background:#fee2e2;"></span> Leave</span>
+            <span class="visual-legend-item"><span class="visual-legend-dot" style="background:#fef3c7;"></span> Half Day</span>
+            <span class="visual-legend-item"><span class="visual-legend-dot" style="background:#dbeafe;"></span> Holiday</span>
+            <span class="visual-legend-item"><span class="visual-legend-dot" style="background:#ede9fe;"></span> Optional</span>
+            <span class="visual-legend-item"><span class="visual-legend-dot" style="background:#f1f5f9;"></span> Weekend</span>
+        </div>
+
+        {% if visual_leave_rows %}
+        <div class="visual-register-scroll">
+            <table class="visual-register-table">
+                <thead>
+                    <tr>
+                        <th class="visual-employee-col">Employee Name</th>
+                        {% for day in visual_month_days %}
+                        <th class="visual-date-head {% if day.is_weekend %}weekend{% endif %}">
+                            <span>{{ day.day }}</span>
+                            <small>{{ day.weekday }}</small>
+                        </th>
+                        {% endfor %}
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in visual_leave_rows %}
+                    <tr>
+                        <td class="visual-employee-col">
+                            <div class="visual-employee-name">{{ row.employee.first_name }} {{ row.employee.last_name }}</div>
+                            <div class="visual-employee-meta">{{ row.employee.department.name|default:"No department" }}</div>
+                        </td>
+                        {% for cell in row.cells %}
+                        <td>
+                            <span class="leave-day-chip {{ cell.status_class }}" title="{{ cell.tooltip }}">{{ cell.code }}</span>
+                        </td>
+                        {% endfor %}
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="visual-empty">No employees found for this register.</div>
+        {% endif %}
+    </section>
 
     <div style="margin-bottom: 32px;">
         <h2 style="font-weight: 800; margin-bottom: 20px; font-size: 20px;">Your Leave Policies</h2>

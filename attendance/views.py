@@ -7,10 +7,198 @@ from employees.models import Employee
 
 from django.db.models import Q
 from django.contrib.auth.decorators import login_required
+from django.urls import reverse
 from datetime import datetime, date, timedelta, time
 import calendar
 from django.utils import timezone
 from .models import Attendance
+
+
+def _month_bounds(anchor_date):
+    month_start = anchor_date.replace(day=1)
+    month_end = anchor_date.replace(day=calendar.monthrange(anchor_date.year, anchor_date.month)[1])
+    return month_start, month_end
+
+
+def _attendance_row(employee, row_date, attendance=None, is_staff=False, today=None):
+    today = today or timezone.localdate()
+    correction = None
+    if attendance:
+        corrections = list(attendance.corrections.all())
+        correction = corrections[0] if corrections else None
+
+    if attendance and attendance.clock_in and attendance.clock_out:
+        status_label = "Completed"
+        status_type = "completed"
+    elif attendance and attendance.clock_in and row_date == today:
+        status_label = "Working"
+        status_type = "working"
+    elif attendance and attendance.clock_in:
+        status_label = "Missed Out"
+        status_type = "missing"
+    elif row_date.weekday() >= 5:
+        status_label = "Weekly Off"
+        status_type = "weekend"
+    else:
+        status_label = "Absent"
+        status_type = "absent"
+
+    return {
+        "employee": employee,
+        "date": row_date,
+        "attendance": attendance,
+        "id": attendance.id if attendance else "",
+        "clock_in": attendance.clock_in if attendance else None,
+        "clock_out": attendance.clock_out if attendance else None,
+        "late_minutes": attendance.late_minutes if attendance else 0,
+        "early_out_minutes": attendance.early_out_minutes if attendance else 0,
+        "formatted_late_time": attendance.formatted_late_time if attendance else "",
+        "formatted_early_out_time": attendance.formatted_early_out_time if attendance else "",
+        "current_work_time": attendance.current_work_time if attendance else "--",
+        "total_break_minutes": attendance.total_break_minutes if attendance else 0,
+        "net_work_hours": attendance.net_work_hours if attendance else None,
+        "status_label": status_label,
+        "status_type": status_type,
+        "correction": correction,
+        "can_request_correction": bool(attendance and not is_staff),
+    }
+
+
+def _build_visual_attendance_register(employees, month_start, month_end, attendance_map, organization, today):
+    from leaves.models import Holiday, LeaveRequest
+
+    register_dates = [
+        month_start + timedelta(days=offset)
+        for offset in range((month_end - month_start).days + 1)
+    ]
+
+    holiday_qs = Holiday.objects.filter(
+        organization=organization,
+        date__range=(month_start, month_end),
+        is_deleted=False,
+    ).select_related('calendar')
+    holiday_map = {holiday.date: holiday for holiday in holiday_qs}
+
+    leave_day_map = {}
+    if employees:
+        leave_qs = LeaveRequest.objects.filter(
+            organization=organization,
+            employee__in=employees,
+            status='APPROVED',
+            start_date__lte=month_end,
+            end_date__gte=month_start,
+            is_deleted=False,
+        ).select_related('employee', 'leave_type')
+
+        for leave in leave_qs:
+            leave_day = max(leave.start_date, month_start)
+            leave_end = min(leave.end_date, month_end)
+            is_half_day = (
+                leave.session_type in ('MORNING', 'AFTERNOON', 'SHORT')
+                or float(leave.total_days or 0) < 1
+            )
+            while leave_day <= leave_end:
+                leave_day_map[(leave.employee_id, leave_day)] = {
+                    'class': 'half' if is_half_day else 'leave',
+                    'code': 'H' if is_half_day else 'L',
+                    'label': 'Half Day' if is_half_day else 'Leave',
+                    'title': f"{leave.leave_type.name} ({leave.get_session_type_display()})",
+                }
+                leave_day += timedelta(days=1)
+
+    counts = {
+        'present': 0,
+        'leave': 0,
+        'half': 0,
+        'absent': 0,
+        'holiday': 0,
+        'weekend': 0,
+    }
+    rows = []
+
+    for employee in employees:
+        cells = []
+        for row_date in register_dates:
+            attendance = attendance_map.get((employee.id, row_date))
+            leave_cell = leave_day_map.get((employee.id, row_date))
+            holiday = holiday_map.get(row_date)
+            is_weekend = row_date.weekday() >= 5
+            title_date = row_date.strftime('%d %b %Y')
+
+            if leave_cell:
+                cell = {
+                    'date': row_date,
+                    'class': leave_cell['class'],
+                    'code': leave_cell['code'],
+                    'label': leave_cell['label'],
+                    'title': f"{title_date}: {leave_cell['title']}",
+                    'is_today': row_date == today,
+                }
+                counts['half' if leave_cell['class'] == 'half' else 'leave'] += 1
+            elif attendance and attendance.clock_in:
+                cell = {
+                    'date': row_date,
+                    'class': 'present',
+                    'code': 'P',
+                    'label': 'Present',
+                    'title': f"{title_date}: In {attendance.clock_in.strftime('%I:%M %p')}"
+                             f"{' / Out ' + attendance.clock_out.strftime('%I:%M %p') if attendance.clock_out else ''}",
+                    'is_today': row_date == today,
+                }
+                counts['present'] += 1
+            elif holiday:
+                cell = {
+                    'date': row_date,
+                    'class': 'holiday',
+                    'code': 'OH' if holiday.is_optional else 'HD',
+                    'label': 'Optional Holiday' if holiday.is_optional else 'Holiday',
+                    'title': f"{title_date}: {holiday.name}",
+                    'is_today': row_date == today,
+                }
+                counts['holiday'] += 1
+            elif is_weekend:
+                cell = {
+                    'date': row_date,
+                    'class': 'weekend',
+                    'code': 'W',
+                    'label': 'Weekly Off',
+                    'title': f"{title_date}: Weekly off",
+                    'is_today': row_date == today,
+                }
+                counts['weekend'] += 1
+            elif row_date <= today:
+                cell = {
+                    'date': row_date,
+                    'class': 'absent',
+                    'code': 'A',
+                    'label': 'Absent',
+                    'title': f"{title_date}: No attendance marked",
+                    'is_today': row_date == today,
+                }
+                counts['absent'] += 1
+            else:
+                cell = {
+                    'date': row_date,
+                    'class': 'future',
+                    'code': '-',
+                    'label': 'Upcoming',
+                    'title': f"{title_date}: Upcoming day",
+                    'is_today': False,
+                }
+
+            cells.append(cell)
+
+        rows.append({
+            'employee': employee,
+            'days': cells,
+        })
+
+    return {
+        'days': [{'date': item, 'is_today': item == today} for item in register_dates],
+        'rows': rows,
+        'counts': counts,
+    }
+
 
 @login_required
 def attendance_view(request):
@@ -21,42 +209,99 @@ def attendance_view(request):
         return redirect('home')
         
     organization = request.user.organization
-    today = datetime.now().date()
+    today = timezone.localdate()
     
-    # Date filter
+    # Month filter. The old date parameter is still accepted for bookmarked URLs.
+    month_str = request.GET.get('month', '')
     filter_date_str = request.GET.get('date', '')
-    if filter_date_str:
+    view_mode = request.GET.get('view', 'list')
+    if view_mode not in ('list', 'visual'):
+        view_mode = 'list'
+    if month_str:
+        try:
+            display_date = datetime.strptime(f"{month_str}-01", '%Y-%m-%d').date()
+        except ValueError:
+            display_date = today
+    elif filter_date_str:
         try:
             display_date = datetime.strptime(filter_date_str, '%Y-%m-%d').date()
         except ValueError:
             display_date = today
     else:
         display_date = today
-        
-    # Base query for the selected date's attendance
-    # Using fallback for org filtering to support legacy data if needed
-    if hasattr(Attendance, 'organization'):
-        attendances = Attendance.objects.filter(employee__organization=organization, date=display_date).select_related('employee', 'employee__department', 'shift').prefetch_related('corrections')
+
+    month_start, month_end = _month_bounds(display_date)
+    current_month_start = today.replace(day=1)
+    if month_start > today:
+        period_end = month_start - timedelta(days=1)
+    elif month_start == current_month_start:
+        period_end = min(month_end, today)
     else:
-        attendances = Attendance.objects.filter(employee__organization=organization, date=display_date).select_related('employee', 'employee__department', 'shift').prefetch_related('corrections')
+        period_end = month_end
     
-    # Search filter
+    employee_qs = Employee.objects.filter(
+        organization=organization,
+        is_active=True,
+        is_deleted=False,
+    ).select_related('department').order_by('first_name', 'last_name', 'employee_id')
+
     search_query = request.GET.get('search', '')
     if search_query and request.user.is_staff:
-        attendances = attendances.filter(
-            Q(employee__first_name__icontains=search_query) |
-            Q(employee__last_name__icontains=search_query) |
-            Q(employee__employee_id__icontains=search_query)
+        employee_qs = employee_qs.filter(
+            Q(first_name__icontains=search_query) |
+            Q(last_name__icontains=search_query) |
+            Q(employee_id__icontains=search_query)
         )
         
     if not request.user.is_staff:
-        attendances = attendances.filter(employee=current_employee)
+        employee_qs = employee_qs.filter(pk=current_employee.pk)
+
+    employees = list(employee_qs)
+
+    attendance_map = {}
+    if employees:
+        attendance_qs = Attendance.objects.filter(
+            employee__in=employees,
+            date__range=(month_start, month_end),
+        ).select_related(
+            'employee',
+            'employee__department',
+            'shift',
+        ).prefetch_related('corrections')
+        attendance_map = {(att.employee_id, att.date): att for att in attendance_qs}
+
+    month_dates = []
+    if period_end >= month_start:
+        total_days = (period_end - month_start).days + 1
+        month_dates = [month_start + timedelta(days=offset) for offset in range(total_days)]
+
+    attendance_rows = []
+    for row_date in reversed(month_dates):
+        for employee in employees:
+            attendance_rows.append(
+                _attendance_row(
+                    employee,
+                    row_date,
+                    attendance_map.get((employee.id, row_date)),
+                    is_staff=request.user.is_staff,
+                    today=today,
+                )
+            )
+
+    visual_register = _build_visual_attendance_register(
+        employees=employees,
+        month_start=month_start,
+        month_end=month_end,
+        attendance_map=attendance_map,
+        organization=organization,
+        today=today,
+    )
 
     # Stats
     total_employees = Employee.objects.filter(organization=organization, is_active=True, is_deleted=False).count()
-    present_count = attendances.filter(clock_in__isnull=False).count()
-    late_count = attendances.filter(late_minutes__gt=0).count()
-    absent_count = total_employees - present_count
+    present_count = sum(1 for row in attendance_rows if row["clock_in"])
+    late_count = sum(1 for row in attendance_rows if row["late_minutes"] > 0)
+    absent_count = sum(1 for row in attendance_rows if row["status_type"] == "absent")
     
     pending_corrections_count = 0
     if request.user.is_staff:
@@ -64,17 +309,33 @@ def attendance_view(request):
         pending_corrections_count = AttendanceCorrection.objects.filter(employee__organization=organization, status='PENDING').count()
     
     context = {
-        'attendances': attendances.order_by('-clock_in'),
+        'attendances': attendance_rows,
         'total_employees': total_employees,
         'present_count': present_count,
         'absent_count': absent_count,
         'late_count': late_count,
         'display_date': display_date,
+        'month_start': month_start,
+        'month_end': month_end,
+        'period_end': period_end,
+        'selected_month_value': month_start.strftime('%Y-%m'),
         'today': today,
         'search_query': search_query,
         'pending_corrections_count': pending_corrections_count,
+        'attendance_register_days': visual_register['days'],
+        'attendance_register_rows': visual_register['rows'],
+        'attendance_register_counts': visual_register['counts'],
+        'view_mode': view_mode,
     }
     return render(request, 'attendance_dashboard.html', context)
+
+
+@login_required
+def attendance_visual_view(request):
+    params = request.GET.copy()
+    params['view'] = 'visual'
+    return redirect(f"{reverse('attendance')}?{params.urlencode()}")
+
 
 def create_shift_view(request,pk=None):
     edit_shift = None
@@ -942,4 +1203,4 @@ def overtime_action_view(request, request_id):
             
     return redirect('overtime_dashboard')
 
-
+

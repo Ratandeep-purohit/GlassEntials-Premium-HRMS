@@ -1,0 +1,309 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ letter.letter_number }} | {{ letter.get_letter_type_display }}</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Manrope:wght@700;800&display=swap">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link rel="stylesheet" href="{% static 'css/landing.css' %}?v=3.0">
+    <link rel="stylesheet" href="{% static 'css/home.css' %}?v=4.3">
+    <style>
+        body { background: #f8fafc; color: #0f172a; }
+        .letter-page { max-width: 1060px; margin: 118px auto 64px; padding: 0 22px; }
+        .letter-actions { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 18px; }
+        .letter-btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; padding: 0 16px; border-radius: 12px; border: 1px solid #dbe4ef; background: #fff; color: #0f172a; text-decoration: none; font-weight: 800; cursor: pointer; }
+        .letter-btn:hover { color: #2563eb; border-color: #bfdbfe; background: #eff6ff; text-decoration: none; }
+        .letter-btn.primary { color: #fff; background: #2563eb; border-color: #2563eb; box-shadow: 0 10px 24px rgba(37, 99, 235, .22); }
+        .letter-btn.primary:hover { color: #fff; background: #1d4ed8; }
+        .letter-paper { background: #fff; border: 1px solid #dbe4ef; border-radius: 8px; padding: clamp(28px, 5vw, 54px); box-shadow: 0 22px 70px rgba(15, 23, 42, .08); font-family: 'Plus Jakarta Sans', sans-serif; }
+        .letter-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 24px; border-bottom: 2px solid #e5eaf2; padding-bottom: 16px; margin-bottom: 24px; }
+        .letter-brand { display: flex; align-items: flex-start; min-width: 0; }
+        .letter-logo { display: block; width: 188px; max-width: 100%; height: auto; max-height: 70px; margin: 0; object-fit: contain; }
+        .letter-company { font-family: 'Manrope', sans-serif; font-size: 29px; font-weight: 800; margin: 0 0 6px; letter-spacing: 0; }
+        .letter-muted { color: #64748b; font-size: 12px; font-weight: 750; line-height: 1.7; }
+        .letter-number { text-align: right; min-width: 190px; }
+        .letter-number strong { display: block; font-size: 14px; margin-bottom: 8px; }
+        .letter-subject { font-size: 18px; font-weight: 900; margin: 22px 0; text-decoration: underline; text-underline-offset: 4px; }
+        .letter-body { font-size: 14px; line-height: 1.9; color: #1f2937; }
+        .letter-body p { margin: 0 0 16px; }
+        .letter-chip-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); border: 1px solid #e5eaf2; border-radius: 8px; overflow: hidden; margin: 22px 0; }
+        .letter-chip { padding: 13px 14px; border-bottom: 1px solid #e5eaf2; min-height: 64px; }
+        .letter-chip:nth-child(odd) { border-right: 1px solid #e5eaf2; }
+        .letter-chip:nth-last-child(-n+2) { border-bottom: 0; }
+        .letter-chip span { display: block; color: #64748b; font-size: 10px; font-weight: 900; text-transform: uppercase; margin-bottom: 5px; }
+        .letter-chip strong { display: block; font-size: 13px; color: #0f172a; }
+        .letter-terms { margin: 18px 0 0; padding-left: 18px; }
+        .letter-terms li { margin-bottom: 9px; }
+        .letter-extra { border-left: 3px solid #2563eb; background: #f8fafc; padding: 14px 16px; border-radius: 8px; margin: 20px 0; }
+        .custom-detail-body { white-space: pre-wrap; margin: 20px 0; }
+        .custom-detail-fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin: 22px 0; }
+        .custom-detail-field { border: 1px solid #e5eaf2; border-radius: 8px; padding: 12px 14px; background: #f8fafc; min-height: 58px; }
+        .custom-detail-field span { display: block; color: #64748b; font-size: 10px; font-weight: 900; text-transform: uppercase; margin-bottom: 5px; }
+        .custom-detail-field strong { display: block; color: #0f172a; font-size: 13px; white-space: pre-wrap; }
+        .letter-sign { margin-top: 42px; display: grid; grid-template-columns: 1fr 1fr; gap: 24px; align-items: end; }
+        .letter-line { width: 220px; max-width: 100%; border-top: 1px solid #0f172a; padding-top: 9px; margin-top: 42px; }
+        @media print {
+            .platform-header, .letter-actions { display: none !important; }
+            body { background: #fff; }
+            .letter-page { margin: 0; max-width: none; padding: 0; }
+            .letter-paper { border: 0; box-shadow: none; border-radius: 0; }
+        }
+        @media (max-width: 720px) {
+            .letter-page { margin-top: 102px; padding: 0 14px; }
+            .letter-actions { flex-direction: column; align-items: stretch; }
+            .letter-btn { width: 100%; }
+            .letter-head, .letter-sign { grid-template-columns: 1fr; flex-direction: column; }
+            .letter-head { gap: 14px; }
+            .letter-number { text-align: left; }
+            .letter-chip-grid, .custom-detail-fields { grid-template-columns: 1fr; }
+            .letter-chip, .letter-chip:nth-child(odd) { border-right: 0; }
+            .letter-chip:nth-last-child(2) { border-bottom: 1px solid #e5eaf2; }
+        }
+    </style>
+</head>
+<body>
+    {% include 'includes/navbar.html' %}
+
+    <main class="letter-page">
+        <div class="letter-actions">
+            <a href="{% url 'letters:manage' %}" class="letter-btn"><i class="fas fa-arrow-left"></i> Back to Letters</a>
+            <div style="display: flex; gap: 10px;">
+                <a href="{% url 'letters:edit' letter.id %}" class="letter-btn"><i class="fas fa-pen"></i> Edit</a>
+                <button class="letter-btn primary" type="button" onclick="window.print()"><i class="fas fa-print"></i> Print</button>
+            </div>
+        </div>
+
+        <article class="letter-paper">
+            <header class="letter-head">
+                <div class="letter-brand">
+                    <img src="{% static 'img/logo-letterhead.png' %}" alt="GlassEntials Logo" class="letter-logo">
+                </div>
+                <div class="letter-number">
+                    <div class="letter-muted">Letter No.</div>
+                    <strong>{{ letter.letter_number }}</strong>
+                    <div class="letter-muted">Issue Date</div>
+                    <strong>{{ letter.issue_date|date:"d F Y" }}</strong>
+                </div>
+            </header>
+
+            <div class="letter-body">
+                <p>
+                    To,<br>
+                    <strong>{{ letter.candidate_name }}</strong><br>
+                    {{ letter.candidate_email|default:"-" }}<br>
+                    {{ letter.candidate_phone|default:"-" }}
+                </p>
+
+                <div class="letter-subject">Subject: {{ letter.subject|default:"Offer Letter" }}</div>
+
+                <p>Dear <strong>{{ letter.candidate_name }}</strong>,</p>
+
+                {% if letter.letter_type == 'CUSTOM' %}
+                <div class="custom-detail-body">
+                    {% if letter.body %}{{ letter.body }}{% else %}Custom letter content not provided.{% endif %}
+                </div>
+
+                {% if letter.custom_fields %}
+                <div class="custom-detail-fields">
+                    {% for field in letter.custom_fields %}
+                    <div class="custom-detail-field">
+                        <span>{{ field.label|default:"Custom Field" }}</span>
+                        <strong>{{ field.value|default:"-" }}</strong>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+                {% else %}
+                <p>
+                    {% if letter.letter_type == 'APPOINTMENT' %}
+                    We are pleased to appoint you as
+                    {% elif letter.letter_type == 'JOINING' %}
+                    We are pleased to confirm your joining as
+                    {% elif letter.letter_type == 'CONFIRMATION' %}
+                    We are pleased to confirm your employment as
+                    {% elif letter.letter_type == 'PROMOTION' %}
+                    We are pleased to inform you of your promotion to
+                    {% elif letter.letter_type == 'EXPERIENCE' %}
+                    This is to certify that you were employed as
+                    {% elif letter.letter_type == 'RELIEVING' %}
+                    This is to confirm that you are relieved from your position as
+                    {% elif letter.letter_type == 'WARNING' %}
+                    This letter serves as a formal warning regarding your conduct or performance in the role of
+                    {% else %}
+                    We are pleased to offer you the position of
+                    {% endif %}
+                    <strong>{{ letter.designation|default:"the assigned role" }}</strong>
+                    in the <strong>{{ letter.department|default:"assigned" }}</strong>
+                    department at <strong>{{ letter.company_name }}</strong>.
+                    {% if letter.letter_type == 'APPOINTMENT' %}
+                    Your appointment will be effective from
+                    {% elif letter.letter_type == 'JOINING' %}
+                    Your date of joining is
+                    {% elif letter.letter_type == 'CONFIRMATION' %}
+                    Your confirmation is effective from
+                    {% elif letter.letter_type == 'PROMOTION' %}
+                    Your promotion is effective from
+                    {% elif letter.letter_type == 'EXPERIENCE' %}
+                    This certificate is issued on
+                    {% elif letter.letter_type == 'RELIEVING' %}
+                    Your relieving date is
+                    {% elif letter.letter_type == 'WARNING' %}
+                    This warning is effective from
+                    {% else %}
+                    Your proposed date of joining is
+                    {% endif %}
+                    <strong>{{ letter.joining_date|date:"d F Y" }}</strong>.
+                </p>
+
+                <p>
+                    {% if letter.letter_type == 'EXPERIENCE' or letter.letter_type == 'RELIEVING' %}
+                    As per company records, you were based at <strong>{{ letter.work_location|default:"the assigned work location" }}</strong>
+                    and reported to <strong>{{ letter.reporting_manager|default:"the reporting manager assigned by the company" }}</strong>.
+                    Your employment type was
+                    {% elif letter.letter_type == 'WARNING' %}
+                    You are currently based at <strong>{{ letter.work_location|default:"the assigned work location" }}</strong>
+                    and report to <strong>{{ letter.reporting_manager|default:"the reporting manager assigned by the company" }}</strong>.
+                    Your employment type is
+                    {% elif letter.letter_type == 'CONFIRMATION' or letter.letter_type == 'PROMOTION' %}
+                    You will continue to be based at <strong>{{ letter.work_location|default:"the assigned work location" }}</strong>
+                    and will report to <strong>{{ letter.reporting_manager|default:"the reporting manager assigned by the company" }}</strong>.
+                    Your employment type will remain
+                    {% else %}
+                    You will be based at <strong>{{ letter.work_location|default:"the assigned work location" }}</strong>
+                    and will report to <strong>{{ letter.reporting_manager|default:"the reporting manager assigned by the company" }}</strong>.
+                    Your employment type will be
+                    {% endif %}
+                    <strong>{{ letter.employment_type|default:"as discussed" }}</strong>.
+                </p>
+
+                <div class="letter-chip-grid">
+                    <div class="letter-chip"><span>Letter Type</span><strong>{{ letter.get_letter_type_display }}</strong></div>
+                    <div class="letter-chip"><span>Annual CTC</span><strong>{% if letter.annual_ctc %}INR {{ letter.annual_ctc|floatformat:2 }}{% else %}-{% endif %}</strong></div>
+                    <div class="letter-chip"><span>Probation</span><strong>{{ letter.probation_period|default:"As per company policy" }}</strong></div>
+                    <div class="letter-chip"><span>Effective Date</span><strong>{{ letter.joining_date|date:"d F Y" }}</strong></div>
+                    <div class="letter-chip"><span>Designation</span><strong>{{ letter.designation|default:"-" }}</strong></div>
+                    <div class="letter-chip"><span>Department</span><strong>{{ letter.department|default:"-" }}</strong></div>
+                </div>
+
+                <p>
+                    {% if letter.letter_type == 'APPOINTMENT' %}
+                    Your appointment will be governed by the following employment conditions:
+                    {% elif letter.letter_type == 'JOINING' %}
+                    Your joining will be governed by the following standard requirements:
+                    {% elif letter.letter_type == 'CONFIRMATION' %}
+                    Your confirmed employment will continue under the following conditions:
+                    {% elif letter.letter_type == 'PROMOTION' %}
+                    Your promotion will be governed by the following conditions:
+                    {% elif letter.letter_type == 'EXPERIENCE' %}
+                    This experience certificate is issued under the following basis:
+                    {% elif letter.letter_type == 'RELIEVING' %}
+                    Your relieving will be governed by the following closure conditions:
+                    {% elif letter.letter_type == 'WARNING' %}
+                    This warning is issued under the following corrective expectations:
+                    {% else %}
+                    The offer will be governed by the following standard conditions:
+                    {% endif %}
+                </p>
+                <ul class="letter-terms">
+                    {% if letter.letter_type == 'APPOINTMENT' %}
+                    <li>Your appointment is subject to company policies, service rules, attendance rules, leave rules, and applicable employment law.</li>
+                    <li>Your compensation, benefits, statutory deductions, and tax deductions will be processed as per payroll policy.</li>
+                    <li>You are required to maintain confidentiality, protect company information, and follow the code of conduct.</li>
+                    <li>The company may verify identity, education, experience, references, and documents submitted by you.</li>
+                    {% elif letter.letter_type == 'JOINING' %}
+                    <li>Please carry required identity, education, experience, bank, and statutory documents on your joining day.</li>
+                    <li>Your employment will be governed by company policies, attendance rules, leave rules, payroll rules, and applicable law.</li>
+                    <li>You are required to maintain confidentiality and follow the company code of conduct from your date of joining.</li>
+                    <li>Your onboarding, induction, and reporting instructions will be coordinated by Human Resources.</li>
+                    {% elif letter.letter_type == 'CONFIRMATION' %}
+                    <li>Your employment confirmation is subject to continued compliance with company policies and applicable employment law.</li>
+                    <li>Your compensation, benefits, attendance, leave, payroll, and statutory deductions will continue as per company policy.</li>
+                    <li>You are required to maintain confidentiality, protect company information, and follow the code of conduct.</li>
+                    <li>The company appreciates your contribution and looks forward to your continued growth with the organization.</li>
+                    {% elif letter.letter_type == 'PROMOTION' %}
+                    <li>Your revised role, responsibilities, reporting structure, and compensation will be governed by company policy.</li>
+                    <li>Any salary revision or benefit change will be processed through payroll as applicable.</li>
+                    <li>Existing confidentiality, conduct, attendance, and leave obligations will continue to apply.</li>
+                    <li>Human Resources and your reporting manager will coordinate transition expectations for the new role.</li>
+                    {% elif letter.letter_type == 'EXPERIENCE' %}
+                    <li>This certificate is based on employment records available with the organization.</li>
+                    <li>It certifies role and association details and does not create any financial or legal liability.</li>
+                    <li>Any verification request may be handled by Human Resources as per company policy.</li>
+                    <li>Confidentiality and information protection obligations continue as applicable.</li>
+                    {% elif letter.letter_type == 'RELIEVING' %}
+                    <li>Final settlement, statutory processing, and payroll closure will be completed as per company policy.</li>
+                    <li>Company assets, data, access cards, documents, and credentials must be returned or closed.</li>
+                    <li>All handover responsibilities must be completed with your reporting manager or HR.</li>
+                    <li>Confidentiality and information protection obligations continue after separation.</li>
+                    {% elif letter.letter_type == 'WARNING' %}
+                    <li>You are expected to take corrective action immediately and comply with company policies.</li>
+                    <li>Your manager and Human Resources may review progress and document follow-up actions.</li>
+                    <li>Repeated non-compliance may lead to further disciplinary action as per company policy.</li>
+                    <li>This warning will be maintained in HR records as applicable.</li>
+                    {% else %}
+                    <li>This offer is subject to successful verification of identity, education, employment history, and references.</li>
+                    <li>Salary, benefits, leave, attendance, confidentiality, and code of conduct rules will be governed by company policy.</li>
+                    <li>Any statutory deductions, tax deductions, or compliance deductions will be processed as applicable by law.</li>
+                    <li>You are expected to submit required joining documents before or on the date of joining.</li>
+                    {% endif %}
+                </ul>
+
+                {% if letter.body %}
+                <div class="letter-extra">
+                    <strong>Additional Terms</strong><br>
+                    {{ letter.body|linebreaksbr }}
+                </div>
+                {% endif %}
+
+                <p>
+                    {% if letter.letter_type == 'APPOINTMENT' %}
+                    Please sign and return a copy of this letter as acknowledgement of your appointment.
+                    We look forward to welcoming you to <strong>{{ letter.company_name }}</strong>.
+                    {% elif letter.letter_type == 'JOINING' %}
+                    Please sign and return a copy of this letter as acknowledgement of your joining.
+                    We look forward to welcoming you to <strong>{{ letter.company_name }}</strong>.
+                    {% elif letter.letter_type == 'CONFIRMATION' %}
+                    Please sign and return a copy of this letter as acknowledgement of your employment confirmation.
+                    We look forward to your continued growth with <strong>{{ letter.company_name }}</strong>.
+                    {% elif letter.letter_type == 'PROMOTION' %}
+                    Please sign and return a copy of this letter as acknowledgement of your promotion.
+                    We wish you continued success in your new role.
+                    {% elif letter.letter_type == 'EXPERIENCE' %}
+                    This certificate is issued on request for official records.
+                    We wish you success in your future endeavors.
+                    {% elif letter.letter_type == 'RELIEVING' %}
+                    Please complete all clearance and handover requirements as applicable.
+                    We thank you for your contribution and wish you success in your future endeavors.
+                    {% elif letter.letter_type == 'WARNING' %}
+                    Please treat this matter seriously and acknowledge receipt of this warning.
+                    Immediate and sustained improvement is expected.
+                    {% else %}
+                    Please sign and return a copy of this letter as acceptance of the offer.
+                    We look forward to welcoming you to <strong>{{ letter.company_name }}</strong>.
+                    {% endif %}
+                </p>
+                {% endif %}
+            </div>
+
+            <footer class="letter-sign">
+                <div>
+                    <div class="letter-muted">For {{ letter.company_name }}</div>
+                    <div class="letter-line">
+                        <strong>{{ letter.signature_name|default:"HR Department" }}</strong><br>
+                        <span class="letter-muted">{{ letter.signature_title|default:"Human Resources" }}</span>
+                    </div>
+                </div>
+                <div>
+                    <div class="letter-muted">Accepted by Candidate</div>
+                    <div class="letter-line">
+                        <strong>{{ letter.candidate_name }}</strong><br>
+                        <span class="letter-muted">Signature and Date</span>
+                    </div>
+                </div>
+            </footer>
+        </article>
+    </main>
+</body>
+</html>
