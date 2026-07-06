@@ -227,7 +227,7 @@ class PayrollAttendanceIntegrationTests(TestCase):
         current = date(year, month, 1)
         dates = []
         while current.month == month:
-            if current.weekday() < 5:
+            if current.weekday() != 6:  # Mon–Sat (Sunday is the only weekly off)
                 dates.append(current)
             current += timedelta(days=1)
         return dates

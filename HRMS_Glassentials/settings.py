@@ -182,11 +182,21 @@ AUTH_USER_MODEL = 'accounts.CustomUser'
 LOGIN_URL = 'login'
 LOGIN_REDIRECT_URL = 'home'
 LOGOUT_REDIRECT_URL = 'login'
+CSRF_FAILURE_VIEW = 'home.error_views.csrf_failure'
 
 # Media files (Uploaded files like Profile Pictures, Documents)
-import os
 
 USE_S3 = os.environ.get('USE_S3', 'False') == 'True'
+
+# Default Storage Settings
+STORAGES = {
+    "default": {
+        "BACKEND": "django.core.files.storage.FileSystemStorage",
+    },
+    "staticfiles": {
+        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+    },
+}
 
 if USE_S3:
     # AWS S3 Settings
@@ -209,15 +219,8 @@ if USE_S3:
         'CacheControl': 'no-store, no-cache, private, must-revalidate',
     }
     
-    # Configure S3 for default storage (media files)
-    STORAGES = {
-        "default": {
-            "BACKEND": "storages.backends.s3boto3.S3Boto3Storage",
-        },
-        "staticfiles": {
-            "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
-        },
-    }
+    # Override default storage for S3
+    STORAGES["default"]["BACKEND"] = "storages.backends.s3boto3.S3Boto3Storage"
     MEDIA_URL = f'https://{AWS_S3_CUSTOM_DOMAIN}/'
 else:
     MEDIA_URL = '/media/'
@@ -226,6 +229,9 @@ else:
 # Production Security Settings
 # Enabled when DEBUG is False
 if not DEBUG:
+    # Ensure Django knows it's behind a secure proxy (Nginx)
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+    
     SECURE_SSL_REDIRECT = os.environ.get('DJANGO_SECURE_SSL_REDIRECT', 'True') == 'True'
     SESSION_COOKIE_SECURE = os.environ.get('DJANGO_SESSION_COOKIE_SECURE', 'True') == 'True'
     CSRF_COOKIE_SECURE = os.environ.get('DJANGO_CSRF_COOKIE_SECURE', 'True') == 'True'

@@ -314,7 +314,7 @@ def home_view(request):
             elif attendance_date == today:
                 status_label = "Not Marked"
                 status_type = "pending"
-            elif attendance_date.weekday() >= 5:
+            elif attendance_date.weekday() == 6:  # Sunday only
                 status_label = "Weekly Off"
                 status_type = "weekend"
             else:

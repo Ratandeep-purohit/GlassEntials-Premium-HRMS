@@ -309,6 +309,7 @@ def toggle_designation_status(request, pk):
         desig.department.updated_by = request.user
         desig.department.save()
     return redirect('designation')
+@login_required
 def add_employee(request):
     if request.method == 'POST':
         try:

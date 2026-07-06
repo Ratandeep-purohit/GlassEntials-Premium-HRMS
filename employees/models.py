@@ -1,5 +1,6 @@
 from django.db import models
 from django.conf import settings
+from django.core.validators import FileExtensionValidator
 
 # Create your models here.
 
@@ -164,17 +165,41 @@ class Employee(BaseModel):
     emergency_contact_relationship = models.CharField(max_length=50, blank=True)
 
     # Documents
-    resume = models.FileField(upload_to='resumes/', blank=True)
-    offer_letter = models.FileField(upload_to='offer_letters/', blank=True)
-    aadhaar_card = models.FileField(upload_to='aadhaar_cards/', blank=True)
-    pan_card = models.FileField(upload_to='pan_cards/', blank=True)
-    appointment_letter = models.FileField(upload_to='appointment_letters/', blank=True)
-    
+    resume = models.FileField(
+        upload_to='resumes/', blank=True,
+        validators=[FileExtensionValidator(allowed_extensions=['pdf', 'jpg', 'jpeg', 'png', 'doc', 'docx'])]
+    )
+    offer_letter = models.FileField(
+        upload_to='offer_letters/', blank=True,
+        validators=[FileExtensionValidator(allowed_extensions=['pdf', 'jpg', 'jpeg', 'png', 'doc', 'docx'])]
+    )
+    aadhaar_card = models.FileField(
+        upload_to='aadhaar_cards/', blank=True,
+        validators=[FileExtensionValidator(allowed_extensions=['pdf', 'jpg', 'jpeg', 'png'])]
+    )
+    pan_card = models.FileField(
+        upload_to='pan_cards/', blank=True,
+        validators=[FileExtensionValidator(allowed_extensions=['pdf', 'jpg', 'jpeg', 'png'])]
+    )
+    appointment_letter = models.FileField(
+        upload_to='appointment_letters/', blank=True,
+        validators=[FileExtensionValidator(allowed_extensions=['pdf', 'jpg', 'jpeg', 'png', 'doc', 'docx'])]
+    )
+
     # System
-    profile_img = models.ImageField(upload_to='profile_imgs/', blank=True)
+    profile_img = models.ImageField(
+        upload_to='profile_imgs/', blank=True,
+        validators=[FileExtensionValidator(allowed_extensions=['jpg', 'jpeg', 'png', 'gif', 'webp'])]
+    )
 
     def __str__(self):
         return f"{self.employee_id} - {self.first_name} {self.last_name}"
+
+    def save(self, *args, **kwargs):
+        file_fields = [f.name for f in self._meta.get_fields() if isinstance(f, (models.FileField, models.ImageField))]
+        exclude_fields = [f.name for f in self._meta.get_fields() if f.name not in file_fields]
+        self.clean_fields(exclude=exclude_fields)
+        super().save(*args, **kwargs)
 
     class Meta:
         unique_together = (('organization', 'employee_id'), ('organization', 'email'))

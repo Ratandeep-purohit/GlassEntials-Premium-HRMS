@@ -42,7 +42,7 @@ def get_working_days(start_date, end_date, organization):
     )
     
     while curr <= end_date:
-        if curr.weekday() < 5 and curr not in holidays: # Monday to Friday
+        if curr.weekday() != 6 and curr not in holidays: # Monday to Saturday
             days += 1
         curr += timedelta(days=1)
     return days
@@ -105,7 +105,7 @@ def leave_dashboard_view(request):
             'date': cursor,
             'day': cursor.day,
             'weekday': cursor.strftime('%a'),
-            'is_weekend': cursor.weekday() >= 5,
+            'is_weekend': cursor.weekday() == 6,  # Sunday only
         })
         cursor += timedelta(days=1)
 

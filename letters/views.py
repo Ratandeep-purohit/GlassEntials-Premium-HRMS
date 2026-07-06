@@ -1,5 +1,6 @@
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.db import IntegrityError, transaction
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 
@@ -17,6 +18,15 @@ def _staff_required(request):
 
 
 def _next_letter_number(organization, letter_type='OFFER'):
+    """
+    Generate the next sequential letter number for the given org + type.
+
+    Uses all_objects (bypasses soft-delete filter) so deleted letters still
+    hold their sequence slot and can never cause a unique-constraint collision.
+    Sorts by created_at DESC (not letter_number string) to avoid lexicographic
+    mis-ordering when numbers exceed single digits.
+    select_for_update() prevents concurrent requests from grabbing the same number.
+    """
     year = timezone.localdate().year
     prefix_map = {
         'OFFER': 'OL',
@@ -30,11 +40,23 @@ def _next_letter_number(organization, letter_type='OFFER'):
         'CUSTOM': 'CL',
     }
     prefix = f"{prefix_map.get(letter_type, 'LT')}-{year}-"
-    last_letter = JoiningLetter.objects.filter(
-        organization=organization,
-        letter_type=letter_type,
-        letter_number__startswith=prefix,
-    ).order_by('-letter_number').first()
+
+    # all_objects bypasses TenantManager's is_deleted=False filter,
+    # ensuring soft-deleted letters keep their number slot permanently.
+    # Note: select_for_update() is intentionally NOT used here because this
+    # function is called on GET requests too (to preview the next number).
+    # Race conditions are handled by transaction.atomic() + IntegrityError
+    # retry in the POST save path.
+    last_letter = (
+        JoiningLetter.all_objects
+        .filter(
+            organization=organization,
+            letter_number__startswith=prefix,
+        )
+        .order_by('-created_at')
+        .first()
+    )
+
     if not last_letter:
         return f"{prefix}0001"
     try:
@@ -155,16 +177,32 @@ def letter_builder(request, letter_id=None):
         if form.is_valid():
             letter = form.save(commit=False)
             letter.organization = organization
-            if not letter.letter_number:
-                letter.letter_number = _next_letter_number(organization, letter.letter_type)
-                letter.created_by = request.user
             letter.updated_by = request.user
-            _apply_employee_defaults(letter)
             if letter.letter_type == 'CUSTOM':
                 letter.custom_fields = _custom_fields_from_post(request.POST)
             else:
                 letter.custom_fields = []
-            letter.save()
+            _apply_employee_defaults(letter)
+            try:
+                with transaction.atomic():
+                    if not letter.letter_number:
+                        # select_for_update inside atomic() locks existing rows
+                        # so concurrent requests can't receive the same number.
+                        letter.letter_number = _next_letter_number(organization, letter.letter_type)
+                        letter.created_by = request.user
+                    letter.save()
+            except IntegrityError:
+                # Extremely rare: another request committed between our lock
+                # read and our insert.  Retry once with a fresh number.
+                try:
+                    with transaction.atomic():
+                        letter.pk = None
+                        letter.letter_number = _next_letter_number(organization, letter.letter_type)
+                        letter.created_by = request.user
+                        letter.save()
+                except IntegrityError:
+                    messages.error(request, "Could not generate a unique letter number. Please try again.")
+                    return redirect('letters:create')
             messages.success(request, f"{letter.get_letter_type_display()} {letter.letter_number} saved successfully.")
             return redirect('letters:manage')
         messages.error(request, "Please correct the highlighted letter fields.")
@@ -219,6 +257,20 @@ def letter_detail(request, letter_id):
         organization=request.user.organization,
     )
     return render(request, 'letters/detail.html', {'letter': letter})
+
+
+@login_required
+def letter_print(request, letter_id):
+    """Dedicated print-only view — renders a minimal A4 template with no web chrome."""
+    if not _staff_required(request):
+        return redirect('home')
+
+    letter = get_object_or_404(
+        JoiningLetter,
+        id=letter_id,
+        organization=request.user.organization,
+    )
+    return render(request, 'letters/print.html', {'letter': letter})
 
 
 @login_required

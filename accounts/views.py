@@ -178,10 +178,12 @@ def register_view(request):
     return render(request, 'register.html')
 
 def error_404(request, exception):
-    return render(request, '404.html', status=404)
+    from home.error_views import page_not_found
+    return page_not_found(request, exception)
 
 def error_500(request):
-    return render(request, '500.html', status=500)
+    from home.error_views import server_error
+    return server_error(request)
 
 def logout_view(request):
     logout(request)

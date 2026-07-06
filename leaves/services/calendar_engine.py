@@ -26,7 +26,7 @@ class LeaveCalendarEngine:
         total = Decimal("0.00")
         current = start_date
         while current <= end_date:
-            is_weekend = current.weekday() >= 5
+            is_weekend = current.weekday() == 6  # Sunday only
             is_holiday = current in holidays
             if is_weekend and not count_weekends:
                 current += timedelta(days=1)

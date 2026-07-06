@@ -249,7 +249,7 @@ class PayrollAttendanceService:
         days = []
         current = start_date
         while current <= end_date:
-            if current.weekday() < 5 and current not in self.holiday_dates:
+            if current.weekday() != 6 and current not in self.holiday_dates:  # Mon–Sat, excluding holidays
                 days.append(current)
             current += timedelta(days=1)
         return days

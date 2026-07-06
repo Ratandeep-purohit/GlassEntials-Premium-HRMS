@@ -36,7 +36,7 @@ def _attendance_row(employee, row_date, attendance=None, is_staff=False, today=N
     elif attendance and attendance.clock_in:
         status_label = "Missed Out"
         status_type = "missing"
-    elif row_date.weekday() >= 5:
+    elif row_date.weekday() == 6:  # Sunday only
         status_label = "Weekly Off"
         status_type = "weekend"
     else:
@@ -122,7 +122,7 @@ def _build_visual_attendance_register(employees, month_start, month_end, attenda
             attendance = attendance_map.get((employee.id, row_date))
             leave_cell = leave_day_map.get((employee.id, row_date))
             holiday = holiday_map.get(row_date)
-            is_weekend = row_date.weekday() >= 5
+            is_weekend = row_date.weekday() == 6  # Sunday only
             title_date = row_date.strftime('%d %b %Y')
 
             if leave_cell:
@@ -876,7 +876,7 @@ def attendance_calendar_view(request):
                         status = 'absent'
                 elif curr_date < today:
                     # If past date and no attendance/holiday, mark as absent if it's a weekday
-                    if curr_date.weekday() < 5: # Mon-Fri
+                    if curr_date.weekday() != 6:  # Mon–Sat (Sunday only is weekly off)
                          status = 'absent'
                     else:
                          status = 'weekend'

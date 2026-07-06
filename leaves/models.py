@@ -1,5 +1,6 @@
 from django.db import models
 from django.conf import settings
+from django.core.validators import FileExtensionValidator
 from employees.models import BaseModel, Employee
 
 class LeaveCategory(BaseModel):
@@ -362,7 +363,10 @@ class LeaveRequest(BaseModel):
     lop_days = models.DecimalField(max_digits=5, decimal_places=2, default=0.0)
     reason = models.TextField()
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='PENDING')
-    attachment = models.FileField(upload_to='leave_attachments/', blank=True, null=True)
+    attachment = models.FileField(
+        upload_to='leave_attachments/', blank=True, null=True,
+        validators=[FileExtensionValidator(allowed_extensions=['pdf', 'jpg', 'jpeg', 'png', 'doc', 'docx'])]
+    )
     attendance_sync_status = models.CharField(max_length=20, default='PENDING')
     payroll_sync_status = models.CharField(max_length=20, default='PENDING')
     
@@ -380,6 +384,12 @@ class LeaveRequest(BaseModel):
     )
 
 
+    def save(self, *args, **kwargs):
+        file_fields = [f.name for f in self._meta.get_fields() if isinstance(f, (models.FileField, models.ImageField))]
+        exclude_fields = [f.name for f in self._meta.get_fields() if f.name not in file_fields]
+        self.clean_fields(exclude=exclude_fields)
+        super().save(*args, **kwargs)
+
     def __str__(self):
         return f"{self.employee.first_name} - {self.leave_type.code} ({self.start_date})"
 
@@ -391,7 +401,10 @@ class LeaveAttachment(BaseModel):
     )
 
     leave_request = models.ForeignKey(LeaveRequest, on_delete=models.CASCADE, related_name='attachments')
-    file = models.FileField(upload_to='leave_attachments/')
+    file = models.FileField(
+        upload_to='leave_attachments/',
+        validators=[FileExtensionValidator(allowed_extensions=['pdf', 'jpg', 'jpeg', 'png', 'doc', 'docx'])]
+    )
     file_name = models.CharField(max_length=255)
     file_type = models.CharField(max_length=50, blank=True)
     file_size = models.PositiveIntegerField(default=0)
@@ -400,6 +413,12 @@ class LeaveAttachment(BaseModel):
     reviewed_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name='reviewed_leave_attachments')
     reviewed_at = models.DateTimeField(null=True, blank=True)
     reviewer_comments = models.TextField(blank=True)
+
+    def save(self, *args, **kwargs):
+        file_fields = [f.name for f in self._meta.get_fields() if isinstance(f, (models.FileField, models.ImageField))]
+        exclude_fields = [f.name for f in self._meta.get_fields() if f.name not in file_fields]
+        self.clean_fields(exclude=exclude_fields)
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return self.file_name

@@ -45,11 +45,42 @@
         .letter-sign { margin-top: 42px; display: grid; grid-template-columns: 1fr 1fr; gap: 24px; align-items: end; }
         .letter-line { width: 220px; max-width: 100%; border-top: 1px solid #0f172a; padding-top: 9px; margin-top: 42px; }
         @media print {
-            .platform-header, .letter-actions { display: none !important; }
-            body { background: #fff; }
-            .letter-page { margin: 0; max-width: none; padding: 0; }
-            .letter-paper { border: 0; box-shadow: none; border-radius: 0; }
+            @page {
+                size: A4 portrait;
+                margin: 6mm 6mm 6mm 6mm;
+            }
+            html, body {
+                background: #fff !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+            .platform-header, .letter-actions, nav, header.platform-header {
+                display: none !important;
+            }
+            .letter-page {
+                margin: 0 !important;
+                max-width: none !important;
+                padding: 0 !important;
+            }
+            .letter-paper {
+                border: 0 !important;
+                box-shadow: none !important;
+                border-radius: 0 !important;
+                padding: 16px !important;
+                /* Scale the entire letter to ~78% so it always fits on one A4 page */
+                zoom: 0.78;
+            }
+            /* Only prevent the signature from being orphaned on page 2 */
+            .letter-sign {
+                page-break-before: avoid;
+                break-before: avoid;
+                page-break-inside: avoid;
+                break-inside: avoid;
+            }
         }
+
         @media (max-width: 720px) {
             .letter-page { margin-top: 102px; padding: 0 14px; }
             .letter-actions { flex-direction: column; align-items: stretch; }
@@ -71,7 +102,7 @@
             <a href="{% url 'letters:manage' %}" class="letter-btn"><i class="fas fa-arrow-left"></i> Back to Letters</a>
             <div style="display: flex; gap: 10px;">
                 <a href="{% url 'letters:edit' letter.id %}" class="letter-btn"><i class="fas fa-pen"></i> Edit</a>
-                <button class="letter-btn primary" type="button" onclick="window.print()"><i class="fas fa-print"></i> Print</button>
+                <a href="{% url 'letters:print' letter.id %}" target="_blank" class="letter-btn primary"><i class="fas fa-print"></i> Print</a>
             </div>
         </div>
 

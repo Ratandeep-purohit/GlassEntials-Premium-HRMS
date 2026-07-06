@@ -16,6 +16,7 @@ import datetime
 from decimal import Decimal
 
 from django.core.exceptions import ValidationError
+from django.core.validators import FileExtensionValidator
 from django.db import models, transaction
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
@@ -876,12 +877,21 @@ class DeclarationProof(BaseModel):
         REJECTED = "REJECTED", _("Rejected")
 
     declaration = models.ForeignKey(EmployeeTaxDeclaration, on_delete=models.CASCADE, related_name="proofs")
-    file = models.FileField(upload_to="tax_proofs/%Y/%m/")
+    file = models.FileField(
+        upload_to="tax_proofs/%Y/%m/",
+        validators=[FileExtensionValidator(allowed_extensions=['pdf', 'jpg', 'jpeg', 'png'])]
+    )
     document_type = models.CharField(max_length=100)
     amount_claimed = models.DecimalField(**MONEY, default=Decimal("0.00"))
     verification_status = models.CharField(max_length=20, choices=VerificationStatus.choices, default=VerificationStatus.PENDING)
     reviewer_remarks = models.TextField(blank=True)
     expiry_date = models.DateField(null=True, blank=True)
+
+    def save(self, *args, **kwargs):
+        file_fields = [f.name for f in self._meta.get_fields() if isinstance(f, (models.FileField, models.ImageField))]
+        exclude_fields = [f.name for f in self._meta.get_fields() if f.name not in file_fields]
+        self.clean_fields(exclude=exclude_fields)
+        super().save(*args, **kwargs)
 
 class DeclarationWorkflowLog(BaseModel):
     """Audit Trail for declarations."""

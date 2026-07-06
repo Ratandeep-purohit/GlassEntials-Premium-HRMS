@@ -1,5 +1,5 @@
-# Use an official Python runtime as a parent image
-FROM python:3.10-slim
+# Use the same major Python version as the development/runtime environment.
+FROM python:3.13-slim
 
 # Set environment variables
 ENV PYTHONDONTWRITEBYTECODE=1
@@ -23,8 +23,11 @@ RUN pip install --upgrade pip && pip install -r requirements.txt
 # Copy project files
 COPY . /app/
 
-# Collect static files
-RUN python manage.py collectstatic --noinput
+# Collect static files with build-time-only Django settings.
+RUN DJANGO_SECRET_KEY=build-time-static-collection-key \
+    DJANGO_DEBUG=False \
+    DJANGO_ALLOWED_HOSTS=localhost,127.0.0.1 \
+    python manage.py collectstatic --noinput --verbosity 0
 
 # Expose port
 EXPOSE $PORT
