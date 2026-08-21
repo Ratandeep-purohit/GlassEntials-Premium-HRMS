@@ -562,8 +562,9 @@ def clock_in_out_view(request):
             messages.error(request, "Your account is not linked to an active employee profile in this organization.")
             return redirect('home')
 
-        today = datetime.now().date()
-        current_time = datetime.now().time()
+        _now_local = timezone.localtime(timezone.now())
+        today = _now_local.date()
+        current_time = _now_local.time()
         
         # Get current shift assignment
         from attendance.models import ShiftAssignment
