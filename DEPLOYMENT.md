@@ -47,7 +47,16 @@ python manage.py collectstatic --noinput
 ## Required Operational Setup
 
 - Use HTTPS only.
-- Store HR document uploads in private object storage such as S3.
+- Run Gunicorn on port **8001** internally so it does not conflict with the CRM. Example: `gunicorn HRMS_Glassentials.wsgi --bind 127.0.0.1:8001 --log-file -`
+- Store HR document uploads in private object storage such as S3. 
+- **If not using S3 (USE_S3=False)**: You MUST proxy `/media/` to Django so that the `secure_media_serve` endpoint can authenticate requests for private employee documents. Do NOT configure Nginx to serve the `media/` directory statically.
+  ```nginx
+  location /media/ {
+      proxy_pass http://127.0.0.1:8001;
+      proxy_set_header Host $host;
+      proxy_set_header X-Real-IP $remote_addr;
+  }
+  ```
 - Configure database backups.
 - Configure logs and error monitoring.
 - Schedule leave accrual and year-end jobs:

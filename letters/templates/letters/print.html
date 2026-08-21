@@ -39,14 +39,15 @@
         p { margin-bottom: 7pt; font-size: 10.5pt; }
 
         /* ── Info grid (replaces chip-grid) ── */
-        .info-table { width: 100%; border-collapse: collapse; margin: 10pt 0; font-size: 9.5pt; }
+        .info-table { width: 100%; border-collapse: collapse; margin: 10pt 0; font-size: 9.5pt; page-break-inside: avoid; break-inside: avoid; }
         .info-table td { border: 0.5pt solid #ccc; padding: 5pt 8pt; vertical-align: top; width: 50%; }
+        .info-table tr { page-break-inside: avoid; break-inside: avoid; }
         .info-table .lbl { font-size: 7.5pt; color: #555; text-transform: uppercase; letter-spacing: .4px; display: block; margin-bottom: 2pt; }
         .info-table .val { font-weight: bold; color: #111; }
 
         /* ── Terms ── */
-        ul { padding-left: 16pt; margin: 6pt 0 8pt; }
-        ul li { margin-bottom: 4pt; font-size: 10pt; }
+        ul { padding-left: 16pt; margin: 6pt 0 8pt; page-break-inside: avoid; break-inside: avoid; }
+        ul li { margin-bottom: 4pt; font-size: 10pt; page-break-inside: avoid; break-inside: avoid; }
 
         /* ── Signature ── */
         .sig { display: flex; justify-content: space-between; margin-top: 20pt; page-break-inside: avoid; break-inside: avoid; }
@@ -57,7 +58,7 @@
         .sig-title { font-size: 9pt; color: #555; }
 
         /* ── Extra / additional terms ── */
-        .extra { border-left: 2.5pt solid #333; background: #f7f7f7; padding: 7pt 10pt; margin: 8pt 0; font-size: 9.5pt; }
+        .extra { border-left: 2.5pt solid #333; background: #f7f7f7; padding: 7pt 10pt; margin: 8pt 0; font-size: 9.5pt; page-break-inside: avoid; break-inside: avoid; }
     </style>
 </head>
 <body>

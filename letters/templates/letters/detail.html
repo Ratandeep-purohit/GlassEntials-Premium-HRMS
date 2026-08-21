@@ -47,7 +47,7 @@
         @media print {
             @page {
                 size: A4 portrait;
-                margin: 6mm 6mm 6mm 6mm;
+                margin: 5mm 5mm 5mm 5mm;
             }
             html, body {
                 background: #fff !important;
@@ -68,11 +68,9 @@
                 border: 0 !important;
                 box-shadow: none !important;
                 border-radius: 0 !important;
-                padding: 16px !important;
-                /* Scale the entire letter to ~78% so it always fits on one A4 page */
-                zoom: 0.78;
+                padding: 12px !important;
+                zoom: 0.72;
             }
-            /* Only prevent the signature from being orphaned on page 2 */
             .letter-sign {
                 page-break-before: avoid;
                 break-before: avoid;

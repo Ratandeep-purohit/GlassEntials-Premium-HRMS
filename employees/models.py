@@ -1,6 +1,19 @@
 from django.db import models
 from django.conf import settings
 from django.core.validators import FileExtensionValidator
+import os
+import uuid
+
+def secure_upload_path(instance, filename, folder):
+    ext = filename.split('.')[-1]
+    secure_name = f"{uuid.uuid4().hex}.{ext}"
+    return os.path.join(folder, secure_name)
+
+def resume_path(instance, filename): return secure_upload_path(instance, filename, 'resumes')
+def offer_letter_path(instance, filename): return secure_upload_path(instance, filename, 'offer_letters')
+def aadhaar_path(instance, filename): return secure_upload_path(instance, filename, 'aadhaar_cards')
+def pan_path(instance, filename): return secure_upload_path(instance, filename, 'pan_cards')
+def appointment_letter_path(instance, filename): return secure_upload_path(instance, filename, 'appointment_letters')
 
 # Create your models here.
 
@@ -166,23 +179,23 @@ class Employee(BaseModel):
 
     # Documents
     resume = models.FileField(
-        upload_to='resumes/', blank=True,
+        upload_to=resume_path, blank=True,
         validators=[FileExtensionValidator(allowed_extensions=['pdf', 'jpg', 'jpeg', 'png', 'doc', 'docx'])]
     )
     offer_letter = models.FileField(
-        upload_to='offer_letters/', blank=True,
+        upload_to=offer_letter_path, blank=True,
         validators=[FileExtensionValidator(allowed_extensions=['pdf', 'jpg', 'jpeg', 'png', 'doc', 'docx'])]
     )
     aadhaar_card = models.FileField(
-        upload_to='aadhaar_cards/', blank=True,
+        upload_to=aadhaar_path, blank=True,
         validators=[FileExtensionValidator(allowed_extensions=['pdf', 'jpg', 'jpeg', 'png'])]
     )
     pan_card = models.FileField(
-        upload_to='pan_cards/', blank=True,
+        upload_to=pan_path, blank=True,
         validators=[FileExtensionValidator(allowed_extensions=['pdf', 'jpg', 'jpeg', 'png'])]
     )
     appointment_letter = models.FileField(
-        upload_to='appointment_letters/', blank=True,
+        upload_to=appointment_letter_path, blank=True,
         validators=[FileExtensionValidator(allowed_extensions=['pdf', 'jpg', 'jpeg', 'png', 'doc', 'docx'])]
     )
 

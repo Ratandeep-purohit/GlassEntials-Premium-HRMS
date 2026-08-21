@@ -218,7 +218,7 @@ if USE_S3:
     AWS_S3_OBJECT_PARAMETERS = {
         'CacheControl': 'no-store, no-cache, private, must-revalidate',
     }
-    
+
     # Override default storage for S3
     STORAGES["default"]["BACKEND"] = "storages.backends.s3boto3.S3Boto3Storage"
     MEDIA_URL = f'https://{AWS_S3_CUSTOM_DOMAIN}/'
@@ -238,6 +238,11 @@ if not DEBUG:
     SECURE_HSTS_SECONDS = int(os.environ.get('DJANGO_SECURE_HSTS_SECONDS', 31536000))
     SECURE_HSTS_INCLUDE_SUBDOMAINS = True
     SECURE_HSTS_PRELOAD = True
+    
+    # Missing Security Headers added
+    SECURE_CONTENT_TYPE_NOSNIFF = True
+    SECURE_REFERRER_POLICY = "same-origin"
+    X_FRAME_OPTIONS = "DENY"
 
 # Logging Configuration
 LOGGING = {

@@ -4,18 +4,50 @@ from django.contrib.auth import get_user_model
 from django.contrib import messages
 from django.db import transaction
 from django.utils import timezone
+from django.core.cache import cache
 
 user=get_user_model()
 
 def landing_page(request):
     return render(request,'landing_page.html')
 
+def get_client_ip(request):
+    """
+    Safely extract the real client IP.
+    Our Nginx configuration guarantees HTTP_X_REAL_IP is set to the 
+    TCP connection's $remote_addr before proxying to Gunicorn on 127.0.0.1:8001.
+    """
+    x_real_ip = request.META.get('HTTP_X_REAL_IP')
+    if x_real_ip:
+        return x_real_ip
+    return request.META.get('REMOTE_ADDR')
+
 def login_view(request):
+    ip = get_client_ip(request)
+    
     if request.method == 'POST':
-        username = request.POST['username']
-        password = request.POST['password']
+        username = request.POST.get('username', '').strip().lower()
+        
+        # Dual-bucket rate limiting strategy
+        # 1. Limit specific account brute-forcing from a specific IP (Scenario A)
+        cache_key_user_ip = f'login_{username}_{ip}'
+        # 2. Limit general horizontal brute-forcing across many accounts from one IP (Scenario C)
+        # Higher limit allows legitimate users behind the same NAT to still log in (Scenario E)
+        cache_key_ip = f'login_{ip}'
+        
+        attempts_user_ip = cache.get(cache_key_user_ip, 0)
+        attempts_ip = cache.get(cache_key_ip, 0)
+        
+        if attempts_user_ip >= 5 or attempts_ip >= 20:
+            messages.error(request, "Too many login attempts. Please try again in 15 minutes.")
+            return render(request, 'login.html')
+
+        password = request.POST.get('password', '')
         user_auth = authenticate(request, username=username, password=password)
         if user_auth is not None:
+            # Clear lockout for this specific user/IP pair on success
+            cache.delete(cache_key_user_ip)
+            
             if not user_auth.is_approved:
                 messages.warning(request, "Your account is currently pending approval by HR/Admin.")
                 return redirect('login')
@@ -24,8 +56,12 @@ def login_view(request):
             messages.success(request, f"Welcome back, {user_auth.username}!")
             return redirect('home')
         else:
+            # Increment failed attempts
+            cache.set(cache_key_user_ip, attempts_user_ip + 1, 900) # 15 minutes
+            cache.set(cache_key_ip, attempts_ip + 1, 900)
             messages.error(request, "Invalid username or password.")
             return redirect('login')
+            
     return render(request, 'login.html')
 
 
@@ -114,9 +150,17 @@ def _create_owner_employee(new_user, organization):
 
 
 def register_view(request):
+    ip = get_client_ip(request)
+    cache_key_ip = f'register_attempts_{ip}'
+    attempts_ip = cache.get(cache_key_ip, 0)
+    
+    if attempts_ip >= 5:
+        messages.error(request, "Too many registration attempts. Please try again in 15 minutes.")
+        return render(request, 'register.html')
+
     if request.method == 'POST':
-        username = request.POST.get('username')
-        email = request.POST.get('email')
+        username = request.POST.get('username', '').strip()
+        email = request.POST.get('email', '').strip()
         phone = request.POST.get('phone')
         org_choice = request.POST.get('organization')
         org_name = request.POST.get('org_name')
@@ -124,9 +168,11 @@ def register_view(request):
         password = request.POST.get('password')
         
         if user.objects.filter(username=username).exists():
+            cache.set(cache_key_ip, attempts_ip + 1, 900)
             messages.error(request, "Username already exists.")
             return redirect('register')
         if user.objects.filter(email=email).exists():
+            cache.set(cache_key_ip, attempts_ip + 1, 900)
             messages.error(request, "Email already exists.")
             return redirect('register')
             
@@ -148,6 +194,7 @@ def register_view(request):
                     try:
                         org_instance = Organization.objects.get(unique_code=org_code)
                     except Organization.DoesNotExist:
+                        cache.set(cache_key_ip, attempts_ip + 1, 900)
                         messages.error(request, "Invalid organization code.")
                         return redirect('register')
                 else:
@@ -169,7 +216,10 @@ def register_view(request):
                     new_user.is_staff = False
                     new_user.save()
                     messages.success(request, "Account created successfully! Please wait for HR/Admin to approve your account.")
+                
+                cache.delete(cache_key_ip) # clear on success
         except Exception as exc:
+            cache.set(cache_key_ip, attempts_ip + 1, 900)
             messages.error(request, f"Account setup failed: {exc}")
             return redirect('register')
 

@@ -1,9 +1,24 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
+from django.db import transaction
+from django.db.models import F
+from django.core.exceptions import PermissionDenied
+from functools import wraps
 from .models import Shift, ShiftAssignment, AttendanceCorrection
 from django.core.exceptions import ValidationError
 from employees.models import Employee
+from django.shortcuts import redirect
+
+def staff_required(view_func):
+    @wraps(view_func)
+    def _wrapped_view(request, *args, **kwargs):
+        if not request.user.is_authenticated:
+            return redirect('login')
+        if not request.user.is_staff:
+            raise PermissionDenied("Only authorized staff can access this page.")
+        return view_func(request, *args, **kwargs)
+    return _wrapped_view
 
 from django.db.models import Q
 from django.contrib.auth.decorators import login_required
@@ -337,6 +352,8 @@ def attendance_visual_view(request):
     return redirect(f"{reverse('attendance')}?{params.urlencode()}")
 
 
+@login_required
+@staff_required
 def create_shift_view(request,pk=None):
     edit_shift = None
     
@@ -434,6 +451,8 @@ def create_shift_view(request,pk=None):
     }
     return render(request, 'createshift.html', context)
 
+@login_required
+@staff_required
 def assign_shift_view(request, pk=None):
     edit_assignment = None
     

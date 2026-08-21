@@ -7,7 +7,19 @@ from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
 from django.contrib import messages
 from django.db.models import Q, Count
+from django.core.exceptions import PermissionDenied
+from functools import wraps
 from .models import Department, Designation, Employee
+
+def staff_required(view_func):
+    @wraps(view_func)
+    def _wrapped_view(request, *args, **kwargs):
+        if not request.user.is_authenticated:
+            return redirect('login')
+        if not request.user.is_staff:
+            raise PermissionDenied("Only authorized staff can access this page.")
+        return view_func(request, *args, **kwargs)
+    return _wrapped_view
 
 # Create your views here.
 @login_required
@@ -75,7 +87,7 @@ def employee_directory(request):
     organization = request.user.organization
     
     # Show active, non-deleted employees of the organization (or global seeded ones)
-    employees_list = Employee.objects.filter(
+    employees_list = Employee.objects.select_related('department', 'designation').filter(
         Q(organization=organization) | Q(organization__isnull=True),
         is_active=True,
         is_deleted=False
@@ -130,6 +142,8 @@ def employee_directory(request):
     }
     return render(request, 'employee_directory.html', context)
 
+@login_required
+@staff_required
 def department_view(request, pk=None):
     edit_dept = None
     if pk:
@@ -187,6 +201,8 @@ def department_view(request, pk=None):
         'edit_dept': edit_dept
     })
 
+@login_required
+@staff_required
 def delete_department(request, pk):
     try:
         dept = Department.objects.get(pk=pk, organization=request.user.organization)
@@ -199,6 +215,8 @@ def delete_department(request, pk):
     except Department.DoesNotExist:
         messages.error(request, 'Department not found.')
     return redirect('department')
+@login_required
+@staff_required
 def toggle_department_status(request, pk):
     try:
         dept = Department.objects.get(pk=pk, organization=request.user.organization)
@@ -217,6 +235,8 @@ def toggle_department_status(request, pk):
         designation.save()
     return redirect('department')
 
+@login_required
+@staff_required
 def designation_view(request, pk=None):
     edit_desig = None
     if pk:
@@ -281,6 +301,8 @@ def designation_view(request, pk=None):
         'departments': departments,
         'edit_desig': edit_desig
     })
+@login_required
+@staff_required
 def delete_designation(request, pk):
     try:
         desig = Designation.objects.get(pk=pk, organization=request.user.organization)
@@ -293,6 +315,8 @@ def delete_designation(request, pk):
     except Designation.DoesNotExist:
         messages.error(request, 'Designation not found.')
     return redirect('designation')
+@login_required
+@staff_required
 def toggle_designation_status(request, pk):
     try:
         desig = Designation.objects.get(pk=pk, organization=request.user.organization)
@@ -310,6 +334,7 @@ def toggle_designation_status(request, pk):
         desig.department.save()
     return redirect('designation')
 @login_required
+@staff_required
 def add_employee(request):
     if request.method == 'POST':
         try:
@@ -387,6 +412,7 @@ def add_employee(request):
     })
 
 @login_required
+@staff_required
 def toggle_employee_status(request, pk):
     try:
         employee = Employee.objects.get(pk=pk, organization=request.user.organization, is_deleted=False)
@@ -399,6 +425,7 @@ def toggle_employee_status(request, pk):
     return redirect('employee')
 
 @login_required
+@staff_required
 def delete_employee(request, pk):
     try:
         employee = Employee.objects.get(pk=pk, organization=request.user.organization)
@@ -413,16 +440,21 @@ def delete_employee(request, pk):
 @login_required
 def view_employee(request, pk):
     try:
-        employee = Employee.objects.get(pk=pk, organization=request.user.organization, is_deleted=False)
+        employee = Employee.objects.select_related('department', 'designation', 'manager').get(pk=pk, organization=request.user.organization, is_deleted=False)
     except Employee.DoesNotExist:
         messages.error(request, 'Employee not found.')
         return redirect('employee')
+        
+    if not request.user.is_staff and employee.email != request.user.email:
+        raise PermissionDenied("You do not have permission to view other employees' profiles.")
+
     
     return render(request, 'viewemployee.html', {
         'employee': employee
     })
 
 @login_required
+@staff_required
 def edit_employee(request, pk):
     try:
         employee = Employee.objects.get(pk=pk, organization=request.user.organization, is_deleted=False)
@@ -499,9 +531,10 @@ def edit_employee(request, pk):
     })
 
 @login_required
+@staff_required
 def export_employees_csv(request):
     # Base query
-    employees = Employee.objects.filter(organization=request.user.organization, is_deleted=False).order_by('-created_at')
+    employees = Employee.objects.select_related('department', 'designation').filter(organization=request.user.organization, is_deleted=False).order_by('-created_at')
     
     # Get filter parameters
     search_query = request.GET.get('search', '')
@@ -555,9 +588,10 @@ def export_employees_csv(request):
     return response
 
 @login_required
+@staff_required
 def export_employees_excel(request):
     # Base query
-    employees = Employee.objects.filter(organization=request.user.organization, is_deleted=False).order_by('-created_at')
+    employees = Employee.objects.select_related('department', 'designation').filter(organization=request.user.organization, is_deleted=False).order_by('-created_at')
     
     # Same filtering logic
     search_query = request.GET.get('search', '')
@@ -692,6 +726,7 @@ def download_sample_excel(request):
     return response
 
 @login_required
+@staff_required
 def bulk_import(request):
     if request.method == 'POST':
         excel_file = request.FILES.get('excel_file')
@@ -926,3 +961,48 @@ def edit_profile(request):
     return render(request, 'edit_profile.html', {
         'employee': employee
     })
+
+from django.http import FileResponse, Http404
+from django.core.exceptions import PermissionDenied
+from django.conf import settings
+from pathlib import Path
+import posixpath
+
+@login_required
+def secure_media_serve(request, path):
+    """
+    Secure endpoint to serve sensitive media files when not using S3.
+    Requires staff access or ownership of the file.
+    """
+    path = posixpath.normpath(path).lstrip('/')
+    fullpath = Path(settings.MEDIA_ROOT) / path
+    
+    try:
+        fullpath.resolve().relative_to(Path(settings.MEDIA_ROOT).resolve())
+    except (ValueError, RuntimeError):
+        raise Http404("Invalid path")
+        
+    if not fullpath.exists() or not fullpath.is_file():
+        raise Http404("File not found")
+        
+    sensitive_prefixes = ['resumes/', 'offer_letters/', 'aadhaar_cards/', 'pan_cards/', 'appointment_letters/']
+    is_sensitive = any(path.startswith(prefix) for prefix in sensitive_prefixes)
+    
+    if is_sensitive:
+        if not request.user.is_staff:
+            # Check ownership
+            employee = Employee.objects.filter(email=request.user.email, organization=request.user.organization, is_active=True, is_deleted=False).first()
+            if not employee:
+                raise PermissionDenied("Access Denied")
+            
+            owned = False
+            for field in ['resume', 'offer_letter', 'aadhaar_card', 'pan_card', 'appointment_letter']:
+                file_field = getattr(employee, field)
+                if file_field and file_field.name == path:
+                    owned = True
+                    break
+                    
+            if not owned:
+                raise PermissionDenied("Access Denied")
+                
+    return FileResponse(open(fullpath, 'rb'))
