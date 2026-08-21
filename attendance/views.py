@@ -22,6 +22,7 @@ def staff_required(view_func):
 
 from django.db.models import Q
 from django.contrib.auth.decorators import login_required
+from django.conf import settings
 from django.urls import reverse
 from datetime import datetime, date, timedelta, time
 import calendar
@@ -253,6 +254,18 @@ def attendance_view(request):
         period_end = min(month_end, today)
     else:
         period_end = month_end
+
+    # Clamp period_start to HRMS_GO_LIVE_DATE so pre-deployment days
+    # are not shown as Absent rows in the attendance log.
+    period_start = month_start
+    _go_live_str = getattr(settings, 'HRMS_GO_LIVE_DATE', '')
+    if _go_live_str:
+        try:
+            _go_live = datetime.strptime(_go_live_str, '%Y-%m-%d').date()
+            if _go_live > period_start:
+                period_start = _go_live
+        except ValueError:
+            pass  # Bad format - ignore and show full month
     
     employee_qs = Employee.objects.filter(
         organization=organization,
@@ -286,9 +299,9 @@ def attendance_view(request):
         attendance_map = {(att.employee_id, att.date): att for att in attendance_qs}
 
     month_dates = []
-    if period_end >= month_start:
-        total_days = (period_end - month_start).days + 1
-        month_dates = [month_start + timedelta(days=offset) for offset in range(total_days)]
+    if period_end >= period_start:
+        total_days = (period_end - period_start).days + 1
+        month_dates = [period_start + timedelta(days=offset) for offset in range(total_days)]
 
     attendance_rows = []
     for row_date in reversed(month_dates):
@@ -305,7 +318,7 @@ def attendance_view(request):
 
     visual_register = _build_visual_attendance_register(
         employees=employees,
-        month_start=month_start,
+        month_start=period_start,
         month_end=month_end,
         attendance_map=attendance_map,
         organization=organization,

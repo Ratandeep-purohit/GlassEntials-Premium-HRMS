@@ -272,3 +272,8 @@ LOGGING = {
         },
     },
 }
+
+# --- Go-Live Date ---
+# Set HRMS_GO_LIVE_DATE=YYYY-MM-DD in your .env to hide pre-deployment
+# absent rows. The attendance log will only show dates from this date onward.
+HRMS_GO_LIVE_DATE = os.environ.get('HRMS_GO_LIVE_DATE', '')
