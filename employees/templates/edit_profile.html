@@ -289,22 +289,10 @@
         }
 
         function removePhoto() {
-            if (confirm('Are you sure you want to remove your profile picture?')) {
+            if (confirm('Are you sure you want to remove your profile picture? This will save your profile immediately.')) {
                 document.getElementById('remove_profile_img_flag').value = "1";
                 document.getElementById('profile_img_input').value = "";
-                
-                let preview = document.getElementById('preview_img');
-                if (preview) {
-                    let placeholder = document.createElement('div');
-                    placeholder.id = 'initial_placeholder';
-                    placeholder.style.fontSize = '54px';
-                    placeholder.style.fontWeight = '800';
-                    placeholder.style.color = '#6366f1';
-                    placeholder.style.fontFamily = "'Manrope', sans-serif";
-                    placeholder.innerText = "{{ request.user.username|slice:':1'|upper }}";
-                    preview.parentNode.appendChild(placeholder);
-                    preview.remove();
-                }
+                document.querySelector('form').submit();
             }
         }
     </script>

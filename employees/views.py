@@ -940,6 +940,8 @@ def edit_profile(request):
 
             # Files
             if request.POST.get('remove_profile_img') == '1':
+                if employee.profile_img:
+                    employee.profile_img.delete(save=False)
                 employee.profile_img = None
             elif request.FILES.get('profile_img'):
                 employee.profile_img = request.FILES.get('profile_img')
