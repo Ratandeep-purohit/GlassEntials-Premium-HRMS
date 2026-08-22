@@ -44,17 +44,23 @@
                 </div>
 
                 <div class="oauth-buttons">
-                    <a href="{% provider_login_url 'google' %}" class="oauth-btn google-btn" onclick="this.classList.add('loading')">
-                        <img src="https://authjs.dev/img/providers/google.svg" alt="Google">
-                        <span>Continue with Google</span>
-                        <div class="btn-loader"></div>
-                    </a>
+                    <form action="{% provider_login_url 'google' %}" method="post" class="oauth-form">
+                        {% csrf_token %}
+                        <button type="submit" class="oauth-btn google-btn" onclick="this.classList.add('loading')">
+                            <img src="https://authjs.dev/img/providers/google.svg" alt="Google">
+                            <span>Continue with Google</span>
+                            <div class="btn-loader"></div>
+                        </button>
+                    </form>
                     
-                    <a href="{% provider_login_url 'microsoft' %}" class="oauth-btn microsoft-btn" onclick="this.classList.add('loading')">
-                        <img src="https://authjs.dev/img/providers/azure.svg" alt="Microsoft" style="width:20px;height:20px;">
-                        <span>Continue with Microsoft</span>
-                        <div class="btn-loader"></div>
-                    </a>
+                    <form action="{% provider_login_url 'microsoft' %}" method="post" class="oauth-form">
+                        {% csrf_token %}
+                        <button type="submit" class="oauth-btn microsoft-btn" onclick="this.classList.add('loading')">
+                            <img src="https://authjs.dev/img/providers/azure.svg" alt="Microsoft" style="width:20px;height:20px;">
+                            <span>Continue with Microsoft</span>
+                            <div class="btn-loader"></div>
+                        </button>
+                    </form>
                 </div>
 
                 <div class="divider">
