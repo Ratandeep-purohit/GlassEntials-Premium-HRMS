@@ -205,6 +205,7 @@ ACCOUNT_LOGIN_METHODS = {'email'}
 ACCOUNT_SIGNUP_FIELDS = ['email*', 'password1*', 'password2*']
 ACCOUNT_EMAIL_VERIFICATION = 'none' # We trust the OAuth provider's verification
 SOCIALACCOUNT_EMAIL_VERIFICATION = 'none'
+SOCIALACCOUNT_LOGIN_ON_GET = True # Bypass the intermediate confirmation page
 ACCOUNT_ADAPTER = 'accounts.adapters.HRMSAccountAdapter'
 SOCIALACCOUNT_ADAPTER = 'accounts.adapters.HRMSSocialAccountAdapter'
 
