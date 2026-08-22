@@ -72,10 +72,9 @@ body.auth-page {
 }
 
 .brand-logo {
-    height: 250px;
-    width: 100%;
-    max-width: 400px;
-    object-fit: contain;
+    width: 350px;
+    max-width: 100%;
+    height: auto;
     display: block;
     margin: 0 auto 40px auto;
     filter: brightness(0) invert(1);
@@ -165,9 +164,9 @@ body.auth-page {
 }
 
 .mobile-logo {
-    height: 120px;
+    width: 250px;
     max-width: 100%;
-    object-fit: contain;
+    height: auto;
 }
 
 /* OAuth Buttons */
