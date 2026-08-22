@@ -44,7 +44,7 @@
                 <div class="oauth-buttons">
                     <form action="{% provider_login_url 'google' %}" method="post" class="oauth-form">
                         {% csrf_token %}
-                        <button type="submit" class="oauth-btn google-btn" onclick="this.classList.add('loading')">
+                        <button type="submit" class="oauth-btn google-btn">
                             <img src="https://authjs.dev/img/providers/google.svg" alt="Google">
                             <span>Continue with Google</span>
                             <div class="btn-loader"></div>
@@ -53,7 +53,7 @@
                     
                     <form action="{% provider_login_url 'microsoft' %}" method="post" class="oauth-form">
                         {% csrf_token %}
-                        <button type="submit" class="oauth-btn microsoft-btn" onclick="this.classList.add('loading')">
+                        <button type="submit" class="oauth-btn microsoft-btn">
                             <img src="https://authjs.dev/img/providers/azure.svg" alt="Microsoft" style="width:20px;height:20px;">
                             <span>Continue with Microsoft</span>
                             <div class="btn-loader"></div>
@@ -177,6 +177,14 @@
         document.getElementById('registerForm').addEventListener('submit', function() {
             const btn = document.getElementById('submitBtn');
             btn.classList.add('loading');
+        });
+
+        // Add loading state to all OAuth forms on submit
+        document.querySelectorAll('.oauth-form').forEach(form => {
+            form.addEventListener('submit', function() {
+                const btn = this.querySelector('button[type="submit"]');
+                if(btn) btn.classList.add('loading');
+            });
         });
     </script>
 </body>
