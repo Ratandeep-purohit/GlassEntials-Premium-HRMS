@@ -65,8 +65,16 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'django.contrib.sites',
 
-    #custom apps
+    # allauth
+    'allauth',
+    'allauth.account',
+    'allauth.socialaccount',
+    'allauth.socialaccount.providers.google',
+    'allauth.socialaccount.providers.microsoft',
+
+    # custom apps
     'accounts',
     'home',
     'employees',
@@ -78,6 +86,8 @@ INSTALLED_APPS = [
     'letters.apps.LettersConfig',
 ]
 
+SITE_ID = 1
+
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -88,6 +98,12 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'allauth.account.middleware.AccountMiddleware',
+]
+
+AUTHENTICATION_BACKENDS = [
+    'django.contrib.auth.backends.ModelBackend',
+    'allauth.account.auth_backends.AuthenticationBackend',
 ]
 
 ROOT_URLCONF = 'HRMS_Glassentials.urls'
@@ -183,6 +199,34 @@ LOGIN_URL = 'login'
 LOGIN_REDIRECT_URL = 'home'
 LOGOUT_REDIRECT_URL = 'login'
 CSRF_FAILURE_VIEW = 'home.error_views.csrf_failure'
+
+# allauth settings
+ACCOUNT_LOGIN_METHODS = {'email'}
+ACCOUNT_SIGNUP_FIELDS = ['email*', 'password1*', 'password2*']
+ACCOUNT_EMAIL_VERIFICATION = 'none' # We trust the OAuth provider's verification
+SOCIALACCOUNT_EMAIL_VERIFICATION = 'none'
+ACCOUNT_ADAPTER = 'accounts.adapters.HRMSAccountAdapter'
+SOCIALACCOUNT_ADAPTER = 'accounts.adapters.HRMSSocialAccountAdapter'
+
+SOCIALACCOUNT_PROVIDERS = {
+    'google': {
+        'SCOPE': ['profile', 'email'],
+        'AUTH_PARAMS': {'access_type': 'online'},
+        'APP': {
+            'client_id': os.environ.get('GOOGLE_CLIENT_ID', ''),
+            'secret': os.environ.get('GOOGLE_CLIENT_SECRET', ''),
+            'key': ''
+        }
+    },
+    'microsoft': {
+        'TENANT': os.environ.get('MICROSOFT_TENANT_ID', 'common'),
+        'APP': {
+            'client_id': os.environ.get('MICROSOFT_CLIENT_ID', ''),
+            'secret': os.environ.get('MICROSOFT_CLIENT_SECRET', ''),
+            'key': ''
+        }
+    }
+}
 
 # Media files (Uploaded files like Profile Pictures, Documents)
 

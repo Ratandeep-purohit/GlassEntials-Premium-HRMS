@@ -1,4 +1,5 @@
 {% load static %}
+{% load socialaccount %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -8,98 +9,121 @@
     <!-- Favicon -->
     <link rel="icon" type="image/png" href="{% static 'img/favicon_logo.png' %}">
     <link rel="apple-touch-icon" href="{% static 'img/favicon_logo.png' %}">
-    <link rel="stylesheet" href="{% static 'css/auth.css' %}?v=3.0">
-    
+    <link rel="stylesheet" href="{% static 'css/auth.css' %}?v=4.0">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head>
-<body class="auth-body">
-
-    <div class="bg-shape shape-1"></div>
-    <div class="bg-shape shape-2"></div>
-
-    <!-- Flash Messages -->
+<body class="auth-page">
     {% include 'includes/_messages.html' %}
 
-    <div class="auth-container wide">
-        <div class="auth-header">
-            <img src="{% static 'img/logo.png' %}" alt="GlassEntials Logo" class="logo">
-            <h2>Create Account</h2>
-            <p>Join us to start managing your workforce</p>
+    <div class="auth-wrapper">
+        <!-- Left Branding Panel -->
+        <div class="auth-branding">
+            <div class="branding-content">
+                <img src="{% static 'img/logo.png' %}" alt="GlassEntials Logo" class="brand-logo">
+                <h2>Join the future of HR.</h2>
+                <p>Create your account and experience seamless workforce management designed for modern teams.</p>
+            </div>
+            <div class="brand-shape shape-register"></div>
         </div>
 
-
-        <form method="post">
-            {% csrf_token %}
-            
-            <div class="auth-grid">
-                <div class="input-group">
-                    <label for="username">Username</label>
-                    <div class="input-wrapper">
-                        <input type="text" id="username" name="username" class="auth-input" placeholder="Choose a username" required>
-                        <i class="fas fa-user"></i>
-                    </div>
+        <!-- Right Form Panel -->
+        <div class="auth-form-container wide">
+            <div class="auth-form-inner">
+                
+                <div class="mobile-logo-container">
+                    <img src="{% static 'img/logo.png' %}" alt="GlassEntials Logo" class="mobile-logo">
                 </div>
 
-                <div class="input-group">
-                    <label for="email">Email Address</label>
-                    <div class="input-wrapper">
-                        <input type="email" id="email" name="email" class="auth-input" placeholder="name@company.com" required>
-                        <i class="fas fa-envelope"></i>
-                    </div>
+                <div class="auth-header">
+                    <h1>Create your account</h1>
+                    <p>Join us to start managing your workforce</p>
                 </div>
 
-                <div class="input-group">
-                    <label for="phone">Phone Number</label>
-                    <div class="input-wrapper">
-                        <input type="text" id="phone" name="phone" class="auth-input" placeholder="+1 (555) 000-0" required>
-                        <i class="fas fa-phone"></i>
-                    </div>
+                <div class="oauth-buttons">
+                    <a href="{% provider_login_url 'google' %}" class="oauth-btn google-btn" onclick="this.classList.add('loading')">
+                        <img src="https://authjs.dev/img/providers/google.svg" alt="Google">
+                        <span>Continue with Google</span>
+                        <div class="btn-loader"></div>
+                    </a>
+                    
+                    <a href="{% provider_login_url 'microsoft' %}" class="oauth-btn microsoft-btn" onclick="this.classList.add('loading')">
+                        <img src="https://authjs.dev/img/providers/azure.svg" alt="Microsoft" style="width:20px;height:20px;">
+                        <span>Continue with Microsoft</span>
+                        <div class="btn-loader"></div>
+                    </a>
                 </div>
 
-                <div class="input-group">
-                    <label for="organization">Organization Type</label>
-                    <div class="input-wrapper">
-                        <select id="organization" name="organization" class="auth-select" required>
-                            <option value="" disabled selected hidden>Choose Setup</option>
-                            <option value="org1">Create New Organization</option>
-                            <option value="org2">Join Existing Organization</option>
-                        </select>
-                        <i class="fas fa-building"></i>
-                    </div>
+                <div class="divider">
+                    <span>OR</span>
                 </div>
 
-                <!-- Dynamic Fields -->
-                <div class="input-group full-width" id="org-name-group" style="display: none;">
-                    <label for="org_name">Organization Name</label>
-                    <div class="input-wrapper">
-                        <input type="text" id="org_name" name="org_name" class="auth-input" placeholder="e.g. Acme Corp">
-                        <i class="fas fa-briefcase"></i>
-                    </div>
-                </div>
+                <form method="post" id="registerForm">
+                    {% csrf_token %}
+                    
+                    <div class="auth-grid">
+                        <div class="form-group">
+                            <label for="username">Username</label>
+                            <input type="text" id="username" name="username" class="form-input" placeholder="Choose a username" required>
+                        </div>
 
-                <div class="input-group full-width" id="org-code-group" style="display: none;">
-                    <label for="org_code">Organization Unique Code</label>
-                    <div class="input-wrapper">
-                        <input type="text" id="org_code" name="org_code" class="auth-input" placeholder="e.g. XJ9-321">
-                        <i class="fas fa-key"></i>
-                    </div>
-                </div>
+                        <div class="form-group">
+                            <label for="email">Email Address</label>
+                            <input type="email" id="email" name="email" class="form-input" placeholder="name@company.com" required>
+                        </div>
 
-                <div class="input-group full-width">
-                    <label for="password">Password</label>
-                    <div class="input-wrapper">
-                        <input type="password" id="password" name="password" class="auth-input" placeholder="Create a strong password" required>
-                        <i class="fas fa-lock"></i>
-                        <i class="fas fa-eye password-toggle" onclick="togglePassword('password', this)" title="Show Password"></i>
-                    </div>
-                </div>
+                        <div class="form-group">
+                            <label for="phone">Phone Number</label>
+                            <input type="text" id="phone" name="phone" class="form-input" placeholder="+1 (555) 000-0" required>
+                        </div>
 
-                <button type="submit" class="auth-btn">Create Account</button>
+                        <div class="form-group">
+                            <label for="password">Password</label>
+                            <div class="password-wrapper">
+                                <input type="password" id="password" name="password" class="form-input" placeholder="Create a strong password" required>
+                                <button type="button" class="password-toggle" onclick="togglePassword('password', this)" tabindex="-1">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="form-group full-width">
+                            <label for="organization">What would you like to do?</label>
+                            <div class="select-wrapper">
+                                <select id="organization" name="organization" class="form-select" required>
+                                    <option value="" disabled selected hidden>Choose Setup</option>
+                                    <option value="org1">Create a New Organization</option>
+                                    <option value="org2">Join an Existing Organization</option>
+                                </select>
+                                <i class="fas fa-chevron-down select-icon"></i>
+                            </div>
+                        </div>
+
+                        <!-- Dynamic Fields -->
+                        <div class="form-group full-width dynamic-group" id="org-name-group" style="display: none;">
+                            <label for="org_name">Organization Name</label>
+                            <input type="text" id="org_name" name="org_name" class="form-input" placeholder="e.g. Acme Corp">
+                        </div>
+
+                        <div class="form-group full-width dynamic-group" id="org-code-group" style="display: none;">
+                            <label for="org_code">Organization Unique Code</label>
+                            <input type="text" id="org_code" name="org_code" class="form-input" placeholder="e.g. XJ9-321">
+                        </div>
+
+                        <div class="form-actions full-width">
+                            <button type="submit" class="submit-btn" id="submitBtn">
+                                <span>Create Account</span>
+                                <div class="btn-loader"></div>
+                            </button>
+                        </div>
+                    </div>
+                </form>
+
+                <div class="auth-footer">
+                    Already have an account? <a href="{% url 'login' %}">Log in here</a>
+                </div>
             </div>
-        </form>
-
-        <div class="auth-footer">
-            Already have an account? <a href="/login/">Log in here</a>
         </div>
     </div>
 
@@ -111,35 +135,43 @@
             var orgNameInput = document.getElementById('org_name');
             var orgCodeInput = document.getElementById('org_code');
             
-            // Hide both initially
+            // Hide both initially with transition
             nameGroup.style.display = 'none';
             codeGroup.style.display = 'none';
             
-            // Remove required properties to avoid block on generic submit
             orgNameInput.required = false;
             orgCodeInput.required = false;
 
             if (orgVal === 'org1') {
                 nameGroup.style.display = 'block';
+                // Trigger reflow for transition
+                void nameGroup.offsetWidth;
+                nameGroup.classList.add('visible');
                 orgNameInput.required = true;
             } else if (orgVal === 'org2') {
                 codeGroup.style.display = 'block';
+                void codeGroup.offsetWidth;
+                codeGroup.classList.add('visible');
                 orgCodeInput.required = true;
             }
         });
 
-        // Password visibility toggler
-        function togglePassword(inputId, iconElement) {
+        function togglePassword(inputId, btn) {
             const input = document.getElementById(inputId);
+            const icon = btn.querySelector('i');
             if (input.type === 'password') {
                 input.type = 'text';
-                iconElement.classList.replace('fa-eye', 'fa-eye-slash');
+                icon.classList.replace('fa-eye', 'fa-eye-slash');
             } else {
                 input.type = 'password';
-                iconElement.classList.replace('fa-eye-slash', 'fa-eye');
+                icon.classList.replace('fa-eye-slash', 'fa-eye');
             }
         }
+
+        document.getElementById('registerForm').addEventListener('submit', function() {
+            const btn = document.getElementById('submitBtn');
+            btn.classList.add('loading');
+        });
     </script>
-    <script src="{% static 'js/landing.js' %}?v=1.0"></script>
 </body>
 </html>

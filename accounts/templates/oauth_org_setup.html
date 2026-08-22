@@ -1,0 +1,130 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Organization Setup | HRMS GlassEntials</title>
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" href="{% static 'img/favicon_logo.png' %}">
+    <link rel="apple-touch-icon" href="{% static 'img/favicon_logo.png' %}">
+    <link rel="stylesheet" href="{% static 'css/auth.css' %}?v=4.0">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body class="auth-page">
+    {% include 'includes/_messages.html' %}
+
+    <div class="auth-wrapper single-column">
+        <div class="auth-form-container wide setup-container">
+            <div class="auth-form-inner">
+                
+                <div class="mobile-logo-container setup-logo">
+                    <img src="{% static 'img/logo.png' %}" alt="GlassEntials Logo" class="mobile-logo">
+                </div>
+
+                <div class="auth-header text-center">
+                    <h1>Almost there! 🎉</h1>
+                    <p>You've successfully signed in with <strong>{{ request.user.email }}</strong>.<br>Let's get your organization set up.</p>
+                </div>
+
+                <form method="post" id="setupForm" class="setup-form">
+                    {% csrf_token %}
+                    
+                    <div class="form-group full-width text-center">
+                        <label for="organization" class="setup-label">What would you like to do?</label>
+                        <div class="select-wrapper">
+                            <select id="organization" name="organization" class="form-select setup-select" required>
+                                <option value="" disabled selected hidden>Choose Setup</option>
+                                <option value="org1">Create a New Organization</option>
+                                <option value="org2">Join an Existing Organization</option>
+                            </select>
+                            <i class="fas fa-chevron-down select-icon"></i>
+                        </div>
+                    </div>
+
+                    <div class="dynamic-setup-fields">
+                        <!-- Dynamic Fields -->
+                        <div class="form-group full-width dynamic-group" id="org-name-group" style="display: none;">
+                            <label for="org_name">Organization Name</label>
+                            <div class="input-with-icon">
+                                <i class="fas fa-building"></i>
+                                <input type="text" id="org_name" name="org_name" class="form-input has-icon" placeholder="e.g. Acme Corp">
+                            </div>
+                            <p class="field-hint">You will be designated as the Owner of this organization.</p>
+                        </div>
+
+                        <div class="form-group full-width dynamic-group" id="org-code-group" style="display: none;">
+                            <label for="org_code">Organization Unique Code</label>
+                            <div class="input-with-icon">
+                                <i class="fas fa-key"></i>
+                                <input type="text" id="org_code" name="org_code" class="form-input has-icon" placeholder="e.g. XJ9-321">
+                            </div>
+                            <p class="field-hint">Ask your HR Admin for your organization's unique join code.</p>
+                        </div>
+
+                        <div class="form-group full-width" id="phone-group" style="display: none;">
+                            <label for="phone">Phone Number (Optional)</label>
+                            <div class="input-with-icon">
+                                <i class="fas fa-phone"></i>
+                                <input type="text" id="phone" name="phone" class="form-input has-icon" placeholder="+1 (555) 000-0">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-actions full-width setup-actions" style="display: none;" id="actionBtnGroup">
+                        <button type="submit" class="submit-btn" id="submitBtn">
+                            <span id="btnText">Continue</span>
+                            <div class="btn-loader"></div>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('organization').addEventListener('change', function() {
+            var orgVal = this.value;
+            var nameGroup = document.getElementById('org-name-group');
+            var codeGroup = document.getElementById('org-code-group');
+            var phoneGroup = document.getElementById('phone-group');
+            var actionGroup = document.getElementById('actionBtnGroup');
+            
+            var orgNameInput = document.getElementById('org_name');
+            var orgCodeInput = document.getElementById('org_code');
+            var btnText = document.getElementById('btnText');
+            
+            // Hide both initially
+            nameGroup.style.display = 'none';
+            codeGroup.style.display = 'none';
+            
+            orgNameInput.required = false;
+            orgCodeInput.required = false;
+
+            actionGroup.style.display = 'block';
+            phoneGroup.style.display = 'block';
+
+            if (orgVal === 'org1') {
+                nameGroup.style.display = 'block';
+                void nameGroup.offsetWidth;
+                nameGroup.classList.add('visible');
+                orgNameInput.required = true;
+                btnText.textContent = "Create Organization";
+            } else if (orgVal === 'org2') {
+                codeGroup.style.display = 'block';
+                void codeGroup.offsetWidth;
+                codeGroup.classList.add('visible');
+                orgCodeInput.required = true;
+                btnText.textContent = "Join Organization";
+            }
+        });
+
+        document.getElementById('setupForm').addEventListener('submit', function() {
+            const btn = document.getElementById('submitBtn');
+            btn.classList.add('loading');
+        });
+    </script>
+</body>
+</html>

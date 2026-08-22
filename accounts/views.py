@@ -239,3 +239,71 @@ def logout_view(request):
     logout(request)
     messages.info(request, "You have been logged out.")
     return redirect('login')
+
+from django.contrib.auth.decorators import login_required
+
+@login_required
+def oauth_org_setup(request):
+    """
+    Called when a user signs in via OAuth but hasn't chosen an organization yet.
+    Re-uses the existing logic from register_view to create/join an org.
+    """
+    user_obj = request.user
+    if getattr(user_obj, 'organization_id', None) is not None:
+        return redirect('home')
+
+    if request.method == 'POST':
+        org_choice = request.POST.get('organization')
+        org_name = request.POST.get('org_name')
+        org_code = request.POST.get('org_code')
+        phone = request.POST.get('phone')
+
+        from .models import Organization
+        import uuid
+        
+        try:
+            with transaction.atomic():
+                if org_choice == 'org1':
+                    if not org_name:
+                        messages.error(request, "Organization name is required.")
+                        return redirect('oauth_org_setup')
+                    unique_code = f"{org_name[:4].upper()}-{str(uuid.uuid4())[:6].upper()}"
+                    org_instance = Organization.objects.create(name=org_name, unique_code=unique_code)
+                elif org_choice == 'org2':
+                    if not org_code:
+                        messages.error(request, "Organization unique code is required.")
+                        return redirect('oauth_org_setup')
+                    try:
+                        org_instance = Organization.objects.get(unique_code=org_code)
+                    except Organization.DoesNotExist:
+                        messages.error(request, "Invalid organization code.")
+                        return redirect('oauth_org_setup')
+                else:
+                    messages.error(request, "Please select an organization setup.")
+                    return redirect('oauth_org_setup')
+
+                if phone:
+                    user_obj.phone = phone
+
+                user_obj.organization = org_instance
+                
+                if org_choice == 'org1':
+                    user_obj.is_approved = True
+                    user_obj.is_staff = True
+                    user_obj.save()
+                    _create_owner_employee(user_obj, org_instance)
+                    messages.success(request, "Organization created successfully! Welcome.")
+                    return redirect('home')
+                else:
+                    user_obj.is_approved = False
+                    user_obj.is_staff = False
+                    user_obj.save()
+                    logout(request) # They are not approved yet
+                    messages.success(request, "Successfully joined organization! Please wait for HR/Admin to approve your account.")
+                    return redirect('login')
+                
+        except Exception as exc:
+            messages.error(request, f"Setup failed: {exc}")
+            return redirect('oauth_org_setup')
+
+    return render(request, 'oauth_org_setup.html')

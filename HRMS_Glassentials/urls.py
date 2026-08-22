@@ -25,6 +25,7 @@ urlpatterns = [
     path('assets/', include('assets.urls')),
     path('announcements/', include('announcements.urls')),
     path('letters/', include('letters.urls')),
+    path('accounts/', include('allauth.urls')),
 ]
 
 if settings.DEBUG:
