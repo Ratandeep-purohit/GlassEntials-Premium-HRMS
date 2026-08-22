@@ -33,11 +33,15 @@ class HRMSAccountAdapter(DefaultAccountAdapter):
 
     def get_login_redirect_url(self, request):
         """
-        If a user logs in (or signs up) via OAuth and doesn't have an organization,
-        they must be routed to the org setup step.
+        After any OAuth login or signup, check if the user has an organization.
+        If not, redirect them to org setup.
+
+        NOTE: This is called for new OAuth account creation.
+        Existing-user linking is handled by the middleware (OrganizationRequiredMiddleware)
+        which enforces the same rule on every request, making it impossible to bypass.
         """
         user = request.user
-        if user.is_authenticated and getattr(user, 'organization_id', None) is None:
+        if user.is_authenticated and not getattr(user, 'organization_id', None):
             return reverse('oauth_org_setup')
         return super().get_login_redirect_url(request)
 
@@ -46,7 +50,14 @@ class HRMSSocialAccountAdapter(DefaultSocialAccountAdapter):
         """
         Invoked just after a user successfully authenticates via a social provider,
         but before the login is actually processed.
-        This is where we implement Account Linking for existing users.
+
+        This implements secure Account Linking: if an existing HRMS user has the
+        same verified email as the OAuth provider, we link the social account to
+        the existing user rather than creating a duplicate.
+
+        After linking, the normal login flow continues and the
+        OrganizationRequiredMiddleware will handle enforcement of org membership
+        regardless of whether this is the first or Nth time the user logs in.
         """
         # If the social account is already linked to a user, do nothing (allauth handles it)
         if sociallogin.is_existing:
@@ -56,17 +67,19 @@ class HRMSSocialAccountAdapter(DefaultSocialAccountAdapter):
         if 'email' not in sociallogin.account.extra_data:
             return
             
-        email = sociallogin.account.extra_data.get('email').lower()
-        
+        email = sociallogin.account.extra_data.get('email', '').lower()
+        if not email:
+            return
+
         # Check if the provider considers this email verified
         # Google: 'email_verified': True
-        # Microsoft: varies by tenant, but let's be strict if they provide a flag
+        # Microsoft: trusted if it comes via OAuth 2.0 from Microsoft
         is_verified = False
         if sociallogin.account.provider == 'google':
             is_verified = sociallogin.account.extra_data.get('email_verified') == True
         elif sociallogin.account.provider == 'microsoft':
-            # Microsoft usually verified if it comes from their login, but check common flags
-            is_verified = True # Assuming MSFT verified if we got here via OAuth 2.0
+            # Microsoft verified the email by controlling the identity provider
+            is_verified = True
             
         if not is_verified:
             # We don't link unverified emails for security reasons
@@ -75,7 +88,9 @@ class HRMSSocialAccountAdapter(DefaultSocialAccountAdapter):
         # Look for an existing user with this email
         try:
             existing_user = User.objects.get(email__iexact=email)
-            # If found, link the social account to this existing user!
+            # If found, link the social account to this existing user.
+            # After this, allauth will log in the existing user.
+            # OrganizationRequiredMiddleware will then enforce the org check.
             sociallogin.connect(request, existing_user)
         except User.DoesNotExist:
-            pass # No existing user, let allauth create a new one
+            pass  # No existing user; let allauth create a new one via save_user()

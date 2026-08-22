@@ -99,6 +99,8 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'allauth.account.middleware.AccountMiddleware',
+    # Enforce organization membership on every protected request
+    'accounts.middleware.OrganizationRequiredMiddleware',
 ]
 
 AUTHENTICATION_BACKENDS = [

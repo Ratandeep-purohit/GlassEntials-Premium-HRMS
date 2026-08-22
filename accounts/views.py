@@ -54,6 +54,10 @@ def login_view(request):
             
             login(request, user_auth)
             messages.success(request, f"Welcome back, {user_auth.username}!")
+            # If this user has no organization (e.g. an OAuth user who was linked
+            # but never completed org setup), send them to org setup.
+            if not getattr(user_auth, 'organization_id', None):
+                return redirect('oauth_org_setup')
             return redirect('home')
         else:
             # Increment failed attempts
