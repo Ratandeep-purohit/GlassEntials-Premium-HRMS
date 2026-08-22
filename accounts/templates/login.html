@@ -44,15 +44,21 @@
                 </div>
 
                 <div class="oauth-buttons">
-                    <a href="{% provider_login_url 'google' %}" class="oauth-btn google-btn">
-                        <img src="https://authjs.dev/img/providers/google.svg" alt="Google">
-                        <span>Continue with Google</span>
-                    </a>
+                    <form action="{% provider_login_url 'google' %}" method="post" style="width: 100%;">
+                        {% csrf_token %}
+                        <button type="submit" class="oauth-btn google-btn" style="width: 100%;">
+                            <img src="https://authjs.dev/img/providers/google.svg" alt="Google">
+                            <span>Continue with Google</span>
+                        </button>
+                    </form>
                     
-                    <a href="{% provider_login_url 'microsoft' %}" class="oauth-btn microsoft-btn">
-                        <img src="https://authjs.dev/img/providers/azure.svg" alt="Microsoft" style="width:20px;height:20px;">
-                        <span>Continue with Microsoft</span>
-                    </a>
+                    <form action="{% provider_login_url 'microsoft' %}" method="post" style="width: 100%;">
+                        {% csrf_token %}
+                        <button type="submit" class="oauth-btn microsoft-btn" style="width: 100%;">
+                            <img src="https://authjs.dev/img/providers/azure.svg" alt="Microsoft" style="width:20px;height:20px;">
+                            <span>Continue with Microsoft</span>
+                        </button>
+                    </form>
                 </div>
 
                 <div class="divider">
