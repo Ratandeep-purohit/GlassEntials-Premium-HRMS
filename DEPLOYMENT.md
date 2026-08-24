@@ -1,6 +1,6 @@
 # Deployment Checklist
 
-Use this checklist before deploying GlassEntials HRMS to a real server.
+Use this checklist before deploying Mulzon HRMS to a real server.
 
 ## Required Environment Variables
 

@@ -5,7 +5,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Add Employee | GlassEntials HRMS</title>
+    <title>Add Employee | Mulzon HRMS</title>
     <!-- Favicon -->
     <link rel="icon" type="image/png" href="{% static 'img/favicon_logo.png' %}">
     <link rel="apple-touch-icon" href="{% static 'img/favicon_logo.png' %}">
@@ -18,337 +18,805 @@
     <link rel="stylesheet" href="{% static 'css/dashboard.css' %}?v=3.0">
     
     <style>
-        .btn-sm {
-            padding: 6px 14px !important;
-            font-size: 13px !important;
-            border-radius: 10px !important;
-            height: auto !important;
-            width: auto !important;
-            gap: 6px !important;
-            min-height: 36px !important;
-            text-decoration: none !important;
+        /* ── ADD EMPLOYEE — PREMIUM REDESIGN ── */
+        :root {
+            --blue: #2563eb;
+            --blue-light: rgba(37, 99, 235, 0.08);
+            --green: #16a34a;
+            --gray-50: #f8fafc;
+            --gray-100: #f1f5f9;
+            --gray-200: #e2e8f0;
+            --gray-400: #94a3b8;
+            --gray-500: #64748b;
+            --gray-700: #334155;
+            --gray-900: #0f172a;
+            --surface: #ffffff;
+            --radius-sm: 8px;
+            --radius: 12px;
+            --radius-lg: 16px;
+            --shadow-xs: 0 1px 2px rgba(0,0,0,0.05);
+            --transition: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* ── PAGE HEADER ── */
+        .emp-page-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 24px 0 24px;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+
+        .header-back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--gray-500);
+            text-decoration: none;
+            margin-bottom: 12px;
+            transition: color var(--transition);
+        }
+
+        .header-back-link:hover {
+            color: var(--blue);
+        }
+
+        .emp-page-header h1 {
+            font-size: 26px;
+            font-weight: 800;
+            color: var(--gray-900);
+            letter-spacing: -0.5px;
+            margin: 0 0 4px;
+            font-family: 'Manrope', sans-serif;
+        }
+
+        .emp-page-header p {
+            font-size: 14px;
+            color: var(--gray-500);
+            margin: 0;
+            font-weight: 400;
+        }
+
+        /* ── FORM CONTAINER ── */
+        .form-layout {
+            display: grid;
+            grid-template-columns: 240px 1fr;
+            gap: 32px;
+            align-items: start;
+        }
+
+        @media (max-width: 992px) {
+            .form-layout { grid-template-columns: 1fr; }
+        }
+
+        /* ── SIDE NAV (Optional but gives SaaS feel) ── */
+        .form-nav {
+            position: sticky;
+            top: 100px;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .form-nav-item {
+            padding: 10px 16px;
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--gray-500);
+            border-radius: var(--radius-sm);
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            transition: all var(--transition);
+        }
+
+        .form-nav-item i {
+            font-size: 14px;
+            width: 16px;
+            text-align: center;
+        }
+
+        .form-nav-item:hover {
+            background: var(--gray-100);
+            color: var(--gray-900);
+        }
+
+        .form-nav-item.active {
+            background: var(--blue-light);
+            color: var(--blue);
+        }
+
+        /* ── CARDS ── */
+        .ui-card {
+            background: var(--surface);
+            border: 1px solid var(--gray-200);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-xs);
+            margin-bottom: 24px;
+            overflow: hidden;
+        }
+
+        .ui-card-header {
+            padding: 20px 24px;
+            border-bottom: 1px solid var(--gray-100);
+            background: var(--surface);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .ui-card-title {
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--gray-900);
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .ui-card-title i {
+            color: var(--blue);
+            font-size: 15px;
+            background: var(--blue-light);
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 8px;
+        }
+
+        .ui-card-body {
+            padding: 24px;
+        }
+
+        /* ── FORM ELEMENTS ── */
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+        }
+
+        @media (max-width: 768px) {
+            .form-grid { grid-template-columns: 1fr; }
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .form-group.full-width {
+            grid-column: 1 / -1;
+        }
+
+        .form-label {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--gray-700);
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 10px 14px;
+            font-size: 14px;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            font-weight: 500;
+            background: var(--gray-50);
+            border: 1px solid var(--gray-200);
+            border-radius: var(--radius-sm);
+            color: var(--gray-900);
+            transition: all var(--transition);
+            outline: none;
+            box-sizing: border-box;
+        }
+
+        .form-input:focus {
+            border-color: var(--blue);
+            background: #fff;
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+
+        .form-input::placeholder {
+            color: var(--gray-400);
+            font-weight: 400;
+        }
+
+        select.form-input {
+            cursor: pointer;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%2394a3b8' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 14px center;
+            padding-right: 36px;
+        }
+
+        /* ── FILE INPUT ── */
+        .file-upload-wrapper {
+            position: relative;
+            background: var(--gray-50);
+            border: 1px dashed var(--gray-400);
+            border-radius: var(--radius-sm);
+            padding: 16px;
+            text-align: center;
+            transition: all var(--transition);
+        }
+
+        .file-upload-wrapper:hover {
+            border-color: var(--blue);
+            background: var(--blue-light);
+        }
+
+        .file-upload-wrapper input[type="file"] {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            opacity: 0; cursor: pointer;
+        }
+
+        .file-upload-content {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            pointer-events: none;
+        }
+
+        .file-upload-content i {
+            font-size: 20px;
+            color: var(--gray-500);
+            margin-bottom: 4px;
+        }
+
+        .file-upload-content span {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--gray-700);
+        }
+
+        .file-upload-content small {
+            font-size: 11px;
+            color: var(--gray-500);
+        }
+
+        /* ── CHECKBOX ── */
+        .checkbox-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--gray-700);
+            cursor: pointer;
+        }
+
+        .checkbox-wrapper input[type="checkbox"] {
+            width: 16px;
+            height: 16px;
+            accent-color: var(--blue);
+            cursor: pointer;
+        }
+
+        /* ── ACTION BAR ── */
+        .form-actions {
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            gap: 16px;
+            margin-top: 32px;
+            padding-top: 24px;
+            border-top: 1px solid var(--gray-200);
+        }
+
+        .btn-primary {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 12px 24px;
+            font-size: 14px;
+            font-weight: 600;
+            background: var(--blue);
+            color: #fff;
+            border: none;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            transition: all var(--transition);
+        }
+
+        .btn-primary:hover {
+            background: #1d4ed8;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25);
+        }
+
+        .btn-secondary {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 12px 24px;
+            font-size: 14px;
+            font-weight: 600;
+            background: var(--surface);
+            color: var(--gray-700);
+            border: 1px solid var(--gray-200);
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            transition: all var(--transition);
+            text-decoration: none;
+        }
+
+        .btn-secondary:hover {
+            background: var(--gray-50);
+            border-color: var(--gray-400);
+            color: var(--gray-900);
         }
     </style>
 </head>
 
 <body>
-    <!--Subtle Background Elements-->
-    <div class="orb orb-1" style="opacity: 0.03;top:-100px;left:-100px;"></div>
-    <div class="orb orb-2" style="opacity: 0.03;bottom:-100px;right:-100px;"></div>
-    
-    <!-- Flash Messages Toast -->
-
-    <!--Header Navigation-->
     {% include 'includes/navbar.html' %}
 
     <main class="workspace">
-        <div class="page-header flex-header">
-            <div class="header-main-content">
-                <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 8px;">
-                    <a href="{% url 'employee' %}" class="action-btn"
-                        style="width: 32px; height: 32px; border-radius: 8px;">
-                        <i class="fas fa-arrow-left" style="font-size: 12px;"></i>
-                    </a>
-                    <span style="color: var(--text-secondary); font-weight: 600; font-size: 14px;">Back to
-                        Directory</span>
-                </div>
+        <!-- ── HEADER ── -->
+        <div class="emp-page-header">
+            <div>
+                <a href="{% url 'employee' %}" class="header-back-link">
+                    <i class="fas fa-arrow-left"></i> Back to Directory
+                </a>
                 <h1>Add New Employee</h1>
-                <p>Enter the employee details to create a new profile in the system</p>
+                <p>Create a comprehensive profile for your new team member.</p>
             </div>
         </div>
 
         <form method="POST" enctype="multipart/form-data">
             {% csrf_token %}
+            <div class="form-layout">
+                
+                <!-- ── SIDE NAVIGATION ── -->
+                <div class="form-nav" id="form-nav">
+                    <a href="#section-basic" class="form-nav-item active"><i class="fas fa-user"></i> Basic Information</a>
+                    <a href="#section-personal" class="form-nav-item"><i class="fas fa-info-circle"></i> Personal Details</a>
+                    <a href="#section-address" class="form-nav-item"><i class="fas fa-map-marker-alt"></i> Address Info</a>
+                    <a href="#section-work" class="form-nav-item"><i class="fas fa-briefcase"></i> Work & Employment</a>
+                    <a href="#section-financial" class="form-nav-item"><i class="fas fa-wallet"></i> Financial Info</a>
+                    <a href="#section-emergency" class="form-nav-item"><i class="fas fa-phone-alt"></i> Emergency Contact</a>
+                    <a href="#section-documents" class="form-nav-item"><i class="fas fa-file-alt"></i> Documents</a>
+                </div>
 
-            <!-- Section 1: Basic Information -->
-            <div class="card" style="margin-bottom: 32px;">
-                <h3 class="section-title"><i class="fas fa-user"></i> Basic Information</h3>
-                <div class="form-grid">
-                    <div class="form-group">
-                        <label class="form-label">First Name</label>
-                        <input type="text" name="first_name" class="form-input" placeholder="e.g. John" value="{{ form_data.first_name|default:'' }}" required>
+                <!-- ── FORM SECTIONS ── -->
+                <div class="form-sections">
+                    
+                    <!-- Section 1: Basic Information -->
+                    <div class="ui-card" id="section-basic">
+                        <div class="ui-card-header">
+                            <h2 class="ui-card-title"><i class="fas fa-user"></i> Basic Information</h2>
+                        </div>
+                        <div class="ui-card-body">
+                            <div class="form-grid">
+                                <div class="form-group">
+                                    <label class="form-label">First Name *</label>
+                                    <input type="text" name="first_name" class="form-input" placeholder="e.g. John" value="{{ form_data.first_name|default:'' }}" required>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Last Name *</label>
+                                    <input type="text" name="last_name" class="form-input" placeholder="e.g. Doe" value="{{ form_data.last_name|default:'' }}" required>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Employee ID *</label>
+                                    <input type="text" name="employee_id" class="form-input" placeholder="e.g. EMP-001" value="{{ form_data.employee_id|default:'' }}" required>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Email Address *</label>
+                                    <input type="email" name="email" class="form-input" placeholder="john.doe@company.com" value="{{ form_data.email|default:'' }}" required>
+                                </div>
+                                <div class="form-group full-width">
+                                    <label class="form-label">Phone Number *</label>
+                                    <input type="text" name="phone_number" class="form-input" placeholder="+1 234 567 890" value="{{ form_data.phone_number|default:'' }}" required>
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                    <div class="form-group">
-                        <label class="form-label">Last Name</label>
-                        <input type="text" name="last_name" class="form-input" placeholder="e.g. Doe" value="{{ form_data.last_name|default:'' }}" required>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Employee ID</label>
-                        <input type="text" name="employee_id" class="form-input" placeholder="e.g. EMP-2024-001" value="{{ form_data.employee_id|default:'' }}" required>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Email Address</label>
-                        <input type="email" name="email" class="form-input" placeholder="john.doe@company.com" value="{{ form_data.email|default:'' }}" required>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Phone Number</label>
-                        <input type="text" name="phone_number" class="form-input" placeholder="+1 234 567 890" value="{{ form_data.phone_number|default:'' }}" required>
-                    </div>
-                </div>
-            </div>
 
-            <!-- Section 2: Personal Details -->
-            <div class="card" style="margin-bottom: 32px;">
-                <h3 class="section-title"><i class="fas fa-info-circle"></i> Personal Details</h3>
-                <div class="form-grid">
-                    <div class="form-group">
-                        <label class="form-label">Date of Birth</label>
-                        <input type="date" name="date_of_birth" class="form-input" value="{{ form_data.date_of_birth|default:'' }}">
+                    <!-- Section 2: Personal Details -->
+                    <div class="ui-card" id="section-personal">
+                        <div class="ui-card-header">
+                            <h2 class="ui-card-title"><i class="fas fa-info-circle"></i> Personal Details</h2>
+                        </div>
+                        <div class="ui-card-body">
+                            <div class="form-grid">
+                                <div class="form-group">
+                                    <label class="form-label">Date of Birth</label>
+                                    <input type="date" name="date_of_birth" class="form-input" value="{{ form_data.date_of_birth|default:'' }}">
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Gender</label>
+                                    <select name="gender" class="form-input">
+                                        <option value="">Select Gender</option>
+                                        <option value="Male" {% if form_data.gender == 'Male' %}selected{% endif %}>Male</option>
+                                        <option value="Female" {% if form_data.gender == 'Female' %}selected{% endif %}>Female</option>
+                                        <option value="Other" {% if form_data.gender == 'Other' %}selected{% endif %}>Other</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Marital Status</label>
+                                    <select name="marital_status" class="form-input">
+                                        <option value="">Select Status</option>
+                                        <option value="Single" {% if form_data.marital_status == 'Single' %}selected{% endif %}>Single</option>
+                                        <option value="Married" {% if form_data.marital_status == 'Married' %}selected{% endif %}>Married</option>
+                                        <option value="Divorced" {% if form_data.marital_status == 'Divorced' %}selected{% endif %}>Divorced</option>
+                                        <option value="Widowed" {% if form_data.marital_status == 'Widowed' %}selected{% endif %}>Widowed</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Blood Group</label>
+                                    <select name="blood_group" class="form-input">
+                                        <option value="">Select Blood Group</option>
+                                        <option value="A+" {% if form_data.blood_group == 'A+' %}selected{% endif %}>A+</option>
+                                        <option value="A-" {% if form_data.blood_group == 'A-' %}selected{% endif %}>A-</option>
+                                        <option value="B+" {% if form_data.blood_group == 'B+' %}selected{% endif %}>B+</option>
+                                        <option value="B-" {% if form_data.blood_group == 'B-' %}selected{% endif %}>B-</option>
+                                        <option value="AB+" {% if form_data.blood_group == 'AB+' %}selected{% endif %}>AB+</option>
+                                        <option value="AB-" {% if form_data.blood_group == 'AB-' %}selected{% endif %}>AB-</option>
+                                        <option value="O+" {% if form_data.blood_group == 'O+' %}selected{% endif %}>O+</option>
+                                        <option value="O-" {% if form_data.blood_group == 'O-' %}selected{% endif %}>O-</option>
+                                    </select>
+                                </div>
+                                <div class="form-group full-width">
+                                    <label class="form-label">Nationality</label>
+                                    <input type="text" name="nationality" class="form-input" value="{{ form_data.nationality|default:'Indian' }}">
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                    <div class="form-group">
-                        <label class="form-label">Gender</label>
-                        <select name="gender" class="form-input">
-                            <option value="">Select Gender</option>
-                            <option value="Male" {% if form_data.gender == 'Male' %}selected{% endif %}>Male</option>
-                            <option value="Female" {% if form_data.gender == 'Female' %}selected{% endif %}>Female</option>
-                            <option value="Other" {% if form_data.gender == 'Other' %}selected{% endif %}>Other</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Marital Status</label>
-                        <select name="marital_status" class="form-input">
-                            <option value="">Select Status</option>
-                            <option value="Single" {% if form_data.marital_status == 'Single' %}selected{% endif %}>Single</option>
-                            <option value="Married" {% if form_data.marital_status == 'Married' %}selected{% endif %}>Married</option>
-                            <option value="Divorced" {% if form_data.marital_status == 'Divorced' %}selected{% endif %}>Divorced</option>
-                            <option value="Widowed" {% if form_data.marital_status == 'Widowed' %}selected{% endif %}>Widowed</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Blood Group</label>
-                        <select name="blood_group" class="form-input">
-                            <option value="">Select Blood Group</option>
-                            <option value="A+" {% if form_data.blood_group == 'A+' %}selected{% endif %}>A+</option>
-                            <option value="A-" {% if form_data.blood_group == 'A-' %}selected{% endif %}>A-</option>
-                            <option value="B+" {% if form_data.blood_group == 'B+' %}selected{% endif %}>B+</option>
-                            <option value="B-" {% if form_data.blood_group == 'B-' %}selected{% endif %}>B-</option>
-                            <option value="AB+" {% if form_data.blood_group == 'AB+' %}selected{% endif %}>AB+</option>
-                            <option value="AB-" {% if form_data.blood_group == 'AB-' %}selected{% endif %}>AB-</option>
-                            <option value="O+" {% if form_data.blood_group == 'O+' %}selected{% endif %}>O+</option>
-                            <option value="O-" {% if form_data.blood_group == 'O-' %}selected{% endif %}>O-</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Nationality</label>
-                        <input type="text" name="nationality" class="form-input" value="{{ form_data.nationality|default:'Indian' }}">
-                    </div>
-                </div>
-            </div>
 
-            <!-- Section 3: Current Address -->
-            <div class="card" style="margin-bottom: 32px;">
-                <h3 class="section-title"><i class="fas fa-map-marker-alt"></i> Current Address</h3>
-                <div class="form-group">
-                    <label class="form-label">Address Lane</label>
-                    <textarea name="current_address" class="form-input" rows="2"
-                        placeholder="Street, Apartment, Suite...">{{ form_data.current_address|default:'' }}</textarea>
-                </div>
-                <div class="form-grid">
-                    <div class="form-group">
-                        <label class="form-label">City</label>
-                        <input type="text" name="current_city" class="form-input" placeholder="e.g. Mumbai" value="{{ form_data.current_city|default:'' }}">
+                    <!-- Section 3: Address Info -->
+                    <div class="ui-card" id="section-address">
+                        <div class="ui-card-header">
+                            <h2 class="ui-card-title"><i class="fas fa-map-marker-alt"></i> Current Address</h2>
+                        </div>
+                        <div class="ui-card-body">
+                            <div class="form-group" style="margin-bottom: 20px;">
+                                <label class="form-label">Street Address</label>
+                                <textarea name="current_address" class="form-input" rows="2"
+                                    placeholder="Apartment, Suite, Building, Street...">{{ form_data.current_address|default:'' }}</textarea>
+                            </div>
+                            <div class="form-grid">
+                                <div class="form-group">
+                                    <label class="form-label">City</label>
+                                    <input type="text" name="current_city" class="form-input" placeholder="e.g. Mumbai" value="{{ form_data.current_city|default:'' }}">
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">State/Province</label>
+                                    <input type="text" name="current_state" class="form-input" placeholder="e.g. Maharashtra" value="{{ form_data.current_state|default:'' }}">
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Country</label>
+                                    <input type="text" name="current_country" class="form-input" value="{{ form_data.current_country|default:'India' }}">
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Postal Code</label>
+                                    <input type="text" name="current_pincode" class="form-input" placeholder="e.g. 400001" value="{{ form_data.current_pincode|default:'' }}">
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="ui-card-header" style="border-top: 1px solid var(--gray-100);">
+                            <h2 class="ui-card-title" style="font-size: 15px;"><i class="fas fa-home" style="background: var(--gray-100); color: var(--gray-700);"></i> Permanent Address</h2>
+                            <label class="checkbox-wrapper">
+                                <input type="checkbox" id="same_as_current"> Same as Current Address
+                            </label>
+                        </div>
+                        <div class="ui-card-body">
+                            <div class="form-group" style="margin-bottom: 20px;">
+                                <label class="form-label">Street Address</label>
+                                <textarea name="permanent_address" class="form-input" rows="2"
+                                    placeholder="Apartment, Suite, Building, Street...">{{ form_data.permanent_address|default:'' }}</textarea>
+                            </div>
+                            <div class="form-grid">
+                                <div class="form-group">
+                                    <label class="form-label">City</label>
+                                    <input type="text" name="permanent_city" class="form-input" placeholder="e.g. Mumbai" value="{{ form_data.permanent_city|default:'' }}">
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">State/Province</label>
+                                    <input type="text" name="permanent_state" class="form-input" placeholder="e.g. Maharashtra" value="{{ form_data.permanent_state|default:'' }}">
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Country</label>
+                                    <input type="text" name="permanent_country" class="form-input" value="{{ form_data.permanent_country|default:'India' }}">
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Postal Code</label>
+                                    <input type="text" name="permanent_pincode" class="form-input" placeholder="e.g. 400001" value="{{ form_data.permanent_pincode|default:'' }}">
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                    <div class="form-group">
-                        <label class="form-label">State</label>
-                        <input type="text" name="current_state" class="form-input" placeholder="e.g. Maharashtra" value="{{ form_data.current_state|default:'' }}">
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Country</label>
-                        <input type="text" name="current_country" class="form-input" value="{{ form_data.current_country|default:'India' }}">
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Pincode</label>
-                        <input type="text" name="current_pincode" class="form-input" placeholder="6-digit code" value="{{ form_data.current_pincode|default:'' }}">
-                    </div>
-                </div>
-            </div>
 
-            <!-- Section 4: Permanent Address -->
-            <div class="card" style="margin-bottom: 32px;">
-                <div
-                    style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-light); margin-bottom: 24px; padding-bottom: 12px;">
-                    <h3 class="section-title" style="border: none; margin: 0; padding: 0;"><i class="fas fa-home"></i>
-                        Permanent Address</h3>
-                    <label
-                        style="display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 700; color: var(--text-secondary); cursor: pointer;">
-                        <input type="checkbox" id="same_as_current"
-                            style="width: 16px; height: 16px; accent-color: var(--accent);">
-                        Same as Current Address
-                    </label>
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Address Lane</label>
-                    <textarea name="permanent_address" class="form-input" rows="2"
-                        placeholder="Street, Apartment, Suite...">{{ form_data.permanent_address|default:'' }}</textarea>
-                </div>
-                <div class="form-grid">
-                    <div class="form-group">
-                        <label class="form-label">City</label>
-                        <input type="text" name="permanent_city" class="form-input" placeholder="e.g. Mumbai" value="{{ form_data.permanent_city|default:'' }}">
+                    <!-- Section 4: Work & Employment -->
+                    <div class="ui-card" id="section-work">
+                        <div class="ui-card-header">
+                            <h2 class="ui-card-title"><i class="fas fa-briefcase"></i> Work & Employment</h2>
+                        </div>
+                        <div class="ui-card-body">
+                            <div class="form-grid">
+                                <div class="form-group">
+                                    <label class="form-label">Joining Date</label>
+                                    <input type="date" name="joining_date" class="form-input" value="{{ form_data.joining_date|default:'' }}">
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Employment Type</label>
+                                    <select name="employment_type" class="form-input">
+                                        <option value="">Select Type</option>
+                                        <option value="Full Time" {% if form_data.employment_type == 'Full Time' %}selected{% endif %}>Full Time</option>
+                                        <option value="Part Time" {% if form_data.employment_type == 'Part Time' %}selected{% endif %}>Part Time</option>
+                                        <option value="Contract" {% if form_data.employment_type == 'Contract' %}selected{% endif %}>Contract</option>
+                                        <option value="Temporary" {% if form_data.employment_type == 'Temporary' %}selected{% endif %}>Temporary</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Department</label>
+                                    <select name="department" class="form-input">
+                                        <option value="">Select Department</option>
+                                        {% for dept in departments %}
+                                        <option value="{{ dept.pk }}" {% if form_data.department == dept.pk|stringformat:"s" %}selected{% endif %}>{{ dept.name }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Designation</label>
+                                    <select name="designation" class="form-input">
+                                        <option value="">Select Designation</option>
+                                        {% for desig in designations %}
+                                        <option value="{{ desig.pk }}" {% if form_data.designation == desig.pk|stringformat:"s" %}selected{% endif %}>{{ desig.name }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Reporting Manager</label>
+                                    <select name="manager" class="form-input">
+                                        <option value="">Select Manager</option>
+                                        {% for manager in managers %}
+                                        <option value="{{ manager.pk }}" {% if form_data.manager == manager.pk|stringformat:"s" %}selected{% endif %}>{{ manager.first_name }} {{ manager.last_name }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Work Location</label>
+                                    <input type="text" name="work_location" class="form-input" placeholder="e.g. Headquarters" value="{{ form_data.work_location|default:'' }}">
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                    <div class="form-group">
-                        <label class="form-label">State</label>
-                        <input type="text" name="permanent_state" class="form-input" placeholder="e.g. Maharashtra" value="{{ form_data.permanent_state|default:'' }}">
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Country</label>
-                        <input type="text" name="permanent_country" class="form-input" value="{{ form_data.permanent_country|default:'India' }}">
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Pincode</label>
-                        <input type="text" name="permanent_pincode" class="form-input" placeholder="6-digit code" value="{{ form_data.permanent_pincode|default:'' }}">
-                    </div>
-                </div>
-            </div>
 
-            <!-- Section 5: Work & Employment -->
-            <div class="card" style="margin-bottom: 32px;">
-                <h3 class="section-title"><i class="fas fa-briefcase"></i> Work & Employment</h3>
-                <div class="form-grid">
-                    <div class="form-group">
-                        <label class="form-label">Joining Date</label>
-                        <input type="date" name="joining_date" class="form-input" value="{{ form_data.joining_date|default:'' }}">
+                    <!-- Section 5: Financial Info -->
+                    <div class="ui-card" id="section-financial">
+                        <div class="ui-card-header">
+                            <h2 class="ui-card-title"><i class="fas fa-wallet"></i> Financial Information</h2>
+                        </div>
+                        <div class="ui-card-body">
+                            <div class="form-grid">
+                                <div class="form-group">
+                                    <label class="form-label">PAN Number</label>
+                                    <input type="text" name="pan_number" class="form-input" placeholder="ABCDE1234F" maxlength="10" value="{{ form_data.pan_number|default:'' }}">
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Aadhaar Number</label>
+                                    <input type="text" name="aadhaar_number" class="form-input" placeholder="12-digit number" maxlength="12" value="{{ form_data.aadhaar_number|default:'' }}">
+                                </div>
+                                <div class="form-group full-width">
+                                    <label class="form-label">Bank Name</label>
+                                    <input type="text" name="bank_name" class="form-input" placeholder="e.g. HDFC Bank" value="{{ form_data.bank_name|default:'' }}">
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Account Number</label>
+                                    <input type="text" name="bank_account_number" class="form-input" placeholder="Account Number" value="{{ form_data.bank_account_number|default:'' }}">
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">IFSC Code</label>
+                                    <input type="text" name="ifsc_code" class="form-input" placeholder="e.g. HDFC0001234" value="{{ form_data.ifsc_code|default:'' }}">
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                    <div class="form-group">
-                        <label class="form-label">Employment Type</label>
-                        <select name="employment_type" class="form-input">
-                            <option value="">Select Type</option>
-                            <option value="Full Time" {% if form_data.employment_type == 'Full Time' %}selected{% endif %}>Full Time</option>
-                            <option value="Part Time" {% if form_data.employment_type == 'Part Time' %}selected{% endif %}>Part Time</option>
-                            <option value="Contract" {% if form_data.employment_type == 'Contract' %}selected{% endif %}>Contract</option>
-                            <option value="Temporary" {% if form_data.employment_type == 'Temporary' %}selected{% endif %}>Temporary</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Department</label>
-                        <select name="department" class="form-input">
-                            <option value="">Select Department</option>
-                            {% for dept in departments %}
-                            <option value="{{ dept.pk }}" {% if form_data.department == dept.pk|stringformat:"s" %}selected{% endif %}>{{ dept.name }}</option>
-                            {% endfor %}
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Designation</label>
-                        <select name="designation" class="form-input">
-                            <option value="">Select Designation</option>
-                            {% for desig in designations %}
-                            <option value="{{ desig.pk }}" {% if form_data.designation == desig.pk|stringformat:"s" %}selected{% endif %}>{{ desig.name }}</option>
-                            {% endfor %}
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Reporting Manager</label>
-                        <select name="manager" class="form-input">
-                            <option value="">Select Manager</option>
-                            {% for manager in managers %}
-                            <option value="{{ manager.pk }}" {% if form_data.manager == manager.pk|stringformat:"s" %}selected{% endif %}>{{ manager.first_name }} {{ manager.last_name }}</option>
-                            {% endfor %}
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Work Location</label>
-                        <input type="text" name="work_location" class="form-input" placeholder="e.g. Mumbai Office" value="{{ form_data.work_location|default:'' }}">
-                    </div>
-                </div>
-            </div>
 
-            <!-- Section 6: Financial Information -->
-            <div class="card" style="margin-bottom: 32px;">
-                <h3 class="section-title"><i class="fas fa-wallet"></i> Financial Information</h3>
-                <div class="form-grid">
-                    <div class="form-group">
-                        <label class="form-label">PAN Number</label>
-                        <input type="text" name="pan_number" class="form-input" placeholder="ABCDE1234F" maxlength="10" value="{{ form_data.pan_number|default:'' }}">
+                    <!-- Section 6: Emergency Contact -->
+                    <div class="ui-card" id="section-emergency">
+                        <div class="ui-card-header">
+                            <h2 class="ui-card-title"><i class="fas fa-phone-alt"></i> Emergency Contact</h2>
+                        </div>
+                        <div class="ui-card-body">
+                            <div class="form-grid">
+                                <div class="form-group full-width">
+                                    <label class="form-label">Contact Name</label>
+                                    <input type="text" name="emergency_contact_name" class="form-input" placeholder="Full Name" value="{{ form_data.emergency_contact_name|default:'' }}">
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Relationship</label>
+                                    <input type="text" name="emergency_contact_relationship" class="form-input"
+                                        placeholder="e.g. Father, Spouse" value="{{ form_data.emergency_contact_relationship|default:'' }}">
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Contact Number</label>
+                                    <input type="text" name="emergency_contact_number" class="form-input"
+                                        placeholder="Phone Number" value="{{ form_data.emergency_contact_number|default:'' }}">
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                    <div class="form-group">
-                        <label class="form-label">Aadhaar Number</label>
-                        <input type="text" name="aadhaar_number" class="form-input" placeholder="12-digit number" maxlength="12" value="{{ form_data.aadhaar_number|default:'' }}">
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Bank Name</label>
-                        <input type="text" name="bank_name" class="form-input" placeholder="e.g. HDFC Bank" value="{{ form_data.bank_name|default:'' }}">
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Account Number</label>
-                        <input type="text" name="bank_account_number" class="form-input" placeholder="Account Number" value="{{ form_data.bank_account_number|default:'' }}">
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">IFSC Code</label>
-                        <input type="text" name="ifsc_code" class="form-input" placeholder="HDFC0001234" value="{{ form_data.ifsc_code|default:'' }}">
-                    </div>
-                </div>
-            </div>
 
-            <!-- Section 7: Emergency Contact -->
-            <div class="card" style="margin-bottom: 32px;">
-                <h3 class="section-title"><i class="fas fa-phone-alt"></i> Emergency Contact</h3>
-                <div class="form-grid">
-                    <div class="form-group">
-                        <label class="form-label">Contact Name</label>
-                        <input type="text" name="emergency_contact_name" class="form-input" placeholder="Full Name" value="{{ form_data.emergency_contact_name|default:'' }}">
+                    <!-- Section 7: Documents -->
+                    <div class="ui-card" id="section-documents">
+                        <div class="ui-card-header">
+                            <h2 class="ui-card-title"><i class="fas fa-file-alt"></i> Documents & Profile Photo</h2>
+                        </div>
+                        <div class="ui-card-body">
+                            <div class="form-grid">
+                                <div class="form-group">
+                                    <label class="form-label">Profile Image</label>
+                                    <div class="file-upload-wrapper">
+                                        <input type="file" name="profile_img" accept="image/*">
+                                        <div class="file-upload-content">
+                                            <i class="fas fa-image"></i>
+                                            <span>Click to upload image</span>
+                                            <small>JPG, PNG up to 2MB</small>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Resume / CV</label>
+                                    <div class="file-upload-wrapper">
+                                        <input type="file" name="resume">
+                                        <div class="file-upload-content">
+                                            <i class="fas fa-file-pdf"></i>
+                                            <span>Click to upload resume</span>
+                                            <small>PDF, DOCX up to 5MB</small>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Offer Letter</label>
+                                    <div class="file-upload-wrapper">
+                                        <input type="file" name="offer_letter">
+                                        <div class="file-upload-content">
+                                            <i class="fas fa-envelope-open-text"></i>
+                                            <span>Click to upload offer</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Aadhaar Card (PDF)</label>
+                                    <div class="file-upload-wrapper">
+                                        <input type="file" name="aadhaar_card">
+                                        <div class="file-upload-content">
+                                            <i class="fas fa-id-card"></i>
+                                            <span>Click to upload Aadhaar</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">PAN Card (PDF)</label>
+                                    <div class="file-upload-wrapper">
+                                        <input type="file" name="pan_card">
+                                        <div class="file-upload-content">
+                                            <i class="fas fa-id-card-clip"></i>
+                                            <span>Click to upload PAN</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Appointment Letter</label>
+                                    <div class="file-upload-wrapper">
+                                        <input type="file" name="appointment_letter">
+                                        <div class="file-upload-content">
+                                            <i class="fas fa-file-contract"></i>
+                                            <span>Click to upload appointment</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                    <div class="form-group">
-                        <label class="form-label">Relationship</label>
-                        <input type="text" name="emergency_contact_relationship" class="form-input"
-                            placeholder="e.g. Father, Spouse" value="{{ form_data.emergency_contact_relationship|default:'' }}">
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Contact Number</label>
-                        <input type="text" name="emergency_contact_number" class="form-input"
-                            placeholder="Phone Number" value="{{ form_data.emergency_contact_number|default:'' }}">
-                    </div>
-                </div>
-            </div>
 
-            <!-- Section 8: Documents & Profile -->
-            <div class="card" style="margin-bottom: 32px;">
-                <h3 class="section-title"><i class="fas fa-file-alt"></i> Documents & Profile Photo</h3>
-                <div class="form-grid">
-                    <div class="form-group">
-                        <label class="form-label">Profile Image</label>
-                        <input type="file" name="profile_img" class="form-input" accept="image/*">
+                    <!-- ── FORM ACTIONS ── -->
+                    <div class="form-actions">
+                        <button type="reset" class="btn-secondary">
+                            <i class="fas fa-undo"></i> Reset
+                        </button>
+                        <button type="submit" class="btn-primary">
+                            <i class="fas fa-check-circle"></i> Save Employee Profile
+                        </button>
                     </div>
-                    <div class="form-group">
-                        <label class="form-label">Resume / CV</label>
-                        <input type="file" name="resume" class="form-input">
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Offer Letter</label>
-                        <input type="file" name="offer_letter" class="form-input">
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Aadhaar Card (PDF)</label>
-                        <input type="file" name="aadhaar_card" class="form-input">
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">PAN Card (PDF)</label>
-                        <input type="file" name="pan_card" class="form-input">
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Appointment Letter</label>
-                        <input type="file" name="appointment_letter" class="form-input">
-                    </div>
-                </div>
-            </div>
 
-            <!-- Form Actions -->
-            <div style="display: flex; gap: 16px; margin-bottom: 60px;">
-                <button type="submit" class="btn-primary" style="flex: 2; height: 54px;">
-                    <i class="fas fa-check-circle"></i> Save Employee Profile
-                </button>
-                <button type="reset" class="btn-secondary" style="flex: 1; height: 54px;">
-                    <i class="fas fa-undo"></i> Reset Form
-                </button>
+                </div>
             </div>
         </form>
     </main>
 
-    <footer
-        style="padding: 32px 0; border-top: 1px solid var(--border-light); text-align: center; color: var(--text-secondary); font-size: 13px;">
-        &copy; 2026 GlassEntials Premium HRMS · Platform Version 4.0.2
-    </footer>
     <script>
+        // Scroll spy for side navigation
+        document.addEventListener('DOMContentLoaded', function() {
+            const sections = document.querySelectorAll('.ui-card[id^="section-"]');
+            const navItems = document.querySelectorAll('.form-nav-item');
+            
+            const observerOptions = {
+                root: null,
+                rootMargin: '-20% 0px -60% 0px',
+                threshold: 0
+            };
+
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        navItems.forEach(item => {
+                            item.classList.remove('active');
+                            if (item.getAttribute('href') === '#' + entry.target.id) {
+                                item.classList.add('active');
+                            }
+                        });
+                    }
+                });
+            }, observerOptions);
+
+            sections.forEach(section => observer.observe(section));
+
+            // Smooth scrolling
+            navItems.forEach(item => {
+                item.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const targetId = this.getAttribute('href').substring(1);
+                    const targetEl = document.getElementById(targetId);
+                    if (targetEl) {
+                        const offset = 80; // Account for fixed header
+                        const bodyRect = document.body.getBoundingClientRect().top;
+                        const elementRect = targetEl.getBoundingClientRect().top;
+                        const elementPosition = elementRect - bodyRect;
+                        const offsetPosition = elementPosition - offset;
+
+                        window.scrollTo({
+                            top: offsetPosition,
+                            behavior: 'smooth'
+                        });
+                    }
+                });
+            });
+
+            // File input logic to show selected file name
+            const fileInputs = document.querySelectorAll('input[type="file"]');
+            fileInputs.forEach(input => {
+                input.addEventListener('change', function(e) {
+                    const wrapper = this.closest('.file-upload-wrapper');
+                    const span = wrapper.querySelector('.file-upload-content span');
+                    const small = wrapper.querySelector('.file-upload-content small');
+                    
+                    if (this.files && this.files.length > 0) {
+                        const fileName = this.files[0].name;
+                        span.textContent = fileName;
+                        span.style.color = 'var(--blue)';
+                        if(small) small.style.display = 'none';
+                        wrapper.style.borderColor = 'var(--blue)';
+                        wrapper.style.background = 'var(--blue-light)';
+                    } else {
+                        span.textContent = 'Click to upload';
+                        span.style.color = '';
+                        if(small) small.style.display = 'block';
+                        wrapper.style.borderColor = '';
+                        wrapper.style.background = '';
+                    }
+                });
+            });
+        });
+
+        // Same as current address logic
         document.getElementById('same_as_current').addEventListener('change', function () {
             if (this.checked) {
                 document.getElementsByName('permanent_address')[0].value = document.getElementsByName('current_address')[0].value;

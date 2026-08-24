@@ -5,7 +5,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Departments | HRMS GlassEntials</title>
+    <title>Departments | Mulzon HRMS</title>
     <!-- Favicon -->
     <link rel="icon" type="image/png" href="{% static 'img/favicon_logo.png' %}">
     <link rel="apple-touch-icon" href="{% static 'img/favicon_logo.png' %}">
@@ -16,136 +16,518 @@
     <link rel="stylesheet" href="{% static 'css/landing.css' %}?v=3.0">
     <link rel="stylesheet" href="{% static 'css/home.css' %}?v=3.1">
     <link rel="stylesheet" href="{% static 'css/dashboard.css' %}?v=3.0">
-    
+
+    <style>
+        /* ── DEPARTMENT DIRECTORY — PREMIUM REDESIGN ── */
+        :root {
+            --blue: #2563eb;
+            --blue-light: rgba(37, 99, 235, 0.08);
+            --green: #16a34a;
+            --green-light: rgba(22, 163, 74, 0.1);
+            --red: #dc2626;
+            --red-light: rgba(220, 38, 38, 0.08);
+            --gray-50: #f8fafc;
+            --gray-100: #f1f5f9;
+            --gray-200: #e2e8f0;
+            --gray-400: #94a3b8;
+            --gray-500: #64748b;
+            --gray-700: #334155;
+            --gray-900: #0f172a;
+            --surface: #ffffff;
+            --radius-sm: 8px;
+            --radius: 12px;
+            --radius-lg: 16px;
+            --shadow-xs: 0 1px 2px rgba(0,0,0,0.05);
+            --shadow-sm: 0 1px 3px rgba(0,0,0,0.07), 0 1px 2px rgba(0,0,0,0.04);
+            --shadow: 0 4px 6px -1px rgba(0,0,0,0.07), 0 2px 4px -1px rgba(0,0,0,0.04);
+            --transition: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* ── PAGE HEADER ── */
+        .emp-page-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 24px 0 20px;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+
+        .emp-page-header h1 {
+            font-size: 26px;
+            font-weight: 800;
+            color: var(--gray-900);
+            letter-spacing: -0.5px;
+            margin: 0 0 3px;
+            font-family: 'Manrope', sans-serif;
+        }
+
+        .emp-page-header p {
+            font-size: 14px;
+            color: var(--gray-500);
+            margin: 0;
+            font-weight: 400;
+        }
+
+        /* ── LAYOUT ── */
+        .split-grid {
+            display: grid;
+            grid-template-columns: 350px 1fr;
+            gap: 24px;
+            align-items: start;
+        }
+
+        @media (max-width: 992px) {
+            .split-grid { grid-template-columns: 1fr; }
+        }
+
+        /* ── CARD ── */
+        .ui-card {
+            background: var(--surface);
+            border: 1px solid var(--gray-200);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-xs);
+            overflow: hidden;
+        }
+
+        .ui-card-header {
+            padding: 18px 20px;
+            border-bottom: 1px solid var(--gray-100);
+            background: var(--surface);
+        }
+
+        .ui-card-title {
+            font-size: 15px;
+            font-weight: 700;
+            color: var(--gray-900);
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .ui-card-title i {
+            color: var(--blue);
+            font-size: 14px;
+        }
+
+        .ui-card-body {
+            padding: 20px;
+        }
+
+        /* ── FORM ── */
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--gray-700);
+            margin-bottom: 6px;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 10px 14px;
+            font-size: 14px;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            font-weight: 500;
+            background: var(--gray-50);
+            border: 1px solid var(--gray-200);
+            border-radius: var(--radius-sm);
+            color: var(--gray-900);
+            transition: border-color var(--transition), box-shadow var(--transition), background var(--transition);
+            outline: none;
+            box-sizing: border-box;
+        }
+
+        .form-input:focus {
+            border-color: var(--blue);
+            background: #fff;
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+
+        .form-input::placeholder {
+            color: var(--gray-400);
+            font-weight: 400;
+        }
+
+        /* ── BUTTONS ── */
+        .btn-primary {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            width: 100%;
+            padding: 12px;
+            font-size: 14px;
+            font-weight: 600;
+            background: var(--blue);
+            color: #fff;
+            border: none;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            transition: all var(--transition);
+        }
+
+        .btn-primary:hover {
+            background: #1d4ed8;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25);
+        }
+
+        .btn-secondary {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            width: 100%;
+            padding: 12px;
+            font-size: 14px;
+            font-weight: 600;
+            background: var(--gray-100);
+            color: var(--gray-700);
+            border: none;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            transition: all var(--transition);
+            text-decoration: none;
+        }
+
+        .btn-secondary:hover {
+            background: var(--gray-200);
+            color: var(--gray-900);
+        }
+
+        /* ── TABLE ── */
+        .ui-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .ui-table thead tr {
+            background: var(--gray-50);
+            border-bottom: 1px solid var(--gray-200);
+        }
+
+        .ui-table th {
+            padding: 12px 20px;
+            text-align: left;
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--gray-400);
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            white-space: nowrap;
+        }
+
+        .ui-table tbody tr {
+            border-bottom: 1px solid var(--gray-100);
+            transition: background var(--transition);
+        }
+
+        .ui-table tbody tr:last-child {
+            border-bottom: none;
+        }
+
+        .ui-table tbody tr:hover {
+            background: #f8faff;
+        }
+
+        .ui-table td {
+            padding: 16px 20px;
+            vertical-align: middle;
+            font-size: 14px;
+        }
+
+        .entity-cell {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .entity-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
+            background: var(--blue-light);
+            color: var(--blue);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            flex-shrink: 0;
+        }
+
+        .entity-name {
+            font-weight: 700;
+            color: var(--gray-900);
+            line-height: 1.2;
+        }
+
+        .entity-sub {
+            font-size: 12px;
+            color: var(--gray-500);
+            margin-top: 2px;
+            font-weight: 500;
+        }
+
+        .desc-cell {
+            color: var(--gray-500);
+            font-size: 13px;
+            max-width: 200px;
+            line-height: 1.4;
+        }
+
+        .staff-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 10px;
+            background: var(--gray-100);
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--gray-700);
+        }
+
+        /* ── STATUS BADGE ── */
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 12px;
+            font-weight: 600;
+            padding: 4px 10px;
+            border-radius: 20px;
+            white-space: nowrap;
+            text-decoration: none;
+            transition: transform var(--transition), opacity var(--transition);
+        }
+
+        .status-badge:hover {
+            transform: scale(1.05);
+            opacity: 0.9;
+        }
+
+        .status-badge .dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        .status-badge.active {
+            background: var(--green-light);
+            color: var(--green);
+        }
+
+        .status-badge.active .dot { background: var(--green); }
+
+        .status-badge.inactive {
+            background: var(--gray-100);
+            color: var(--gray-500);
+        }
+
+        .status-badge.inactive .dot { background: var(--gray-400); }
+
+        /* ── ACTIONS ── */
+        .row-actions {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 13px;
+            color: var(--gray-500);
+            background: transparent;
+            transition: all var(--transition);
+            text-decoration: none;
+        }
+
+        .btn-icon:hover {
+            background: var(--gray-100);
+            color: var(--gray-900);
+        }
+
+        .btn-icon.delete:hover {
+            background: #fef2f2;
+            color: var(--red);
+        }
+
+        /* ── EMPTY STATE ── */
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+        }
+
+        .empty-state-icon {
+            width: 56px;
+            height: 56px;
+            background: var(--gray-100);
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            color: var(--gray-400);
+            margin: 0 auto 16px;
+        }
+
+        .empty-state h3 {
+            font-size: 15px;
+            font-weight: 700;
+            color: var(--gray-900);
+            margin: 0 0 4px;
+        }
+
+        .empty-state p {
+            font-size: 13px;
+            color: var(--gray-500);
+            margin: 0;
+        }
+    </style>
 </head>
 
 <body>
-    <!-- Flash Messages Toast -->
-
-    <!--Subtle Background Elements-->
-    <div class="orb orb-1" style="opacity: 0.03;top:-100px;left:-100px;"></div>
-    <div class="orb orb-2" style="opacity: 0.03;bottom:-100px;right:-100px;"></div>
-
-    <!--Header Navigation-->
     {% include 'includes/navbar.html' %}
 
     <main class="workspace">
-        <div class="page-header">
-            <h1>Departments</h1>
-            <p>Organize and manage your company structure</p>
+        <div class="emp-page-header">
+            <div>
+                <h1>Departments</h1>
+                <p>Organize and manage your company structure.</p>
+            </div>
         </div>
 
         <div class="split-grid">
             <!-- Left Side: Form -->
-            <div class="card">
-                <div class="card-header">
-                    <h2 class="card-title">
+            <div class="ui-card">
+                <div class="ui-card-header">
+                    <h2 class="ui-card-title">
                         <i class="fas {% if edit_dept %}fa-edit{% else %}fa-plus-circle{% endif %}"></i>
-                        {% if edit_dept %}Edit{% else %}New{% endif %} Department
+                        {% if edit_dept %}Edit Department{% else %}Add Department{% endif %}
                     </h2>
                 </div>
-                <form method="POST">
-                    {% csrf_token %}
-                    <div class="form-group">
-                        <label class="form-label">Department Name</label>
-                        <input type="text" name="name" class="form-input" placeholder="e.g. Product Engineering" 
-                            value="{{ edit_dept.name|default:'' }}" required>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Description</label>
-                        <textarea name="description" class="form-input" rows="4"
-                            placeholder="Briefly describe the department's purpose...">{{ edit_dept.description|default:'' }}</textarea>
-                    </div>
-                    
-                    {% if edit_dept %}
-                    <div style="display: flex; gap: 12px;">
-                        <button type="submit" class="btn-primary" style="flex: 2;">
-                            <i class="fas fa-save"></i> Update Department
-                        </button>
-                        <a href="{% url 'department' %}" class="action-btn" style="flex: 1; height: 50px; border-radius: 14px;">
-                            <i class="fas fa-times"></i>
-                        </a>
-                    </div>
-                    {% else %}
-                    <button type="submit" class="btn-primary">
-                        <i class="fas fa-check"></i> Create Department
-                    </button>
-                    {% endif %}
-                </form>
+                <div class="ui-card-body">
+                    <form method="POST">
+                        {% csrf_token %}
+                        <div class="form-group">
+                            <label class="form-label">Department Name</label>
+                            <input type="text" name="name" class="form-input" placeholder="e.g. Engineering" 
+                                value="{{ edit_dept.name|default:'' }}" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Description (Optional)</label>
+                            <textarea name="description" class="form-input" rows="4"
+                                placeholder="Briefly describe the department's purpose...">{{ edit_dept.description|default:'' }}</textarea>
+                        </div>
+                        
+                        {% if edit_dept %}
+                        <div style="display: flex; gap: 10px; margin-top: 24px;">
+                            <button type="submit" class="btn-primary" style="flex: 2;">
+                                <i class="fas fa-save"></i> Save Changes
+                            </button>
+                            <a href="{% url 'department' %}" class="btn-secondary" style="flex: 1; padding: 12px 0;">
+                                Cancel
+                            </a>
+                        </div>
+                        {% else %}
+                        <div style="margin-top: 24px;">
+                            <button type="submit" class="btn-primary">
+                                <i class="fas fa-plus"></i> Create Department
+                            </button>
+                        </div>
+                        {% endif %}
+                    </form>
+                </div>
             </div>
 
             <!-- Right Side: Table -->
-            <div class="card table-card">
-                <div class="table-responsive">
-                    <table class="premium-table">
+            <div class="ui-card">
+                {% if departments %}
+                <div style="overflow-x: auto;">
+                    <table class="ui-table">
                         <thead>
                             <tr>
                                 <th>Department</th>
                                 <th>Description</th>
                                 <th>Staffing</th>
                                 <th>Status</th>
-                                <th>Actions</th>
+                                <th style="text-align: right;">Actions</th>
                             </tr>
                         </thead>
                         <tbody>
                             {% for dept in departments %}
                             <tr>
                                 <td>
-                                    <div class="entity-info">
-                                        <div class="entity-icon-circle"
-                                            style="background: rgba(37, 99, 235, 0.08); color: #2563eb;">
-                                            <i class="fas fa-sitemap"></i>
+                                    <div class="entity-cell">
+                                        <div class="entity-icon">
+                                            <i class="fas fa-building"></i>
                                         </div>
                                         <div>
-                                            <span class="entity-name-main">{{ dept.name }}</span>
-                                            <span class="entity-subtitle">Added: {{ dept.created_at|date:"M d, Y" }}</span>
+                                            <div class="entity-name">{{ dept.name }}</div>
+                                            <div class="entity-sub">Added: {{ dept.created_at|date:"M d, Y" }}</div>
                                         </div>
                                     </div>
                                 </td>
-                                <td>{{ dept.description|default:"No description provided"|truncatewords:15 }}</td>
-                                <td>{{ dept.employee_set.count }} Employees</td>
+                                <td>
+                                    <div class="desc-cell">{{ dept.description|default:"—"|truncatewords:8 }}</div>
+                                </td>
+                                <td>
+                                    <span class="staff-badge">
+                                        <i class="fas fa-users" style="color: var(--gray-400);"></i> 
+                                        {{ dept.employee_set.count }}
+                                    </span>
+                                </td>
                                 <td>
                                     <a href="{% url 'toggle_department_status' dept.pk %}" 
-                                       class="status-pill {% if dept.is_active %}active{% else %}inactive{% endif %}"
-                                       title="Click to {% if dept.is_active %}Deactivate{% else %}Activate{% endif %}">
-                                        <i class="fas fa-circle" style="font-size: 6px;"></i> 
+                                       class="status-badge {% if dept.is_active %}active{% else %}inactive{% endif %}"
+                                       title="Toggle Status">
+                                        <span class="dot"></span> 
                                         {% if dept.is_active %}Active{% else %}Inactive{% endif %}
                                     </a>
                                 </td>
                                 <td>
-                                    <div class="action-group">
-                                        <a href="{% url 'edit_department' dept.pk %}" class="action-btn" title="Edit">
+                                    <div class="row-actions" style="justify-content: flex-end;">
+                                        <a href="{% url 'edit_department' dept.pk %}" class="btn-icon" title="Edit">
                                             <i class="fas fa-pen"></i>
                                         </a>
-                                        <a href="{% url 'delete_department' dept.pk %}" class="action-btn delete" 
-                                           onclick="return confirm('Are you sure you want to delete this department?')" title="Delete">
+                                        <a href="{% url 'delete_department' dept.pk %}" class="btn-icon delete" 
+                                           onclick="return confirm('Are you sure you want to delete {{ dept.name }}? This action cannot be undone.')" title="Delete">
                                             <i class="fas fa-trash"></i>
                                         </a>
                                     </div>
-                                </td>
-                            </tr>
-                            {% empty %}
-                            <tr>
-                                <td colspan="5" style="text-align: center; padding: 48px 24px;">
-                                    <div style="color: var(--text-secondary); opacity: 0.6; margin-bottom: 12px;">
-                                        <i class="fas fa-folder-open" style="font-size: 32px;"></i>
-                                    </div>
-                                    <span style="color: var(--text-secondary); font-weight: 500;">No departments found yet.</span>
                                 </td>
                             </tr>
                             {% endfor %}
                         </tbody>
                     </table>
                 </div>
+                {% else %}
+                <div class="empty-state">
+                    <div class="empty-state-icon">
+                        <i class="fas fa-sitemap"></i>
+                    </div>
+                    <h3>No departments yet</h3>
+                    <p>Create your first department to start organizing your team.</p>
+                </div>
+                {% endif %}
             </div>
         </div>
     </main>
 
-    <footer
-        style="margin-top: 60px; padding: 32px 0; border-top: 1px solid var(--border-light); text-align: center; color: var(--text-secondary); font-size: 13px;">
-        &copy; 2026 GlassEntials Premium HRMS · Platform Version 4.0.2
-    </footer>
     <script src="{% static 'js/landing.js' %}?v=1.0"></script>
 </body>
-
 </html>

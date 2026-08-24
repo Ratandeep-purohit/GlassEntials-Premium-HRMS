@@ -12,15 +12,15 @@ User = get_user_model()
 class AssetModuleTests(TestCase):
     def setUp(self):
         # Create organization
-        self.org = Organization.objects.create(name="Glassentials Org")
+        self.org = Organization.objects.create(name="Mulzon Org")
         
         # Create users
         self.admin_user = User.objects.create_user(
-            username="admin_user", email="admin@glassentials.com", password="password123",
+            username="admin_user", email="admin@mulzon.com", password="password123",
             is_staff=True, organization=self.org
         )
         self.emp_user = User.objects.create_user(
-            username="emp_user", email="employee@glassentials.com", password="password123",
+            username="emp_user", email="employee@mulzon.com", password="password123",
             is_staff=False, organization=self.org
         )
         
@@ -30,7 +30,7 @@ class AssetModuleTests(TestCase):
             employee_id="GEMP001",
             first_name="Jane",
             last_name="Doe",
-            email="employee@glassentials.com",
+            email="employee@mulzon.com",
             phone_number="9876543210",
             is_active=True
         )

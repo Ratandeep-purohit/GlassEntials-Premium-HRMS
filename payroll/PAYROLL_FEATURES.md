@@ -1,6 +1,6 @@
-# 💎 Glassentials HRMS: Payroll Module Roadmap
+# 💎 Mulzon HRMS: Payroll Module Roadmap
 
-The Payroll Module for Glassentials is designed to be a high-performance, enterprise-grade engine that handles everything from basic salary processing to complex statutory compliance and employee financial wellness.
+The Payroll Module for Mulzon is designed to be a high-performance, enterprise-grade engine that handles everything from basic salary processing to complex statutory compliance and employee financial wellness.
 
 ## 🏗️ Core Submodules
 

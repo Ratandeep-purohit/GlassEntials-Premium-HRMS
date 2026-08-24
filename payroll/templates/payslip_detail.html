@@ -4,7 +4,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Payslip — {{ payslip.employee.first_name }} {{ payslip.employee.last_name }} | GlassEntials HRMS</title>
+<title>Payslip — {{ payslip.employee.first_name }} {{ payslip.employee.last_name }} | Mulzon HRMS</title>
     <!-- Favicon -->
     <link rel="icon" type="image/png" href="{% static 'img/favicon_logo.png' %}">
     <link rel="apple-touch-icon" href="{% static 'img/favicon_logo.png' %}">
@@ -319,11 +319,11 @@ body{background:#f0f4f8;font-family:var(--font);color:var(--text);font-size:14px
     <!-- HEADER -->
     <div class="ps-header">
       <div class="ps-header-left">
-        <img src="{% static 'img/logo.png' %}" alt="GlassEntials" class="ps-logo">
+        <img src="{% static 'img/logo.png' %}" alt="Mulzon" class="ps-logo">
         <div class="ps-company">
-          <h2>GlassEntials Premium Pvt. Ltd.</h2>
+          <h2>Mulzon Premium Pvt. Ltd.</h2>
           <p>CIN: U74999MH2020PTC000000 &nbsp;|&nbsp; PAN: AAACG0000A<br>
-             GSTIN: 27AAACG0000A1ZV &nbsp;|&nbsp; hr@glassentials.com</p>
+             GSTIN: 27AAACG0000A1ZV &nbsp;|&nbsp; hr@mulzon.com</p>
         </div>
       </div>
       <div class="ps-header-right">
@@ -516,12 +516,12 @@ body{background:#f0f4f8;font-family:var(--font);color:var(--text);font-size:14px
         <i class="fas fa-lock" style="color:#94a3b8;margin-right:6px"></i>
         This is a system-generated payslip and does not require a physical signature.
         This document is confidential and intended solely for the named employee.
-        For queries, contact hr@glassentials.com
+        For queries, contact hr@mulzon.com
       </div>
       <div class="ps-footer-right">
         <div class="ps-sig-line" style="width:180px;border-top:1px solid #cbd5e1;padding-top:6px;font-size:10.5px;color:#94a3b8;text-align:center;margin-left:auto">Authorised Signatory</div>
         <div class="ps-generated" style="font-size:10.5px;color:#94a3b8;margin-top:6px;text-align:right">
-          Generated: {{ now|date:"d M Y, H:i" }} &nbsp;|&nbsp; GlassEntials HRMS v2.0
+          Generated: {{ now|date:"d M Y, H:i" }} &nbsp;|&nbsp; Mulzon HRMS v2.0
         </div>
       </div>
     </div>

@@ -11,7 +11,7 @@ User = get_user_model()
 
 class AnnouncementModuleTests(TestCase):
     def setUp(self):
-        self.org = Organization.objects.create(name="GlassEntials", unique_code="GE001")
+        self.org = Organization.objects.create(name="Mulzon", unique_code="GE001")
         self.other_org = Organization.objects.create(name="Other Org", unique_code="OO001")
         self.admin = User.objects.create_user(
             username="admin",

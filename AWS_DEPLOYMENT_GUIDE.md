@@ -1,6 +1,6 @@
-# GlassEntials HRMS - AWS Deployment Guide
+# Mulzon HRMS - AWS Deployment Guide
 
-> Complete step-by-step guide for deploying the GlassEntials Premium HRMS application on Amazon Web Services (AWS)
+> Complete step-by-step guide for deploying the Mulzon Premium HRMS application on Amazon Web Services (AWS)
 
 ---
 
@@ -23,7 +23,7 @@
 
 ## Architecture Overview
 
-### Recommended AWS Architecture for GlassEntials
+### Recommended AWS Architecture for Mulzon
 
 ```
 ┌─────────────────────────────────────────────────┐
@@ -109,7 +109,7 @@ pytest  # or: python manage.py test
 
 ```bash
 # Create VPC with CIDR block 10.0.0.0/16
-aws ec2 create-vpc --cidr-block 10.0.0.0/16 --tag-specifications 'ResourceType=vpc,Tags=[{Key=Name,Value=glassentials-vpc}]'
+aws ec2 create-vpc --cidr-block 10.0.0.0/16 --tag-specifications 'ResourceType=vpc,Tags=[{Key=Name,Value=mulzon-vpc}]'
 
 # Note the VPC ID from response
 export VPC_ID="vpc-xxxxx"
@@ -133,7 +133,7 @@ aws ec2 create-subnet --vpc-id $VPC_ID --cidr-block 10.0.12.0/24 --availability-
 
 ```bash
 # Create Internet Gateway
-aws ec2 create-internet-gateway --tag-specifications 'ResourceType=internet-gateway,Tags=[{Key=Name,Value=glassentials-igw}]'
+aws ec2 create-internet-gateway --tag-specifications 'ResourceType=internet-gateway,Tags=[{Key=Name,Value=mulzon-igw}]'
 
 # Note IGW ID
 export IGW_ID="igw-xxxxx"
@@ -164,8 +164,8 @@ aws ec2 associate-route-table --subnet-id $PUBLIC_SUBNET_1B --route-table-id $PU
 
 ```bash
 aws ec2 create-security-group \
-  --group-name glassentials-app-sg \
-  --description "Security group for GlassEntials Django app" \
+  --group-name mulzon-app-sg \
+  --description "Security group for Mulzon Django app" \
   --vpc-id $VPC_ID
 
 export APP_SG_ID="sg-xxxxx"
@@ -189,7 +189,7 @@ aws ec2 authorize-security-group-ingress \
 
 ```bash
 aws ec2 create-security-group \
-  --group-name glassentials-alb-sg \
+  --group-name mulzon-alb-sg \
   --description "Security group for ALB" \
   --vpc-id $VPC_ID
 
@@ -214,7 +214,7 @@ aws ec2 authorize-security-group-ingress \
 
 ```bash
 aws ec2 create-security-group \
-  --group-name glassentials-rds-sg \
+  --group-name mulzon-rds-sg \
   --description "Security group for RDS PostgreSQL" \
   --vpc-id $VPC_ID
 
@@ -232,19 +232,19 @@ aws ec2 authorize-security-group-ingress \
 
 ```bash
 # Create S3 bucket for static files
-aws s3 mb s3://glassentials-static-${AWS_ACCOUNT_ID} --region us-east-1
+aws s3 mb s3://mulzon-static-${AWS_ACCOUNT_ID} --region us-east-1
 
 # Create S3 bucket for media uploads
-aws s3 mb s3://glassentials-media-${AWS_ACCOUNT_ID} --region us-east-1
+aws s3 mb s3://mulzon-media-${AWS_ACCOUNT_ID} --region us-east-1
 
 # Block public access (media files)
 aws s3api put-public-access-block \
-  --bucket glassentials-media-${AWS_ACCOUNT_ID} \
+  --bucket mulzon-media-${AWS_ACCOUNT_ID} \
   --public-access-block-configuration "BlockPublicAcls=true,IgnorePublicAcls=true,BlockPublicPolicy=true,RestrictPublicBuckets=true"
 
 # Enable versioning for backups
 aws s3api put-bucket-versioning \
-  --bucket glassentials-static-${AWS_ACCOUNT_ID} \
+  --bucket mulzon-static-${AWS_ACCOUNT_ID} \
   --versioning-configuration Status=Enabled
 ```
 
@@ -258,8 +258,8 @@ aws s3api put-bucket-versioning \
 
 ```bash
 aws rds create-db-subnet-group \
-  --db-subnet-group-name glassentials-db-subnet \
-  --db-subnet-group-description "Subnet group for GlassEntials RDS" \
+  --db-subnet-group-name mulzon-db-subnet \
+  --db-subnet-group-description "Subnet group for Mulzon RDS" \
   --subnet-ids subnet-1a subnet-1b
 ```
 
@@ -267,7 +267,7 @@ aws rds create-db-subnet-group \
 
 ```bash
 aws rds create-db-instance \
-  --db-instance-identifier glassentials-db \
+  --db-instance-identifier mulzon-db \
   --db-instance-class db.t3.small \
   --engine postgres \
   --engine-version 15.4 \
@@ -275,14 +275,14 @@ aws rds create-db-instance \
   --master-user-password 'YourSecurePassword123!' \
   --allocated-storage 100 \
   --storage-type gp3 \
-  --db-subnet-group-name glassentials-db-subnet \
+  --db-subnet-group-name mulzon-db-subnet \
   --vpc-security-group-ids $RDS_SG_ID \
   --multi-az \
   --backup-retention-period 30 \
   --preferred-backup-window "03:00-04:00" \
   --preferred-maintenance-window "sun:04:00-sun:05:00" \
   --enable-cloudwatch-logs-exports '["postgresql"]' \
-  --tags Key=Name,Value=glassentials-db
+  --tags Key=Name,Value=mulzon-db
 ```
 
 **Alternative: Using AWS Secrets Manager for password**:
@@ -290,7 +290,7 @@ aws rds create-db-instance \
 ```bash
 # Store DB password securely
 aws secretsmanager create-secret \
-  --name glassentials/db/password \
+  --name mulzon/db/password \
   --secret-string '{"username":"glassadmin","password":"YourSecurePassword123!"}'
 ```
 
@@ -301,7 +301,7 @@ aws secretsmanager create-secret \
 ```bash
 # Get RDS endpoint
 export RDS_ENDPOINT=$(aws rds describe-db-instances \
-  --db-instance-identifier glassentials-db \
+  --db-instance-identifier mulzon-db \
   --query 'DBInstances[0].Endpoint.Address' \
   --output text)
 
@@ -309,10 +309,10 @@ export RDS_ENDPOINT=$(aws rds describe-db-instances \
 psql -h $RDS_ENDPOINT -U glassadmin -d postgres
 
 # Inside psql:
-CREATE DATABASE glassentials_prod;
-CREATE USER glassentials_user WITH PASSWORD 'AppUserPassword123!';
-GRANT ALL PRIVILEGES ON DATABASE glassentials_prod TO glassentials_user;
-ALTER USER glassentials_user CREATEDB;
+CREATE DATABASE mulzon_prod;
+CREATE USER mulzon_user WITH PASSWORD 'AppUserPassword123!';
+GRANT ALL PRIVILEGES ON DATABASE mulzon_prod TO mulzon_user;
+ALTER USER mulzon_user CREATEDB;
 \q
 ```
 
@@ -328,8 +328,8 @@ from pathlib import Path
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': os.getenv('DB_NAME', 'glassentials_prod'),
-        'USER': os.getenv('DB_USER', 'glassentials_user'),
+        'NAME': os.getenv('DB_NAME', 'mulzon_prod'),
+        'USER': os.getenv('DB_USER', 'mulzon_user'),
         'PASSWORD': os.getenv('DB_PASSWORD'),
         'HOST': os.getenv('DB_HOST'),  # RDS Endpoint
         'PORT': os.getenv('DB_PORT', '5432'),
@@ -342,14 +342,14 @@ DATABASES = {
 }
 
 # Static Files (S3)
-AWS_STORAGE_BUCKET_NAME = 'glassentials-static-{account-id}'
+AWS_STORAGE_BUCKET_NAME = 'mulzon-static-{account-id}'
 AWS_S3_REGION_NAME = 'us-east-1'
 AWS_S3_CUSTOM_DOMAIN = f'{AWS_STORAGE_BUCKET_NAME}.s3.amazonaws.com'
 STATIC_URL = f'https://{AWS_S3_CUSTOM_DOMAIN}/static/'
 STATICFILES_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
 
 # Media Files (S3)
-AWS_MEDIA_BUCKET_NAME = 'glassentials-media-{account-id}'
+AWS_MEDIA_BUCKET_NAME = 'mulzon-media-{account-id}'
 MEDIA_URL = f'https://{AWS_MEDIA_BUCKET_NAME}.s3.amazonaws.com/media/'
 DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
 
@@ -429,8 +429,8 @@ aws ec2 run-instances \
   --key-name your-key-pair \
   --security-group-ids $APP_SG_ID \
   --subnet-id $PRIVATE_SUBNET_1A \
-  --iam-instance-profile Name=glassentials-ec2-role \
-  --tag-specifications 'ResourceType=instance,Tags=[{Key=Name,Value=glassentials-app-base}]'
+  --iam-instance-profile Name=mulzon-ec2-role \
+  --tag-specifications 'ResourceType=instance,Tags=[{Key=Name,Value=mulzon-app-base}]'
 ```
 
 **SSH into instance and install dependencies**:
@@ -448,18 +448,18 @@ sudo apt-get install -y postgresql-client libpq-dev
 sudo apt-get install -y git curl wget
 
 # Create app user
-sudo useradd -m -s /bin/bash glassentials
+sudo useradd -m -s /bin/bash mulzon
 
 # Create application directory
-sudo mkdir -p /var/www/glassentials
-sudo chown -R glassentials:glassentials /var/www/glassentials
+sudo mkdir -p /var/www/mulzon
+sudo chown -R mulzon:mulzon /var/www/mulzon
 ```
 
 **Setup application**:
 
 ```bash
-# As glassentials user:
-cd /var/www/glassentials
+# As mulzon user:
+cd /var/www/mulzon
 
 # Clone repository
 git clone https://your-repo-url.git .
@@ -475,17 +475,17 @@ pip install -r requirements.txt
 **Create environment file**:
 
 ```bash
-# /var/www/glassentials/.env (set proper permissions)
+# /var/www/mulzon/.env (set proper permissions)
 DB_HOST=your-rds-endpoint.us-east-1.rds.amazonaws.com
 DB_PORT=5432
-DB_NAME=glassentials_prod
-DB_USER=glassentials_user
+DB_NAME=mulzon_prod
+DB_USER=mulzon_user
 DB_PASSWORD=your-secure-password
 
 AWS_ACCESS_KEY_ID=your-access-key
 AWS_SECRET_ACCESS_KEY=your-secret-key
-AWS_STORAGE_BUCKET_NAME=glassentials-static-xxxxx
-AWS_MEDIA_BUCKET_NAME=glassentials-media-xxxxx
+AWS_STORAGE_BUCKET_NAME=mulzon-static-xxxxx
+AWS_MEDIA_BUCKET_NAME=mulzon-media-xxxxx
 
 SECRET_KEY=your-django-secret-key
 DEBUG=False
@@ -495,17 +495,17 @@ ALLOWED_HOSTS=your-domain.com,www.your-domain.com
 **Create Gunicorn systemd service**:
 
 ```bash
-# /etc/systemd/system/glassentials.service
+# /etc/systemd/system/mulzon.service
 [Unit]
-Description=GlassEntials Django Application
+Description=Mulzon Django Application
 After=network.target
 
 [Service]
-User=glassentials
-WorkingDirectory=/var/www/glassentials
-Environment="PATH=/var/www/glassentials/venv/bin"
-EnvironmentFile=/var/www/glassentials/.env
-ExecStart=/var/www/glassentials/venv/bin/gunicorn \
+User=mulzon
+WorkingDirectory=/var/www/mulzon
+Environment="PATH=/var/www/mulzon/venv/bin"
+EnvironmentFile=/var/www/mulzon/.env
+ExecStart=/var/www/mulzon/venv/bin/gunicorn \
     --workers 4 \
     --worker-class sync \
     --bind 0.0.0.0:8000 \
@@ -525,8 +525,8 @@ WantedBy=multi-user.target
 
 ```bash
 sudo systemctl daemon-reload
-sudo systemctl enable glassentials
-sudo systemctl start glassentials
+sudo systemctl enable mulzon
+sudo systemctl start mulzon
 ```
 
 ### 3. Create Custom AMI
@@ -538,8 +538,8 @@ export INSTANCE_ID="i-xxxxx"
 # Create AMI from instance
 aws ec2 create-image \
   --instance-id $INSTANCE_ID \
-  --name "glassentials-django-app" \
-  --description "GlassEntials Django application ready for production"
+  --name "mulzon-django-app" \
+  --description "Mulzon Django application ready for production"
 
 # Note the AMI ID
 export CUSTOM_AMI_ID="ami-xxxxx"
@@ -551,17 +551,17 @@ export CUSTOM_AMI_ID="ami-xxxxx"
 
 ```bash
 aws ec2 create-launch-template \
-  --launch-template-name glassentials-lt \
-  --version-description "GlassEntials production template" \
+  --launch-template-name mulzon-lt \
+  --version-description "Mulzon production template" \
   --launch-template-data '{
     "ImageId":"'$CUSTOM_AMI_ID'",
     "InstanceType":"t3.medium",
     "KeyName":"your-key-pair",
     "SecurityGroupIds":["'$APP_SG_ID'"],
-    "IamInstanceProfile":{"Arn":"arn:aws:iam::ACCOUNT_ID:instance-profile/glassentials-ec2-role"},
+    "IamInstanceProfile":{"Arn":"arn:aws:iam::ACCOUNT_ID:instance-profile/mulzon-ec2-role"},
     "TagSpecifications":[{
       "ResourceType":"instance",
-      "Tags":[{"Key":"Name","Value":"glassentials-app-asg"}]
+      "Tags":[{"Key":"Name","Value":"mulzon-app-asg"}]
     }]
   }'
 ```
@@ -570,8 +570,8 @@ aws ec2 create-launch-template \
 
 ```bash
 aws autoscaling create-auto-scaling-group \
-  --auto-scaling-group-name glassentials-asg \
-  --launch-template LaunchTemplateName=glassentials-lt \
+  --auto-scaling-group-name mulzon-asg \
+  --launch-template LaunchTemplateName=mulzon-lt \
   --min-size 2 \
   --max-size 6 \
   --desired-capacity 2 \
@@ -579,7 +579,7 @@ aws autoscaling create-auto-scaling-group \
   --health-check-type ELB \
   --health-check-grace-period 300 \
   --vpc-zone-identifier "subnet-1a,subnet-1b" \
-  --target-group-arns arn:aws:elasticloadbalancing:us-east-1:ACCOUNT_ID:targetgroup/glassentials-tg/xxxxx
+  --target-group-arns arn:aws:elasticloadbalancing:us-east-1:ACCOUNT_ID:targetgroup/mulzon-tg/xxxxx
 ```
 
 **Scaling Policies**:
@@ -587,7 +587,7 @@ aws autoscaling create-auto-scaling-group \
 ```bash
 # Create scaling policy for CPU
 aws autoscaling put-scaling-policy \
-  --auto-scaling-group-name glassentials-asg \
+  --auto-scaling-group-name mulzon-asg \
   --policy-name scale-up-cpu \
   --policy-type TargetTrackingScaling \
   --target-tracking-configuration '{
@@ -608,21 +608,21 @@ aws autoscaling put-scaling-policy \
 
 ```bash
 aws elbv2 create-load-balancer \
-  --name glassentials-alb \
+  --name mulzon-alb \
   --subnets $PUBLIC_SUBNET_1A $PUBLIC_SUBNET_1B \
   --security-groups $ALB_SG_ID \
   --scheme internet-facing \
   --type application \
-  --tags Key=Name,Value=glassentials-alb
+  --tags Key=Name,Value=mulzon-alb
 
-export ALB_ARN="arn:aws:elasticloadbalancing:us-east-1:ACCOUNT_ID:loadbalancer/app/glassentials-alb/xxxxx"
+export ALB_ARN="arn:aws:elasticloadbalancing:us-east-1:ACCOUNT_ID:loadbalancer/app/mulzon-alb/xxxxx"
 ```
 
 **Create Target Group**:
 
 ```bash
 aws elbv2 create-target-group \
-  --name glassentials-tg \
+  --name mulzon-tg \
   --protocol HTTP \
   --port 8000 \
   --vpc-id $VPC_ID \
@@ -634,7 +634,7 @@ aws elbv2 create-target-group \
   --healthy-threshold-count 2 \
   --unhealthy-threshold-count 3
 
-export TARGET_GROUP_ARN="arn:aws:elasticloadbalancing:us-east-1:ACCOUNT_ID:targetgroup/glassentials-tg/xxxxx"
+export TARGET_GROUP_ARN="arn:aws:elasticloadbalancing:us-east-1:ACCOUNT_ID:targetgroup/mulzon-tg/xxxxx"
 ```
 
 **Create Listeners**:
@@ -685,18 +685,18 @@ aws acm describe-certificate --certificate-arn $CERT_ARN
 # Create CloudFront distribution for static assets
 aws cloudfront create-distribution \
   --distribution-config '{
-    "CallerReference":"glassentials-'$(date +%s)'",
+    "CallerReference":"mulzon-'$(date +%s)'",
     "Enabled":true,
     "Origins":{
       "Quantity":1,
       "Items":[{
-        "Id":"S3-glassentials-static",
-        "DomainName":"glassentials-static-xxxxx.s3.amazonaws.com",
+        "Id":"S3-mulzon-static",
+        "DomainName":"mulzon-static-xxxxx.s3.amazonaws.com",
         "S3OriginConfig":{"OriginAccessIdentity":""}
       }]
     },
     "DefaultCacheBehavior":{
-      "TargetOriginId":"S3-glassentials-static",
+      "TargetOriginId":"S3-mulzon-static",
       "ViewerProtocolPolicy":"redirect-to-https",
       "AllowedMethods":["GET","HEAD"],
       "CachePolicyId":"658327ea-f89d-4fab-a63d-7e88639e58f6"
@@ -747,10 +747,10 @@ LOGGING = {
 
 ```bash
 # Application logs
-aws logs create-log-group --log-group-name /aws/glassentials/app
+aws logs create-log-group --log-group-name /aws/mulzon/app
 
 # ALB logs
-aws logs create-log-group --log-group-name /aws/glassentials/alb
+aws logs create-log-group --log-group-name /aws/mulzon/alb
 
 # RDS logs (already enabled during creation)
 ```
@@ -760,7 +760,7 @@ aws logs create-log-group --log-group-name /aws/glassentials/alb
 ```bash
 # High CPU utilization alarm
 aws cloudwatch put-metric-alarm \
-  --alarm-name glassentials-high-cpu \
+  --alarm-name mulzon-high-cpu \
   --alarm-description "Alert when CPU exceeds 80%" \
   --metric-name CPUUtilization \
   --namespace AWS/EC2 \
@@ -768,11 +768,11 @@ aws cloudwatch put-metric-alarm \
   --period 300 \
   --threshold 80 \
   --comparison-operator GreaterThanThreshold \
-  --alarm-actions arn:aws:sns:us-east-1:ACCOUNT_ID:glassentials-alerts
+  --alarm-actions arn:aws:sns:us-east-1:ACCOUNT_ID:mulzon-alerts
 
 # RDS database connections alarm
 aws cloudwatch put-metric-alarm \
-  --alarm-name glassentials-db-connections \
+  --alarm-name mulzon-db-connections \
   --alarm-description "Alert on high database connections" \
   --metric-name DatabaseConnections \
   --namespace AWS/RDS \
@@ -780,16 +780,16 @@ aws cloudwatch put-metric-alarm \
   --period 300 \
   --threshold 80 \
   --comparison-operator GreaterThanThreshold \
-  --dimensions Name=DBInstanceIdentifier,Value=glassentials-db
+  --dimensions Name=DBInstanceIdentifier,Value=mulzon-db
 ```
 
 ### 3. SNS Notifications
 
 ```bash
 # Create SNS topic for alerts
-aws sns create-topic --name glassentials-alerts
+aws sns create-topic --name mulzon-alerts
 
-export SNS_TOPIC_ARN="arn:aws:sns:us-east-1:ACCOUNT_ID:glassentials-alerts"
+export SNS_TOPIC_ARN="arn:aws:sns:us-east-1:ACCOUNT_ID:mulzon-alerts"
 
 # Subscribe email
 aws sns subscribe \
@@ -846,7 +846,7 @@ def employee_list(request):
 ```bash
 # Create Redis cluster
 aws elasticache create-cache-cluster \
-  --cache-cluster-id glassentials-redis \
+  --cache-cluster-id mulzon-redis \
   --cache-node-type cache.t3.micro \
   --engine redis \
   --engine-version 7.0 \
@@ -870,17 +870,17 @@ Already configured during RDS creation:
 ```bash
 # Create manual snapshot
 aws rds create-db-snapshot \
-  --db-instance-identifier glassentials-db \
-  --db-snapshot-identifier glassentials-db-snapshot-$(date +%Y%m%d)
+  --db-instance-identifier mulzon-db \
+  --db-snapshot-identifier mulzon-db-snapshot-$(date +%Y%m%d)
 
 # List snapshots
 aws rds describe-db-snapshots \
-  --db-instance-identifier glassentials-db
+  --db-instance-identifier mulzon-db
 
 # Copy snapshot to another region (disaster recovery)
 aws rds copy-db-snapshot \
-  --source-db-snapshot-identifier arn:aws:rds:us-east-1:ACCOUNT_ID:snapshot:glassentials-db-snapshot-xxxxx \
-  --target-db-snapshot-identifier glassentials-db-snapshot-dr \
+  --source-db-snapshot-identifier arn:aws:rds:us-east-1:ACCOUNT_ID:snapshot:mulzon-db-snapshot-xxxxx \
+  --target-db-snapshot-identifier mulzon-db-snapshot-dr \
   --source-region us-east-1 \
   --destination-region us-west-2
 ```
@@ -892,7 +892,7 @@ aws rds copy-db-snapshot \
 # Create lifecycle policy to archive old versions
 
 aws s3api put-bucket-lifecycle-configuration \
-  --bucket glassentials-static-xxxxx \
+  --bucket mulzon-static-xxxxx \
   --lifecycle-configuration '{
     "Rules":[{
       "Id":"archive-old-versions",
@@ -950,8 +950,8 @@ aws s3api put-bucket-lifecycle-configuration \
         "s3:DeleteObject"
       ],
       "Resource": [
-        "arn:aws:s3:::glassentials-static-*/*",
-        "arn:aws:s3:::glassentials-media-*/*"
+        "arn:aws:s3:::mulzon-static-*/*",
+        "arn:aws:s3:::mulzon-media-*/*"
       ]
     },
     {
@@ -959,7 +959,7 @@ aws s3api put-bucket-lifecycle-configuration \
       "Action": [
         "secretsmanager:GetSecretValue"
       ],
-      "Resource": "arn:aws:secretsmanager:us-east-1:ACCOUNT_ID:secret:glassentials/*"
+      "Resource": "arn:aws:secretsmanager:us-east-1:ACCOUNT_ID:secret:mulzon/*"
     },
     {
       "Effect": "Allow",
@@ -967,20 +967,20 @@ aws s3api put-bucket-lifecycle-configuration \
         "logs:CreateLogStream",
         "logs:PutLogEvents"
       ],
-      "Resource": "arn:aws:logs:us-east-1:ACCOUNT_ID:log-group:/aws/glassentials/*"
+      "Resource": "arn:aws:logs:us-east-1:ACCOUNT_ID:log-group:/aws/mulzon/*"
     }
   ]
 }
 ```
 
 ```bash
-aws iam create-role --role-name glassentials-ec2-role --assume-role-policy-document file:///tmp/ec2-trust-policy.json
+aws iam create-role --role-name mulzon-ec2-role --assume-role-policy-document file:///tmp/ec2-trust-policy.json
 
-aws iam put-role-policy --role-name glassentials-ec2-role --policy-name glassentials-policy --policy-document file:///tmp/ec2-policy.json
+aws iam put-role-policy --role-name mulzon-ec2-role --policy-name mulzon-policy --policy-document file:///tmp/ec2-policy.json
 
-aws iam create-instance-profile --instance-profile-name glassentials-ec2-role
+aws iam create-instance-profile --instance-profile-name mulzon-ec2-role
 
-aws iam add-role-to-instance-profile --instance-profile-name glassentials-ec2-role --role-name glassentials-ec2-role
+aws iam add-role-to-instance-profile --instance-profile-name mulzon-ec2-role --role-name mulzon-ec2-role
 ```
 
 ### 2. Secrets Management
@@ -988,14 +988,14 @@ aws iam add-role-to-instance-profile --instance-profile-name glassentials-ec2-ro
 ```bash
 # Store secrets in AWS Secrets Manager
 aws secretsmanager create-secret \
-  --name glassentials/django/secret-key \
+  --name mulzon/django/secret-key \
   --secret-string 'your-django-secret-key'
 
 # Retrieve in Django
 import boto3
 
 client = boto3.client('secretsmanager')
-response = client.get_secret_value(SecretId='glassentials/django/secret-key')
+response = client.get_secret_value(SecretId='mulzon/django/secret-key')
 SECRET_KEY = response['SecretString']
 ```
 
@@ -1014,7 +1014,7 @@ aws ec2 create-vpc-endpoint \
 ```bash
 # Create WAF WebACL
 aws wafv2 create-web-acl \
-  --name glassentials-waf \
+  --name mulzon-waf \
   --region us-east-1 \
   --scope REGIONAL \
   --default-action Block={} \
@@ -1023,7 +1023,7 @@ aws wafv2 create-web-acl \
 
 # Associate with ALB
 aws wafv2 associate-web-acl \
-  --web-acl-arn arn:aws:wafv2:us-east-1:ACCOUNT_ID:regional/webacl/glassentials-waf/xxxxx \
+  --web-acl-arn arn:aws:wafv2:us-east-1:ACCOUNT_ID:regional/webacl/mulzon-waf/xxxxx \
   --resource-arn $ALB_ARN
 ```
 
@@ -1058,38 +1058,38 @@ aws elbv2 describe-target-health \
   --target-group-arn $TARGET_GROUP_ARN
 
 # SSH into instance and check logs
-systemctl status glassentials
-journalctl -u glassentials -n 50
+systemctl status mulzon
+journalctl -u mulzon -n 50
 
 # Check application logs
-tail -f /var/log/syslog | grep glassentials
+tail -f /var/log/syslog | grep mulzon
 ```
 
 #### 2. Database Connection Errors
 
 ```bash
 # Test connectivity from EC2
-psql -h $RDS_ENDPOINT -U glassentials_user -d glassentials_prod
+psql -h $RDS_ENDPOINT -U mulzon_user -d mulzon_prod
 
 # Check RDS security group
 aws ec2 describe-security-groups --group-ids $RDS_SG_ID
 
 # Verify parameter group settings
-aws rds describe-db-instances --db-instance-identifier glassentials-db
+aws rds describe-db-instances --db-instance-identifier mulzon-db
 ```
 
 #### 3. Static Files Not Loading
 
 ```bash
 # Verify S3 bucket permissions
-aws s3api get-bucket-acl --bucket glassentials-static-xxxxx
+aws s3api get-bucket-acl --bucket mulzon-static-xxxxx
 
 # Check CloudFront cache
 aws cloudfront get-distribution --id XXXXX
 
 # Manually sync static files to S3
 python manage.py collectstatic --noinput
-aws s3 sync ./static s3://glassentials-static-xxxxx/static/
+aws s3 sync ./static s3://mulzon-static-xxxxx/static/
 ```
 
 #### 4. High Memory Usage
@@ -1099,7 +1099,7 @@ aws s3 sync ./static s3://glassentials-static-xxxxx/static/
 ps aux | grep gunicorn
 
 # Reduce workers if needed
-# Edit /etc/systemd/system/glassentials.service
+# Edit /etc/systemd/system/mulzon.service
 # --workers 2 (instead of 4)
 ```
 
@@ -1107,16 +1107,16 @@ ps aux | grep gunicorn
 
 ```bash
 # Get ALB DNS name
-aws elbv2 describe-load-balancers --names glassentials-alb --query 'LoadBalancers[0].DNSName'
+aws elbv2 describe-load-balancers --names mulzon-alb --query 'LoadBalancers[0].DNSName'
 
 # Check Auto Scaling Group status
-aws autoscaling describe-auto-scaling-groups --auto-scaling-group-names glassentials-asg
+aws autoscaling describe-auto-scaling-groups --auto-scaling-group-names mulzon-asg
 
 # View recent CloudWatch logs
-aws logs tail /aws/glassentials/app --follow
+aws logs tail /aws/mulzon/app --follow
 
 # Get RDS endpoint
-aws rds describe-db-instances --db-instance-identifier glassentials-db --query 'DBInstances[0].Endpoint.Address'
+aws rds describe-db-instances --db-instance-identifier mulzon-db --query 'DBInstances[0].Endpoint.Address'
 ```
 
 ---
@@ -1176,7 +1176,7 @@ aws ce list-cost-allocation-tags --status Inactive
 # Update security patches on EC2 instances (automated via Systems Manager)
 aws ssm create-document \
   --content file:///tmp/patch-manager-document.json \
-  --name glassentials-patch-policy \
+  --name mulzon-patch-policy \
   --document-type Command
 
 # Update Django dependencies
@@ -1198,7 +1198,7 @@ python manage.py migrate
 ```bash
 # Perform maintenance window tasks
 aws rds modify-db-instance \
-  --db-instance-identifier glassentials-db \
+  --db-instance-identifier mulzon-db \
   --preferred-maintenance-window sun:04:00-sun:05:00 \
   --apply-immediately
 ```
@@ -1235,12 +1235,12 @@ aws rds modify-db-instance \
 - [AWS Documentation](https://docs.aws.amazon.com/)
 - [Django Deployment Guide](https://docs.djangoproject.com/en/stable/howto/deployment/)
 - [AWS Well-Architected Framework](https://aws.amazon.com/architecture/well-architected/)
-- [GlassEntials Internal Wiki](https://wiki.glassentials.internal)
+- [Mulzon Internal Wiki](https://wiki.mulzon.internal)
 
 ---
 
 <div align="center">
-  <p><strong>GlassEntials Premium HRMS - AWS Deployment Guide</strong></p>
-  <p><em>© 2026 GlassEntials Platform. Internal Enterprise Documentation.</em></p>
+  <p><strong>Mulzon Premium HRMS - AWS Deployment Guide</strong></p>
+  <p><em>© 2026 Mulzon Platform. Internal Enterprise Documentation.</em></p>
   <p><em>Last Updated: May 2026</em></p>
 </div>

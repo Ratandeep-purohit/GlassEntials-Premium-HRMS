@@ -23,14 +23,14 @@ def seed():
     # 2. Create a Test Employee (if none exist)
     user = User.objects.filter(username="testuser").first()
     if not user:
-        user = User.objects.create_user(username="testuser", email="test@glassentials.com", password="password123")
+        user = User.objects.create_user(username="testuser", email="test@mulzon.com", password="password123")
 
     emp, created = Employee.objects.get_or_create(
         employee_id="GENT-001",
         defaults={
             'first_name': "John",
             'last_name': "Doe",
-            'email': "test@glassentials.com",
+            'email': "test@mulzon.com",
             'department': dept,
             'designation': desig,
             'joining_date': date(2025, 1, 1),

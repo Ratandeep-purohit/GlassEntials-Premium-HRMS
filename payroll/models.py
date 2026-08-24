@@ -1,5 +1,5 @@
 """
-Glassentials HRMS — Payroll Module Models (v3)
+Mulzon HRMS — Payroll Module Models (v3)
 ===============================================
 Improvements over v2:
   - unique_together → models.UniqueConstraint (migration-safe, named)
