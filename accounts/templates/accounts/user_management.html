@@ -1,0 +1,651 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Management | Mulzon HRMS</title>
+    <link rel="icon" type="image/png" href="{% static 'img/favicon_logo.png' %}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Manrope:wght@600;700;800&display=swap">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link rel="stylesheet" href="{% static 'css/landing.css' %}?v=4.4">
+    <link rel="stylesheet" href="{% static 'css/home.css' %}?v=4.4">
+    <link rel="stylesheet" href="{% static 'css/dashboard.css' %}?v=4.4">
+    <style>
+        :root {
+            --blue: #2563eb; --blue-light: rgba(37,99,235,0.08); --blue-border: rgba(37,99,235,0.2);
+            --green: #16a34a; --green-light: rgba(22,163,74,0.08);
+            --amber: #d97706; --amber-light: rgba(217,119,6,0.08);
+            --red: #dc2626; --red-light: rgba(220,38,38,0.08);
+            --slate: #64748b;
+            --bg: #f8fafc; --surface: #fff; --border: #e2e8f0;
+            --text: #0f172a; --text-muted: #64748b;
+            --radius: 12px; --radius-sm: 8px;
+            --shadow-xs: 0 1px 2px rgba(0,0,0,.05);
+            --transition: 150ms cubic-bezier(.4,0,.2,1);
+        }
+
+        /* ── Header ── */
+        .um-header { display:flex;align-items:center;justify-content:space-between;gap:16px;padding:20px 0 16px;flex-wrap:wrap; }
+        .um-header-left h1 { font-family:'Manrope',sans-serif;font-size:22px;font-weight:800;color:var(--text);margin:0 0 2px;letter-spacing:-.4px; }
+        .um-header-left p { font-size:13px;color:var(--text-muted);margin:0; }
+        .um-header-actions { display:flex;align-items:center;gap:8px; }
+
+        /* ── Buttons ── */
+        .btn-um { display:inline-flex;align-items:center;justify-content:center;gap:6px;height:36px;padding:0 14px;font-size:13px;font-weight:600;border-radius:var(--radius-sm);cursor:pointer;text-decoration:none;transition:all var(--transition);border:1px solid transparent;font-family:'Plus Jakarta Sans',sans-serif;white-space:nowrap; }
+        .btn-um-ghost { background:var(--surface);color:var(--text-muted);border-color:var(--border); }
+        .btn-um-ghost:hover { background:var(--bg);color:var(--text);border-color:#cbd5e1; }
+        .btn-um-primary { background:var(--blue);color:#fff; }
+        .btn-um-primary:hover { background:#1d4ed8; }
+        .btn-um-danger { background:var(--red-light);color:var(--red);border-color:rgba(220,38,38,.2); }
+        .btn-um-danger:hover { background:var(--red);color:#fff; }
+
+        /* ── Stats ── */
+        .um-stats { display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px; }
+        @media(max-width:768px){.um-stats{grid-template-columns:repeat(2,1fr);}}
+        .um-stat { background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px 20px;display:flex;align-items:center;gap:14px;box-shadow:var(--shadow-xs); }
+        .um-stat-icon { width:38px;height:38px;border-radius:var(--radius-sm);display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0; }
+        .um-stat-val { font-size:24px;font-weight:800;color:var(--text);font-family:'Manrope',sans-serif;line-height:1; }
+        .um-stat-label { font-size:12px;font-weight:600;color:var(--text-muted);margin-top:3px; }
+
+        /* ── Toolbar ── */
+        .um-toolbar { display:flex;align-items:center;gap:10px;padding:12px 14px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);margin-bottom:16px;flex-wrap:wrap;box-shadow:var(--shadow-xs); }
+        .um-search { position:relative;flex:1;min-width:200px; }
+        .um-search i { position:absolute;left:11px;top:50%;transform:translateY(-50%);color:var(--text-muted);font-size:13px;pointer-events:none; }
+        .um-search input { width:100%;height:36px;padding:0 12px 0 34px;border:1px solid var(--border);border-radius:var(--radius-sm);font-size:13px;font-family:'Plus Jakarta Sans',sans-serif;background:var(--bg);color:var(--text);outline:none;transition:all var(--transition);box-sizing:border-box; }
+        .um-search input:focus { border-color:var(--blue);background:#fff;box-shadow:0 0 0 3px rgba(37,99,235,.08); }
+        .um-select { height:36px;padding:0 28px 0 10px;border:1px solid var(--border);border-radius:var(--radius-sm);font-size:13px;font-family:'Plus Jakarta Sans',sans-serif;color:var(--text);background:var(--bg);outline:none;cursor:pointer;appearance:none;background-image:url("data:image/svg+xml,%3Csvg width='10' height='6' viewBox='0 0 10 6' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%2364748b' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center; }
+
+        /* ── Table card ── */
+        .um-card { background:var(--surface);border:1px solid var(--border);border-radius:16px;overflow:hidden;box-shadow:var(--shadow-xs); }
+        .um-card-header { display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid var(--border);gap:12px;flex-wrap:wrap; }
+        .um-card-title { font-size:15px;font-weight:700;color:var(--text);margin:0; }
+        .um-card-sub { font-size:12px;color:var(--text-muted);margin:2px 0 0; }
+        .um-table-wrap { overflow-x:auto; }
+        table.um-table { width:100%;border-collapse:collapse;font-size:13px; }
+        .um-table thead tr { background:#f8fafc;border-bottom:1px solid var(--border); }
+        .um-table thead th { padding:10px 16px;font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;text-align:left;white-space:nowrap; }
+        .um-table tbody tr { border-bottom:1px solid var(--border);transition:background var(--transition); }
+        .um-table tbody tr:last-child { border-bottom:none; }
+        .um-table tbody tr:hover { background:#f8fafc; }
+        .um-table td { padding:13px 16px;vertical-align:middle; }
+
+        /* ── User cell ── */
+        .user-cell { display:flex;align-items:center;gap:10px; }
+        .user-avatar { width:36px;height:36px;border-radius:50%;overflow:hidden;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;border:1px solid var(--blue-border); }
+        .user-name { font-weight:700;color:var(--text);line-height:1.2; }
+        .user-email { font-size:11px;color:var(--text-muted);margin-top:2px; }
+
+        /* ── Badges ── */
+        .badge { display:inline-flex;align-items:center;gap:5px;padding:3px 9px;border-radius:20px;font-size:11px;font-weight:700;white-space:nowrap; }
+        .badge::before { content:'●';font-size:7px; }
+        .badge-active   { background:var(--green-light);color:var(--green); }
+        .badge-inactive { background:rgba(100,116,139,.08);color:var(--slate); }
+        .badge-pending  { background:var(--amber-light);color:var(--amber); }
+        .badge-staff    { background:var(--blue-light);color:var(--blue); }
+        .badge-employee { background:rgba(100,116,139,.08);color:var(--slate); }
+        .badge-pwd-done    { background:var(--green-light);color:var(--green); }
+        .badge-pwd-pending { background:var(--amber-light);color:var(--amber); }
+
+        /* ── Action menu ── */
+        .action-wrap { position:relative;display:inline-block; }
+        .action-btn { width:30px;height:30px;display:flex;align-items:center;justify-content:center;border:1px solid var(--border);border-radius:6px;background:var(--surface);color:var(--text-muted);cursor:pointer;font-size:14px;transition:all var(--transition); }
+        .action-btn:hover { border-color:var(--blue);color:var(--blue);background:var(--blue-light); }
+        .action-drop { position:absolute;right:0;top:calc(100% + 4px);background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:0 8px 24px rgba(0,0,0,.1);min-width:185px;z-index:200;overflow:hidden;display:none; }
+        .action-drop.open { display:block; }
+        .action-drop button { display:flex;align-items:center;gap:10px;padding:10px 14px;font-size:13px;font-weight:600;color:var(--text-muted);background:none;border:none;width:100%;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;transition:all var(--transition);text-align:left; }
+        .action-drop button:hover { background:var(--bg);color:var(--text); }
+        .action-drop button.danger:hover { background:var(--red-light);color:var(--red); }
+        .action-drop button i { width:14px;text-align:center; }
+
+        /* ── Empty state ── */
+        .um-empty { padding:56px 24px;text-align:center;color:var(--text-muted); }
+        .um-empty i { font-size:36px;opacity:.3;margin-bottom:16px;display:block; }
+        .um-empty h3 { font-size:16px;font-weight:700;color:var(--text);margin:0 0 6px; }
+        .um-empty p  { font-size:14px;margin:0; }
+
+        /* ── Modals ── */
+        .modal-overlay { position:fixed;inset:0;background:rgba(15,23,42,.5);backdrop-filter:blur(4px);display:none;align-items:center;justify-content:center;z-index:9000; }
+        .modal-overlay.open { display:flex; }
+        .modal-box { background:var(--surface);border-radius:16px;width:480px;max-width:92vw;box-shadow:0 24px 60px rgba(0,0,0,.18);overflow:hidden; }
+        .modal-hd { display:flex;align-items:center;justify-content:space-between;padding:18px 20px;border-bottom:1px solid var(--border); }
+        .modal-hd h3 { margin:0;font-size:16px;font-weight:800;color:var(--text); }
+        .modal-close { background:none;border:none;font-size:20px;color:var(--text-muted);cursor:pointer;padding:4px;transition:color var(--transition); }
+        .modal-close:hover { color:var(--text); }
+        .modal-body { padding:20px;display:flex;flex-direction:column;gap:14px; }
+        .modal-ft { padding:16px 20px;border-top:1px solid var(--border);display:flex;gap:10px;justify-content:flex-end; }
+        .form-field { display:flex;flex-direction:column;gap:6px; }
+        .form-field label { font-size:13px;font-weight:600;color:var(--text); }
+        .form-field input, .form-field select { padding:9px 12px;border:1px solid var(--border);border-radius:var(--radius-sm);font-family:'Plus Jakarta Sans',sans-serif;font-size:13px;color:var(--text);background:var(--bg);outline:none;transition:border-color var(--transition);width:100%;box-sizing:border-box; }
+        .form-field input:focus, .form-field select:focus { border-color:var(--blue);background:#fff; }
+        .form-row { display:grid;grid-template-columns:1fr 1fr;gap:12px; }
+
+        /* ── Success creds box ── */
+        .creds-box { background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);padding:16px;display:flex;flex-direction:column;gap:10px; }
+        .creds-row { display:flex;align-items:center;justify-content:space-between;gap:8px; }
+        .creds-label { font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px; }
+        .creds-val { font-size:14px;font-weight:700;color:var(--text);font-family:monospace; }
+        .copy-btn { display:inline-flex;align-items:center;gap:5px;height:28px;padding:0 10px;font-size:11px;font-weight:700;border-radius:5px;background:var(--blue-light);color:var(--blue);border:1px solid var(--blue-border);cursor:pointer;transition:all var(--transition);font-family:'Plus Jakarta Sans',sans-serif; }
+        .copy-btn:hover { background:var(--blue);color:#fff; }
+        .pwd-highlight { font-family:monospace;font-size:18px;font-weight:800;color:var(--blue);letter-spacing:2px;background:var(--blue-light);padding:10px 14px;border-radius:var(--radius-sm);border:1px solid var(--blue-border);display:block;text-align:center;margin:4px 0; }
+
+        @media(max-width:640px){
+            .um-header{flex-direction:column;align-items:flex-start;}
+            .um-toolbar{flex-direction:column;align-items:stretch;}
+            .um-search{width:100%;}
+            .form-row{grid-template-columns:1fr;}
+        }
+    </style>
+</head>
+
+<body>
+    {% include 'includes/navbar.html' %}
+
+    <main class="workspace">
+
+        <!-- ── Header ── -->
+        <div class="um-header">
+            <div class="um-header-left">
+                <h1>User Management</h1>
+                <p>Manage organization users, access, and login accounts.</p>
+            </div>
+            <div class="um-header-actions">
+                <button class="btn-um btn-um-primary" onclick="openCreateModal()">
+                    <i class="fas fa-plus"></i> Create User
+                </button>
+            </div>
+        </div>
+
+        <!-- ── Stats ── -->
+        <div class="um-stats">
+            <div class="um-stat">
+                <div class="um-stat-icon" style="background:var(--blue-light);color:var(--blue);"><i class="fas fa-users"></i></div>
+                <div><div class="um-stat-val">{{ total_count }}</div><div class="um-stat-label">Total Users</div></div>
+            </div>
+            <div class="um-stat">
+                <div class="um-stat-icon" style="background:var(--green-light);color:var(--green);"><i class="fas fa-circle-check"></i></div>
+                <div><div class="um-stat-val">{{ active_count }}</div><div class="um-stat-label">Active</div></div>
+            </div>
+            <div class="um-stat">
+                <div class="um-stat-icon" style="background:var(--amber-light);color:var(--amber);"><i class="fas fa-key"></i></div>
+                <div><div class="um-stat-val">{{ pending_count }}</div><div class="um-stat-label">Setup Pending</div></div>
+            </div>
+            <div class="um-stat">
+                <div class="um-stat-icon" style="background:rgba(100,116,139,.08);color:var(--slate);"><i class="fas fa-user-slash"></i></div>
+                <div><div class="um-stat-val">{{ inactive_count }}</div><div class="um-stat-label">Inactive</div></div>
+            </div>
+        </div>
+
+        <!-- ── Toolbar ── -->
+        <form method="GET" id="filterForm">
+            <div class="um-toolbar">
+                <div class="um-search">
+                    <i class="fas fa-search"></i>
+                    <input type="text" name="search" value="{{ search }}"
+                           placeholder="Search name, email, username…"
+                           id="searchInput" onchange="document.getElementById('filterForm').submit()"
+                           aria-label="Search users">
+                </div>
+                <select name="role" class="um-select" onchange="document.getElementById('filterForm').submit()" aria-label="Role filter">
+                    <option value="" {% if not role_filter %}selected{% endif %}>All Roles</option>
+                    <option value="staff"    {% if role_filter == 'staff' %}selected{% endif %}>HR Admin / Staff</option>
+                    <option value="employee" {% if role_filter == 'employee' %}selected{% endif %}>Employee</option>
+                </select>
+                <select name="status" class="um-select" onchange="document.getElementById('filterForm').submit()" aria-label="Status filter">
+                    <option value="" {% if not status_filter %}selected{% endif %}>All Status</option>
+                    <option value="active"   {% if status_filter == 'active' %}selected{% endif %}>Active</option>
+                    <option value="inactive" {% if status_filter == 'inactive' %}selected{% endif %}>Inactive</option>
+                    <option value="pending"  {% if status_filter == 'pending' %}selected{% endif %}>Pending Approval</option>
+                </select>
+                <select name="pwd" class="um-select" onchange="document.getElementById('filterForm').submit()" aria-label="Password setup filter">
+                    <option value="" {% if not pwd_filter %}selected{% endif %}>Password Setup</option>
+                    <option value="pending" {% if pwd_filter == 'pending' %}selected{% endif %}>Setup Pending</option>
+                    <option value="done"    {% if pwd_filter == 'done' %}selected{% endif %}>Setup Done</option>
+                </select>
+                {% if search or role_filter or status_filter or pwd_filter %}
+                <a href="{% url 'user_management' %}" class="btn-um btn-um-ghost"><i class="fas fa-times"></i> Clear</a>
+                {% endif %}
+            </div>
+        </form>
+
+        <!-- ── User Table ── -->
+        <div class="um-card">
+            <div class="um-card-header">
+                <div>
+                    <div class="um-card-title">Organization Users</div>
+                    <div class="um-card-sub">{{ org_users|length }} user{{ org_users|length|pluralize }} found</div>
+                </div>
+            </div>
+            <div class="um-table-wrap">
+                <table class="um-table" role="grid">
+                    <thead>
+                        <tr>
+                            <th>User</th>
+                            <th>Employee</th>
+                            <th>Role</th>
+                            <th>Status</th>
+                            <th>Password Setup</th>
+                            <th>Last Login</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for u in org_users %}
+                        <tr>
+                            <!-- User -->
+                            <td>
+                                <div class="user-cell">
+                                    <div class="user-avatar" style="background:var(--blue-light);color:var(--blue);">
+                                        {{ u.username|slice:":1"|upper }}
+                                    </div>
+                                    <div>
+                                        <div class="user-name">{{ u.get_full_name|default:u.username }}</div>
+                                        <div class="user-email">{{ u.email }}</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <!-- Employee -->
+                            <td>
+                                {% if u.linked_employee %}
+                                <div style="font-weight:600;color:var(--text);font-size:13px;">{{ u.linked_employee.first_name }} {{ u.linked_employee.last_name }}</div>
+                                <div style="font-size:11px;color:var(--text-muted);">{{ u.linked_employee.employee_id }}</div>
+                                {% else %}
+                                <span style="color:var(--text-muted);font-size:13px;">—</span>
+                                {% endif %}
+                            </td>
+                            <!-- Role -->
+                            <td>
+                                {% if u.is_superuser %}
+                                <span class="badge badge-staff">Super Admin</span>
+                                {% elif u.is_staff %}
+                                <span class="badge badge-staff">HR Admin</span>
+                                {% else %}
+                                <span class="badge badge-employee">Employee</span>
+                                {% endif %}
+                            </td>
+                            <!-- Status -->
+                            <td>
+                                {% if u.is_active and u.is_approved %}
+                                <span class="badge badge-active">Active</span>
+                                {% elif not u.is_approved %}
+                                <span class="badge badge-pending">Pending Approval</span>
+                                {% else %}
+                                <span class="badge badge-inactive">Inactive</span>
+                                {% endif %}
+                            </td>
+                            <!-- Password setup -->
+                            <td>
+                                {% if u.must_change_password %}
+                                <span class="badge badge-pwd-pending">Setup Required</span>
+                                {% else %}
+                                <span class="badge badge-pwd-done">Completed</span>
+                                {% endif %}
+                            </td>
+                            <!-- Last login -->
+                            <td style="color:var(--text-muted);font-size:12px;">
+                                {% if u.last_login %}
+                                {{ u.last_login|date:"d M Y, h:i A" }}
+                                {% else %}
+                                <span style="color:var(--text-muted);">Never</span>
+                                {% endif %}
+                            </td>
+                            <!-- Actions -->
+                            <td>
+                                <div class="action-wrap">
+                                    <button class="action-btn" onclick="toggleMenu(this)" aria-label="Actions">
+                                        <i class="fas fa-ellipsis"></i>
+                                    </button>
+                                    <div class="action-drop">
+                                        <!-- Reset Password -->
+                                        <button type="button" onclick="resetPassword({{ u.pk }}, '{{ u.username|escapejs }}')">
+                                            <i class="fas fa-key"></i> Reset Password
+                                        </button>
+                                        <!-- Convert to Employee (if not linked) -->
+                                        {% if not u.linked_employee %}
+                                        <button type="button" onclick="openConvertModal({{ u.pk }}, '{{ u.username|escapejs }}')">
+                                            <i class="fas fa-id-badge"></i> Convert to Employee
+                                        </button>
+                                        {% endif %}
+                                        <!-- Toggle Role (not for self or superuser) -->
+                                        {% if u.pk != request.user.pk and not u.is_superuser %}
+                                        <form method="POST" action="{% url 'edit_user_role' u.pk %}" style="margin:0;">
+                                            {% csrf_token %}
+                                            <input type="hidden" name="role" value="{% if u.is_staff %}employee{% else %}staff{% endif %}">
+                                            <button type="submit">
+                                                <i class="fas fa-user-gear"></i>
+                                                Make {% if u.is_staff %}Employee{% else %}HR Admin{% endif %}
+                                            </button>
+                                        </form>
+                                        <!-- Toggle Active -->
+                                        <form method="POST" action="{% url 'toggle_user_status' u.pk %}" style="margin:0;">
+                                            {% csrf_token %}
+                                            <button type="submit" class="{% if u.is_active %}danger{% endif %}">
+                                                <i class="fas {% if u.is_active %}fa-user-slash{% else %}fa-user-check{% endif %}"></i>
+                                                {% if u.is_active %}Deactivate{% else %}Activate{% endif %}
+                                            </button>
+                                        </form>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="7">
+                                <div class="um-empty">
+                                    <i class="fas fa-users"></i>
+                                    <h3>No users found</h3>
+                                    <p>No users match your current filters.</p>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </main>
+
+    <footer style="padding:24px 0;border-top:1px solid var(--border);text-align:center;color:var(--text-muted);font-size:12px;">
+        &copy; 2026 Mulzon Premium HRMS &middot; Platform Version 4.0.2
+    </footer>
+
+    <!-- ── Create User Modal ── -->
+    <div id="createModal" class="modal-overlay" onclick="if(event.target===this)closeCreateModal()">
+        <div class="modal-box">
+            <div class="modal-hd">
+                <h3>Create New User</h3>
+                <button class="modal-close" onclick="closeCreateModal()" aria-label="Close">&times;</button>
+            </div>
+            <form method="POST" action="{% url 'create_user' %}" id="createForm">
+                {% csrf_token %}
+                <div class="modal-body">
+
+                    <!-- Link to employee (optional) -->
+                    <div class="form-field">
+                        <label>Link to Employee <span style="color:var(--text-muted);font-weight:500;">(optional)</span></label>
+                        <select name="employee_id" id="employeeSelect" onchange="prefillFromEmployee(this)">
+                            <option value="">— Select employee (auto-fills details) —</option>
+                            {% for emp in available_employees %}
+                            <option value="{{ emp.pk }}"
+                                    data-email="{{ emp.email }}"
+                                    data-first="{{ emp.first_name }}"
+                                    data-last="{{ emp.last_name }}">
+                                {{ emp.first_name }} {{ emp.last_name }} ({{ emp.employee_id }})
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-field">
+                            <label for="cf_first">First Name</label>
+                            <input type="text" name="first_name" id="cf_first" placeholder="Rajat">
+                        </div>
+                        <div class="form-field">
+                            <label for="cf_last">Last Name</label>
+                            <input type="text" name="last_name" id="cf_last" placeholder="Sharma">
+                        </div>
+                    </div>
+
+                    <div class="form-field">
+                        <label for="cf_email">Email Address <span style="color:var(--red);">*</span></label>
+                        <input type="email" name="email" id="cf_email" placeholder="rajat@company.com" required>
+                    </div>
+
+                    <div class="form-field">
+                        <label for="cf_username">Username <span style="color:var(--red);">*</span></label>
+                        <input type="text" name="username" id="cf_username" placeholder="rajat.sharma" required autocomplete="off">
+                    </div>
+
+                    <div class="form-field">
+                        <label>Role</label>
+                        <select name="role">
+                            <option value="employee">Employee (Standard Access)</option>
+                            <option value="staff">HR Admin (Full Staff Access)</option>
+                        </select>
+                    </div>
+
+                    <div style="background:rgba(37,99,235,.04);border:1px solid rgba(37,99,235,.12);border-radius:var(--radius-sm);padding:12px 14px;font-size:12px;color:var(--text-muted);">
+                        <i class="fas fa-shield-halved" style="color:var(--blue);margin-right:6px;"></i>
+                        A secure temporary password will be generated automatically. The user will be required to create a new password on first login.
+                    </div>
+                </div>
+                <div class="modal-ft">
+                    <button type="button" class="btn-um btn-um-ghost" onclick="closeCreateModal()">Cancel</button>
+                    <button type="submit" class="btn-um btn-um-primary"><i class="fas fa-user-plus"></i> Create User</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ── Reset Password Modal ── -->
+    <div id="resetModal" class="modal-overlay" onclick="if(event.target===this)closeResetModal()">
+        <div class="modal-box">
+            <div class="modal-hd">
+                <h3>Reset Password</h3>
+                <button class="modal-close" onclick="closeResetModal()">&times;</button>
+            </div>
+            <div class="modal-body" id="resetBody">
+                <p style="font-size:14px;color:var(--text-muted);">Loading…</p>
+            </div>
+            <div class="modal-ft">
+                <button class="btn-um btn-um-ghost" onclick="closeResetModal()">Done</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── Temp Creds Modal (shown after user creation) ── -->
+    <div id="credsModal" class="modal-overlay">
+        <div class="modal-box">
+            <div class="modal-hd">
+                <h3 style="color:var(--green);">
+                    <i class="fas fa-circle-check" style="margin-right:8px;"></i>User Created Successfully
+                </h3>
+                <button class="modal-close" onclick="closeCreds()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p style="font-size:13px;color:var(--text-muted);margin:0;">
+                    Share these temporary credentials securely with the employee. The password will <strong>not</strong> be shown again.
+                </p>
+                <div class="creds-box">
+                    <div>
+                        <div class="creds-label">Full Name</div>
+                        <div class="creds-val" id="c-name">—</div>
+                    </div>
+                    <div>
+                        <div class="creds-label">Email</div>
+                        <div class="creds-row">
+                            <div class="creds-val" id="c-email">—</div>
+                            <button class="copy-btn" onclick="copy('c-email', this)"><i class="fas fa-copy"></i> Copy</button>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="creds-label">Temporary Password</div>
+                        <span class="pwd-highlight" id="c-pwd">—</span>
+                        <div style="text-align:center;margin-top:6px;">
+                            <button class="copy-btn" onclick="copy('c-pwd', this)"><i class="fas fa-copy"></i> Copy Password</button>
+                        </div>
+                    </div>
+                </div>
+                <div style="background:var(--amber-light);border:1px solid rgba(217,119,6,.2);border-radius:var(--radius-sm);padding:10px 14px;font-size:12px;color:var(--amber);font-weight:600;">
+                    <i class="fas fa-triangle-exclamation" style="margin-right:6px;"></i>
+                    The user must create a new password on first login. This is the only time the temporary password is shown.
+                </div>
+            </div>
+            <div class="modal-ft">
+                <button class="btn-um btn-um-primary" onclick="closeCreds()">Done</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── Convert to Employee Modal ── -->
+    <div id="convertModal" class="modal-overlay" onclick="if(event.target===this)closeConvertModal()">
+        <div class="modal-box">
+            <div class="modal-hd">
+                <h3>Convert to Employee</h3>
+                <button class="modal-close" onclick="closeConvertModal()" aria-label="Close">&times;</button>
+            </div>
+            <form method="POST" action="" id="convertForm">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <p style="font-size:13px;color:var(--text-muted);margin:0 0 10px;">
+                        Creating an employee profile for <strong id="convertUserName"></strong>. An employee ID will be generated automatically.
+                    </p>
+
+                    <div class="form-field">
+                        <label>Department <span style="color:var(--text-muted);font-weight:500;">(optional)</span></label>
+                        <select name="department_id">
+                            <option value="">— Select Department —</option>
+                            {% for dept in departments %}
+                            <option value="{{ dept.pk }}">{{ dept.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="form-field">
+                        <label>Designation <span style="color:var(--text-muted);font-weight:500;">(optional)</span></label>
+                        <select name="designation_id">
+                            <option value="">— Select Designation —</option>
+                            {% for desig in designations %}
+                            <option value="{{ desig.pk }}">{{ desig.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="form-field">
+                        <label>Shift <span style="color:var(--text-muted);font-weight:500;">(optional)</span></label>
+                        <select name="shift_id">
+                            <option value="">— Select Shift —</option>
+                            {% for shift in shifts %}
+                            <option value="{{ shift.pk }}">{{ shift.name }} ({{ shift.start_time|time:"H:i" }} - {{ shift.end_time|time:"H:i" }})</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-ft">
+                    <button type="button" class="btn-um btn-um-ghost" onclick="closeConvertModal()">Cancel</button>
+                    <button type="submit" class="btn-um btn-um-primary"><i class="fas fa-check"></i> Convert</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // ── Row action menus ──
+        function toggleMenu(btn) {
+            const drop = btn.nextElementSibling;
+            const isOpen = drop.classList.contains('open');
+            document.querySelectorAll('.action-drop.open').forEach(d => d.classList.remove('open'));
+            if (!isOpen) drop.classList.add('open');
+        }
+        document.addEventListener('click', e => {
+            if (!e.target.closest('.action-wrap'))
+                document.querySelectorAll('.action-drop.open').forEach(d => d.classList.remove('open'));
+        });
+
+        // ── Create User Modal ──
+        function openCreateModal() { document.getElementById('createModal').classList.add('open'); }
+        function closeCreateModal() { document.getElementById('createModal').classList.remove('open'); }
+
+        function prefillFromEmployee(sel) {
+            const opt = sel.options[sel.selectedIndex];
+            if (opt && opt.dataset.email) {
+                document.getElementById('cf_email').value = opt.dataset.email;
+                document.getElementById('cf_first').value = opt.dataset.first;
+                document.getElementById('cf_last').value  = opt.dataset.last;
+                // Auto-generate username from name
+                const uname = (opt.dataset.first + '.' + opt.dataset.last).toLowerCase().replace(/\s+/g,'');
+                document.getElementById('cf_username').value = uname;
+            } else {
+                document.getElementById('cf_email').value = '';
+                document.getElementById('cf_first').value = '';
+                document.getElementById('cf_last').value  = '';
+                document.getElementById('cf_username').value = '';
+            }
+        }
+
+        // ── Reset Password ──
+        function resetPassword(userId, username) {
+            document.querySelectorAll('.action-drop.open').forEach(d => d.classList.remove('open'));
+            document.getElementById('resetBody').innerHTML = '<p style="font-size:14px;color:var(--text-muted);">Generating temporary password for <strong>' + username + '</strong>…</p>';
+            document.getElementById('resetModal').classList.add('open');
+
+            fetch('/accounts/users/' + userId + '/reset-password/', {
+                method: 'POST',
+                headers: { 'X-CSRFToken': '{{ csrf_token }}' },
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.ok) {
+                    document.getElementById('resetBody').innerHTML = `
+                        <p style="font-size:13px;color:var(--text-muted);margin:0;">New temporary credentials for <strong>${data.username}</strong>. Share securely — this is shown once.</p>
+                        <div class="creds-box">
+                            <div>
+                                <div class="creds-label">Email</div>
+                                <div class="creds-row">
+                                    <div class="creds-val" id="r-email">${data.email}</div>
+                                    <button class="copy-btn" onclick="copy('r-email',this)"><i class="fas fa-copy"></i> Copy</button>
+                                </div>
+                            </div>
+                            <div>
+                                <div class="creds-label">New Temporary Password</div>
+                                <span class="pwd-highlight" id="r-pwd">${data.temp_password}</span>
+                                <div style="text-align:center;margin-top:6px;">
+                                    <button class="copy-btn" onclick="copy('r-pwd',this)"><i class="fas fa-copy"></i> Copy Password</button>
+                                </div>
+                            </div>
+                        </div>
+                        <div style="background:var(--amber-light);border:1px solid rgba(217,119,6,.2);border-radius:8px;padding:10px 14px;font-size:12px;color:var(--amber);font-weight:600;">
+                            <i class="fas fa-triangle-exclamation" style="margin-right:6px;"></i>
+                            The user must create a new password on next login. This password will not be shown again.
+                        </div>`;
+                } else {
+                    document.getElementById('resetBody').innerHTML = '<p style="color:var(--red);">Failed to reset password. Please try again.</p>';
+                }
+            });
+        }
+        function closeResetModal() { document.getElementById('resetModal').classList.remove('open'); }
+
+        // ── Convert to Employee ──
+        function openConvertModal(userId, username) {
+            document.querySelectorAll('.action-drop.open').forEach(d => d.classList.remove('open'));
+            document.getElementById('convertUserName').textContent = username;
+            document.getElementById('convertForm').action = '/accounts/users/' + userId + '/convert-employee/';
+            document.getElementById('convertModal').classList.add('open');
+        }
+        function closeConvertModal() { document.getElementById('convertModal').classList.remove('open'); }
+
+        // ── Temp creds after create ──
+        function closeCreds() { document.getElementById('credsModal').classList.remove('open'); }
+
+        function copy(elemId, btn) {
+            const text = document.getElementById(elemId).textContent.trim();
+            navigator.clipboard.writeText(text).then(() => {
+                btn.innerHTML = '<i class="fas fa-check"></i> Copied!';
+                setTimeout(() => btn.innerHTML = '<i class="fas fa-copy"></i> Copy', 2000);
+            });
+        }
+
+        // On page load: check for temp creds in session
+        window.addEventListener('DOMContentLoaded', () => {
+            fetch('{% url "get_temp_creds" %}')
+            .then(r => r.json())
+            .then(data => {
+                if (data.ok && data.creds) {
+                    document.getElementById('c-name').textContent  = data.creds.full_name  || '—';
+                    document.getElementById('c-email').textContent = data.creds.email;
+                    document.getElementById('c-pwd').textContent   = data.creds.temp_password;
+                    document.getElementById('credsModal').classList.add('open');
+                }
+            });
+
+            // Search on Enter
+            const si = document.getElementById('searchInput');
+            if (si) si.addEventListener('keydown', e => { if (e.key === 'Enter') document.getElementById('filterForm').submit(); });
+        });
+    </script>
+</body>
+</html>

@@ -911,7 +911,7 @@
                 <span class="remove">✕</span>
             </a>
             {% endif %}
-            <a href="{% url 'employee_list' %}" class="clear-filters-link">Clear all</a>
+            <a href="{% url 'employee' %}" class="clear-filters-link">Clear all</a>
         </div>
         {% endif %}
 
@@ -1105,7 +1105,7 @@
                 {% if search_query or selected_dept or selected_desig or selected_status %}
                 <h3>No employees match your filters</h3>
                 <p>Try adjusting your search or filters to find who you're looking for.</p>
-                <a href="{% url 'employee_list' %}" class="btn btn-secondary">
+                <a href="{% url 'employee' %}" class="btn btn-secondary">
                     <i class="fas fa-times"></i> Clear Filters
                 </a>
                 {% else %}
