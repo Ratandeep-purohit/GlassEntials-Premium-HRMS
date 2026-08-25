@@ -1,649 +1,922 @@
 {% load static %}
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Attendance Dashboard | Mulzon HRMS</title>
-    <!-- Favicon -->
+    <title>Attendance · {{ selected_date|date:"d M Y" }} | Mulzon HRMS</title>
     <link rel="icon" type="image/png" href="{% static 'img/favicon_logo.png' %}">
     <link rel="apple-touch-icon" href="{% static 'img/favicon_logo.png' %}">
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="stylesheet"
-        href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Manrope:wght@600;700;800&display=swap">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Manrope:wght@600;700;800&display=swap">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-    <link rel="stylesheet" href="{% static 'css/landing.css' %}?v=3.0">
-    <link rel="stylesheet" href="{% static 'css/home.css' %}?v=3.1">
-    <link rel="stylesheet" href="{% static 'css/dashboard.css' %}?v=3.0">
+    <link rel="stylesheet" href="{% static 'css/landing.css' %}?v=4.4">
+    <link rel="stylesheet" href="{% static 'css/home.css' %}?v=4.4">
+    <link rel="stylesheet" href="{% static 'css/dashboard.css' %}?v=4.4">
+
     <style>
-        .btn-corrections {
-            margin-right: 12px; 
-            background: white; 
-            position: relative; 
-            display: inline-flex; 
-            align-items: center; 
-            justify-content: center; 
-            gap: 10px; 
-            height: 46px; 
-            padding: 0 20px; 
-            box-sizing: border-box; 
-            border-color: var(--border-light);
-        }
-        .btn-corrections.pending {
-            border-color: #ef4444 !important;
-        }
-        .btn-corrections i.pending {
-            color: #ef4444 !important;
+        /* ── DESIGN TOKENS ── */
+        :root {
+            --blue: #2563eb;
+            --blue-light: rgba(37,99,235,0.08);
+            --blue-border: rgba(37,99,235,0.2);
+            --green: #16a34a;
+            --green-light: rgba(22,163,74,0.08);
+            --amber: #d97706;
+            --amber-light: rgba(217,119,6,0.08);
+            --red: #dc2626;
+            --red-light: rgba(220,38,38,0.08);
+            --slate: #64748b;
+            --surface: #ffffff;
+            --bg: #f8fafc;
+            --border: #e2e8f0;
+            --text: #0f172a;
+            --text-muted: #64748b;
+            --radius-sm: 8px;
+            --radius: 12px;
+            --radius-lg: 16px;
+            --transition: 150ms cubic-bezier(0.4,0,0.2,1);
+            --shadow-xs: 0 1px 2px rgba(0,0,0,0.05);
+            --shadow-sm: 0 2px 8px rgba(0,0,0,0.06);
         }
 
-        .correction-status-pill {
-            display: inline-flex; 
-            align-items: center; 
-            padding: 4px 10px; 
-            border-radius: 20px; 
-            font-size: 11px; 
-            font-weight: 700; 
-            width: fit-content;
-        }
-        .correction-status-pill.PENDING { background: rgba(100, 116, 139, 0.1); color: #64748b; }
-        .correction-status-pill.APPROVED { background: rgba(34, 197, 94, 0.1); color: #16a34a; }
-        .correction-status-pill.REJECTED { background: rgba(239, 68, 68, 0.1); color: #ef4444; }
-
-        .btn-fix-time {
-            background: rgba(37, 99, 235, 0.1); 
-            color: #2563eb; 
-            border: none; 
-            padding: 6px 12px; 
-            border-radius: 6px; 
-            font-weight: 700; 
-            font-size: 11px; 
-            cursor: pointer; 
-            transition: all 0.2s;
-            display: inline-flex;
-            align-items: center;
-        }
-        .btn-fix-time:hover {
-            background: rgba(37, 99, 235, 0.2);
-        }
-        .modal-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.5);
-            backdrop-filter: blur(4px);
-            display: none;
-            align-items: center;
-            justify-content: center;
-            z-index: 10000;
-        }
-        .modal-content {
-            background: white;
-            padding: 0;
-            border-radius: 20px;
-            width: 450px;
-            max-width: 90%;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.2);
-            overflow: hidden;
-        }
-        .modal-header {
-            padding: 20px 24px;
-            border-bottom: 1px solid var(--border-light);
+        /* ── PAGE HEADER ── */
+        .att-header {
             display: flex;
             align-items: center;
             justify-content: space-between;
+            gap: 16px;
+            padding: 20px 0 16px;
+            flex-wrap: wrap;
         }
-        .modal-title {
-            margin: 0;
-            font-size: 18px;
+        .att-header-left h1 {
+            font-family: 'Manrope', sans-serif;
+            font-size: 22px;
             font-weight: 800;
+            color: var(--text);
+            margin: 0 0 2px;
+            letter-spacing: -0.4px;
         }
-        .close-btn {
-            background: none;
-            border: none;
-            font-size: 24px;
+        .att-header-left p {
+            font-size: 13px;
+            color: var(--text-muted);
+            margin: 0;
+        }
+        .att-header-actions {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        /* ── COMPACT BUTTONS ── */
+        .btn-att {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            height: 36px;
+            padding: 0 14px;
+            font-size: 13px;
+            font-weight: 600;
+            border-radius: var(--radius-sm);
             cursor: pointer;
-            color: var(--text-secondary);
-        }
-        .format-option { transition: all 0.2s; border: 2px solid var(--border-light) !important; }
-        .format-option.active { border-color: var(--primary) !important; background: rgba(79, 70, 229, 0.05) !important; }
-        .attendance-status-pill {
-            display: inline-flex;
-            align-items: center;
-            padding: 4px 10px;
-            border-radius: 20px;
-            font-size: 12px;
-            font-weight: 700;
-            width: fit-content;
-        }
-        .attendance-status-pill.completed { background: rgba(34, 197, 94, 0.1); color: #16a34a; }
-        .attendance-status-pill.working { background: rgba(37, 99, 235, 0.1); color: #2563eb; }
-        .attendance-status-pill.missing { background: rgba(245, 158, 11, 0.12); color: #d97706; }
-        .attendance-status-pill.absent { background: rgba(239, 68, 68, 0.1); color: #ef4444; }
-        .attendance-status-pill.weekend { background: rgba(100, 116, 139, 0.12); color: #64748b; }
-
-        .btn-visual-attendance {
-            height: 44px;
-            padding: 0 20px;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            margin: 0;
-            border: 1px solid rgba(37, 99, 235, 0.3);
-            border-radius: 12px;
-            background: rgba(37, 99, 235, 0.08);
-            color: #2563eb;
             text-decoration: none;
-            font-weight: 800;
-            box-shadow: 0 10px 24px rgba(37, 99, 235, 0.12);
+            transition: all var(--transition);
+            white-space: nowrap;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            border: 1px solid transparent;
         }
-        .btn-visual-attendance.active {
-            background: #2563eb;
+        .btn-att-ghost {
+            background: var(--surface);
+            color: var(--text-muted);
+            border-color: var(--border);
+        }
+        .btn-att-ghost:hover { background: var(--bg); color: var(--text); border-color: #cbd5e1; }
+        .btn-att-primary {
+            background: var(--blue);
             color: #fff;
-            border-color: #2563eb;
+            border-color: var(--blue);
         }
+        .btn-att-primary:hover { background: #1d4ed8; }
+        .btn-att-danger-outline {
+            background: var(--surface);
+            color: var(--red);
+            border-color: rgba(220,38,38,0.3);
+        }
+        .btn-att-danger-outline:hover { background: var(--red-light); }
 
-        .attendance-view-switch {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            padding: 6px;
-            margin-bottom: 18px;
-            border: 1px solid rgba(226, 232, 240, 0.95);
-            border-radius: 16px;
-            background: rgba(255, 255, 255, 0.9);
-            box-shadow: 0 12px 34px rgba(15, 23, 42, 0.05);
-        }
-        .attendance-view-switch a {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            min-height: 42px;
-            padding: 0 18px;
-            border-radius: 12px;
-            color: var(--text-secondary);
-            text-decoration: none;
-            font-size: 14px;
-            font-weight: 800;
-            transition: all 0.2s ease;
-        }
-        .attendance-view-switch a:hover {
-            color: #2563eb;
-            background: rgba(37, 99, 235, 0.07);
-        }
-        .attendance-view-switch a.active {
-            color: #fff;
-            background: #2563eb;
-            box-shadow: 0 10px 22px rgba(37, 99, 235, 0.24);
-        }
-
-        .attendance-register-card {
-            margin-bottom: 24px;
-            padding: 0;
-            overflow: hidden;
-            border: 1px solid rgba(226, 232, 240, 0.95);
-            border-radius: 22px;
-            background: rgba(255, 255, 255, 0.96);
-            box-shadow: 0 18px 50px rgba(15, 23, 42, 0.06);
-        }
-        .attendance-register-head {
+        /* ── DATE NAV BAR ── */
+        .date-nav {
             display: flex;
-            align-items: flex-start;
-            justify-content: space-between;
-            gap: 18px;
-            padding: 24px;
-            border-bottom: 1px solid var(--border-light);
+            align-items: center;
+            gap: 8px;
+            padding: 12px 0;
         }
-        .attendance-register-title {
-            margin: 0 0 6px;
-            font-size: 20px;
-            font-weight: 800;
-            color: var(--text-primary);
+        .date-nav-btn {
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            background: var(--surface);
+            color: var(--text-muted);
+            text-decoration: none;
+            font-size: 12px;
+            transition: all var(--transition);
         }
-        .attendance-register-subtitle {
-            margin: 0;
+        .date-nav-btn:hover { border-color: var(--blue); color: var(--blue); background: var(--blue-light); }
+        .date-nav-btn.disabled { pointer-events: none; opacity: 0.35; }
+        .date-nav-picker {
+            position: relative;
+            display: inline-flex;
+        }
+        .date-nav-label {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            height: 36px;
+            padding: 0 14px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            font-size: 14px;
+            font-weight: 700;
+            color: var(--text);
+            cursor: pointer;
+            transition: all var(--transition);
+            white-space: nowrap;
+        }
+        .date-nav-label:hover { border-color: var(--blue); }
+        .date-nav-label i { color: var(--blue); font-size: 13px; }
+        .date-input-hidden {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            opacity: 0;
+            cursor: pointer;
+        }
+        .date-nav-today {
+            display: inline-flex;
+            align-items: center;
+            height: 36px;
+            padding: 0 12px;
+            background: var(--blue-light);
+            color: var(--blue);
+            border: 1px solid var(--blue-border);
+            border-radius: var(--radius-sm);
             font-size: 13px;
             font-weight: 700;
-            color: var(--text-secondary);
+            cursor: pointer;
+            text-decoration: none;
+            transition: all var(--transition);
         }
-        .attendance-register-legend {
+        .date-nav-today:hover { background: var(--blue); color: #fff; }
+        .date-nav-sep { width: 1px; height: 24px; background: var(--border); margin: 0 4px; }
+
+        /* ── STAT CARDS ── */
+        .att-stats {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+        @media (max-width: 768px) {
+            .att-stats { grid-template-columns: repeat(2, 1fr); }
+        }
+        .att-stat-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 16px 20px;
             display: flex;
             align-items: center;
-            justify-content: flex-end;
+            gap: 16px;
+            box-shadow: var(--shadow-xs);
+            transition: box-shadow var(--transition);
+        }
+        .att-stat-card:hover { box-shadow: var(--shadow-sm); }
+        .att-stat-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: var(--radius-sm);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            flex-shrink: 0;
+        }
+        .att-stat-body { flex: 1; min-width: 0; }
+        .att-stat-value {
+            font-size: 24px;
+            font-weight: 800;
+            color: var(--text);
+            line-height: 1;
+            font-family: 'Manrope', sans-serif;
+        }
+        .att-stat-label {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-muted);
+            margin-top: 4px;
+        }
+        .att-stat-rate {
+            font-size: 12px;
+            font-weight: 700;
+            margin-top: 6px;
+        }
+        .att-rate-bar {
+            height: 3px;
+            background: var(--border);
+            border-radius: 99px;
+            margin-top: 6px;
+            overflow: hidden;
+        }
+        .att-rate-fill {
+            height: 100%;
+            border-radius: 99px;
+            background: var(--green);
+            transition: width 0.8s ease;
+        }
+
+        /* ── TOOLBAR ── */
+        .att-toolbar {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 14px 16px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+            box-shadow: var(--shadow-xs);
+        }
+        .att-search-wrap {
+            position: relative;
+            flex: 1;
+            min-width: 200px;
+        }
+        .att-search-wrap i {
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-muted);
+            font-size: 13px;
+            pointer-events: none;
+        }
+        .att-search-input {
+            width: 100%;
+            height: 36px;
+            padding: 0 12px 0 36px;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            font-size: 13px;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            outline: none;
+            transition: all var(--transition);
+            box-sizing: border-box;
+        }
+        .att-search-input:focus { border-color: var(--blue); background: #fff; box-shadow: 0 0 0 3px rgba(37,99,235,0.08); }
+        .att-toolbar-sep { width: 1px; height: 20px; background: var(--border); flex-shrink: 0; }
+
+        /* ── VIEW TOGGLE ── */
+        .view-toggle {
+            display: inline-flex;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            overflow: hidden;
+        }
+        .view-toggle a {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            height: 34px;
+            padding: 0 12px;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-decoration: none;
+            transition: all var(--transition);
+        }
+        .view-toggle a.active {
+            background: var(--surface);
+            color: var(--blue);
+            box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+        }
+        .view-toggle a:hover:not(.active) { color: var(--text); }
+
+        /* ── TABLE SECTION ── */
+        .att-table-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            overflow: hidden;
+            box-shadow: var(--shadow-xs);
+        }
+        .att-table-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--border);
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+        .att-table-title {
+            font-size: 15px;
+            font-weight: 700;
+            color: var(--text);
+            margin: 0;
+        }
+        .att-table-subtitle {
+            font-size: 12px;
+            color: var(--text-muted);
+            font-weight: 500;
+            margin: 2px 0 0;
+        }
+        .att-table-wrap { overflow-x: auto; }
+        table.att-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+        .att-table thead tr {
+            background: #f8fafc;
+            border-bottom: 1px solid var(--border);
+        }
+        .att-table thead th {
+            padding: 10px 16px;
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            text-align: left;
+            white-space: nowrap;
+        }
+        .att-table tbody tr {
+            border-bottom: 1px solid var(--border);
+            transition: background var(--transition);
+        }
+        .att-table tbody tr:last-child { border-bottom: none; }
+        .att-table tbody tr:hover { background: #f8fafc; }
+        .att-table td { padding: 13px 16px; vertical-align: middle; }
+
+        /* ── EMPLOYEE CELL ── */
+        .emp-cell { display: flex; align-items: center; gap: 10px; }
+        .emp-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            overflow: hidden;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 13px;
+            font-weight: 800;
+            background: var(--blue-light);
+            color: var(--blue);
+            border: 1px solid var(--blue-border);
+        }
+        .emp-avatar img { width: 100%; height: 100%; object-fit: cover; }
+        .emp-name { font-weight: 700; color: var(--text); line-height: 1.2; }
+        .emp-id { font-size: 11px; color: var(--text-muted); font-weight: 500; margin-top: 2px; }
+
+        /* ── TIME CELLS ── */
+        .time-val { font-weight: 600; color: var(--text); white-space: nowrap; }
+        .time-dash { color: var(--text-muted); font-weight: 500; }
+        .time-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 3px;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 10px;
+            font-weight: 700;
+            margin-top: 3px;
+            width: fit-content;
+        }
+        .time-badge.late { background: var(--red-light); color: var(--red); }
+        .time-badge.early { background: var(--amber-light); color: var(--amber); }
+        .working-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--green);
+            margin-top: 3px;
+        }
+        .working-dot {
+            width: 6px; height: 6px;
+            border-radius: 50%;
+            background: var(--green);
+            animation: pulse-dot 1.5s ease-in-out infinite;
+        }
+        @keyframes pulse-dot {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.5; transform: scale(0.8); }
+        }
+
+        /* ── STATUS BADGES ── */
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 700;
+            white-space: nowrap;
+        }
+        .status-badge::before {
+            content: '●';
+            font-size: 8px;
+        }
+        .status-badge.completed { background: var(--green-light); color: var(--green); }
+        .status-badge.working   { background: var(--blue-light); color: var(--blue); }
+        .status-badge.missing   { background: var(--amber-light); color: var(--amber); }
+        .status-badge.absent    { background: var(--red-light); color: var(--red); }
+        .status-badge.weekend   { background: rgba(100,116,139,0.08); color: var(--slate); }
+
+        /* ── ACTIONS MENU ── */
+        .action-menu-wrap { position: relative; display: inline-block; }
+        .action-menu-btn {
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            background: var(--surface);
+            color: var(--text-muted);
+            cursor: pointer;
+            font-size: 14px;
+            transition: all var(--transition);
+        }
+        .action-menu-btn:hover { border-color: var(--blue); color: var(--blue); background: var(--blue-light); }
+        .action-dropdown {
+            position: absolute;
+            right: 0;
+            top: calc(100% + 4px);
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            box-shadow: 0 8px 24px rgba(0,0,0,0.1);
+            min-width: 180px;
+            z-index: 100;
+            overflow: hidden;
+            display: none;
+        }
+        .action-dropdown.open { display: block; }
+        .action-dropdown a, .action-dropdown button {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 14px;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-decoration: none;
+            background: none;
+            border: none;
+            width: 100%;
+            cursor: pointer;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            transition: all var(--transition);
+            text-align: left;
+        }
+        .action-dropdown a:hover, .action-dropdown button:hover {
+            background: var(--bg);
+            color: var(--text);
+        }
+        .action-dropdown a i, .action-dropdown button i { width: 14px; text-align: center; }
+
+        /* ── CORRECTION STATUS ── */
+        .correction-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 3px 8px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 700;
+        }
+        .correction-pill.PENDING  { background: rgba(100,116,139,0.1); color: var(--slate); }
+        .correction-pill.APPROVED { background: var(--green-light); color: var(--green); }
+        .correction-pill.REJECTED { background: var(--red-light); color: var(--red); }
+
+        /* ── EMPTY STATE ── */
+        .att-empty {
+            padding: 56px 24px;
+            text-align: center;
+            color: var(--text-muted);
+        }
+        .att-empty i { font-size: 36px; opacity: 0.3; margin-bottom: 16px; display: block; }
+        .att-empty h3 { font-size: 16px; font-weight: 700; color: var(--text); margin: 0 0 6px; }
+        .att-empty p { font-size: 14px; margin: 0 0 20px; }
+
+        /* ── VISUAL REGISTER ── */
+        .att-register-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            overflow: hidden;
+            box-shadow: var(--shadow-xs);
+            margin-bottom: 24px;
+        }
+        .att-register-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--border);
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+        .register-legend {
+            display: flex;
+            align-items: center;
             gap: 12px;
             flex-wrap: wrap;
         }
         .legend-item {
             display: inline-flex;
             align-items: center;
-            gap: 7px;
-            font-size: 12px;
-            font-weight: 800;
-            color: var(--text-secondary);
+            gap: 5px;
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--text-muted);
         }
         .legend-dot {
-            width: 10px;
-            height: 10px;
-            border-radius: 999px;
-            display: inline-block;
+            width: 8px; height: 8px;
+            border-radius: 50%;
         }
         .legend-dot.present { background: #22c55e; }
-        .legend-dot.leave { background: #ef4444; }
-        .legend-dot.half { background: #f59e0b; }
-        .legend-dot.absent { background: #fb7185; }
+        .legend-dot.leave   { background: #ef4444; }
+        .legend-dot.half    { background: #f59e0b; }
+        .legend-dot.absent  { background: #fb7185; }
         .legend-dot.holiday { background: #3b82f6; }
         .legend-dot.weekend { background: #94a3b8; }
-        .attendance-register-summary {
+        .register-summary {
             display: grid;
-            grid-template-columns: repeat(6, minmax(110px, 1fr));
-            gap: 12px;
-            padding: 18px 24px;
-            background: linear-gradient(135deg, rgba(248, 250, 252, 0.95), rgba(255, 255, 255, 0.95));
-            border-bottom: 1px solid var(--border-light);
+            grid-template-columns: repeat(6, 1fr);
+            gap: 10px;
+            padding: 14px 20px;
+            background: var(--bg);
+            border-bottom: 1px solid var(--border);
         }
-        .register-metric {
-            min-height: 62px;
-            padding: 12px 14px;
-            border: 1px solid rgba(226, 232, 240, 0.9);
-            border-radius: 16px;
-            background: #fff;
+        @media (max-width: 768px) { .register-summary { grid-template-columns: repeat(3,1fr); } }
+        .reg-metric {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            padding: 10px 12px;
         }
-        .register-metric strong {
-            display: block;
-            font-size: 22px;
-            line-height: 1;
-            color: var(--text-primary);
+        .reg-metric strong { display: block; font-size: 20px; font-weight: 800; color: var(--text); }
+        .reg-metric span { font-size: 10px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.04em; }
+        .register-scroll { overflow-x: auto; }
+        .att-chip {
+            width: 28px; height: 28px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 7px;
+            font-size: 10px;
+            font-weight: 900;
+            cursor: default;
         }
-        .register-metric span {
-            display: block;
-            margin-top: 6px;
-            font-size: 11px;
-            font-weight: 800;
-            color: var(--text-secondary);
-            text-transform: uppercase;
-            letter-spacing: 0.04em;
-        }
-        .attendance-register-scroll {
-            overflow: auto;
-            max-height: 620px;
-            scrollbar-width: thin;
-            background: #fff;
-        }
-        .attendance-register-table {
+        .att-chip.present { background: #dcfce7; color: #15803d; }
+        .att-chip.leave   { background: #fee2e2; color: #dc2626; }
+        .att-chip.half    { background: #fef3c7; color: #b45309; }
+        .att-chip.absent  { background: #ffe4e6; color: #e11d48; }
+        .att-chip.holiday { background: #dbeafe; color: #1d4ed8; font-size: 9px; }
+        .att-chip.weekend { background: #f1f5f9; color: #64748b; }
+        .att-chip.future  { background: #f8fafc; color: #cbd5e1; }
+        .register-table {
             width: max-content;
             min-width: 100%;
-            border-collapse: separate;
-            border-spacing: 0;
+            border-collapse: collapse;
         }
-        .attendance-register-table th,
-        .attendance-register-table td {
-            border-bottom: 1px solid rgba(226, 232, 240, 0.8);
+        .register-table th, .register-table td {
+            border-bottom: 1px solid rgba(226,232,240,0.8);
             text-align: center;
             vertical-align: middle;
         }
-        .attendance-register-table thead th {
+        .register-table thead th {
             position: sticky;
             top: 0;
             z-index: 3;
-            min-width: 48px;
-            padding: 14px 10px;
+            padding: 12px 8px;
             background: #f8fafc;
             color: #475569;
-            font-size: 12px;
-            font-weight: 900;
+            font-size: 11px;
+            font-weight: 700;
+            min-width: 40px;
         }
-        .attendance-register-table thead th span {
-            display: block;
-            margin-top: 4px;
-            font-size: 10px;
-            color: #94a3b8;
-            font-weight: 800;
-            text-transform: uppercase;
-        }
-        .attendance-register-table th.employee-column,
-        .attendance-register-table td.employee-column {
+        .register-table thead th span { display: block; font-size: 9px; color: #94a3b8; text-transform: uppercase; margin-top: 2px; }
+        .register-table th.emp-col, .register-table td.emp-col {
             position: sticky;
             left: 0;
             z-index: 4;
-            min-width: 240px;
-            max-width: 240px;
-            padding: 14px 16px;
+            min-width: 200px;
+            max-width: 200px;
             text-align: left;
+            padding: 12px 14px;
             background: #fff;
-            box-shadow: 12px 0 20px rgba(15, 23, 42, 0.04);
+            box-shadow: 6px 0 12px rgba(15,23,42,0.04);
         }
-        .attendance-register-table thead th.employee-column {
-            background: #f8fafc;
-            z-index: 5;
-        }
-        .attendance-register-table th.today-column {
-            background: rgba(37, 99, 235, 0.08);
-            color: #2563eb;
-        }
-        .register-employee {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            min-width: 0;
-        }
-        .register-avatar {
-            width: 38px;
-            height: 38px;
+        .register-table thead th.emp-col { background: #f8fafc; z-index: 5; }
+        .register-table th.today-col { background: var(--blue-light); color: var(--blue); }
+        .reg-emp { display: flex; align-items: center; gap: 10px; }
+        .reg-avatar {
+            width: 32px; height: 32px;
             border-radius: 50%;
             overflow: hidden;
-            flex: 0 0 auto;
-            display: grid;
-            place-items: center;
-            background: #eaf0ff;
-            color: #2563eb;
-            font-weight: 900;
-            border: 1px solid rgba(37, 99, 235, 0.16);
-        }
-        .register-avatar img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-        .register-employee-name {
-            font-size: 13px;
-            font-weight: 900;
-            color: var(--text-primary);
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-        .register-employee-meta {
-            margin-top: 3px;
-            font-size: 11px;
-            font-weight: 700;
-            color: var(--text-secondary);
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-        .att-chip {
-            display: inline-flex;
-            width: 30px;
-            height: 30px;
+            flex-shrink: 0;
+            display: flex;
             align-items: center;
             justify-content: center;
-            border-radius: 9px;
-            font-size: 11px;
-            font-weight: 900;
-            transition: transform 0.15s ease, box-shadow 0.15s ease;
+            font-size: 12px;
+            font-weight: 800;
+            background: var(--blue-light);
+            color: var(--blue);
         }
-        .att-chip:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 18px rgba(15, 23, 42, 0.12);
+        .reg-avatar img { width: 100%; height: 100%; object-fit: cover; }
+        .reg-emp-name { font-size: 12px; font-weight: 700; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .reg-emp-meta { font-size: 10px; font-weight: 600; color: var(--text-muted); }
+
+        /* ── MODALS ── */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(15,23,42,0.5);
+            backdrop-filter: blur(4px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 9000;
         }
-        .att-chip.present { background: #dcfce7; color: #15803d; }
-        .att-chip.leave { background: #fee2e2; color: #dc2626; }
-        .att-chip.half { background: #fef3c7; color: #b45309; }
-        .att-chip.absent { background: #ffe4e6; color: #e11d48; }
-        .att-chip.holiday { background: #dbeafe; color: #1d4ed8; font-size: 10px; }
-        .att-chip.weekend { background: #f1f5f9; color: #64748b; }
-        .att-chip.future { background: #f8fafc; color: #cbd5e1; }
-        @media (max-width: 768px) {
-            .attendance-view-switch {
-                display: flex;
-                width: 100%;
-            }
-            .attendance-view-switch a {
-                flex: 1;
-                padding: 0 10px;
-            }
-            .btn-visual-attendance {
-                width: 100%;
-            }
-            .attendance-register-head {
-                flex-direction: column;
-                padding: 18px;
-            }
-            .attendance-register-summary {
-                grid-template-columns: repeat(2, minmax(0, 1fr));
-                padding: 14px 18px;
-            }
-            .attendance-register-table th.employee-column,
-            .attendance-register-table td.employee-column {
-                min-width: 190px;
-                max-width: 190px;
-            }
-            .attendance-register-table thead th {
-                min-width: 42px;
-                padding: 12px 8px;
-            }
-            .att-chip {
-                width: 28px;
-                height: 28px;
-            }
+        .modal-overlay.open { display: flex; }
+        .modal-box {
+            background: var(--surface);
+            border-radius: var(--radius-lg);
+            width: 440px;
+            max-width: 92vw;
+            box-shadow: 0 24px 60px rgba(0,0,0,0.18);
+            overflow: hidden;
+        }
+        .modal-hd {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 18px 20px;
+            border-bottom: 1px solid var(--border);
+        }
+        .modal-hd h3 { margin: 0; font-size: 16px; font-weight: 800; color: var(--text); }
+        .modal-close { background: none; border: none; font-size: 20px; color: var(--text-muted); cursor: pointer; padding: 4px; transition: color var(--transition); }
+        .modal-close:hover { color: var(--text); }
+        .modal-body { padding: 20px; display: flex; flex-direction: column; gap: 16px; }
+        .modal-ft { padding: 16px 20px; border-top: 1px solid var(--border); display: flex; gap: 10px; justify-content: flex-end; }
+
+        .form-field { display: flex; flex-direction: column; gap: 6px; }
+        .form-field label { font-size: 13px; font-weight: 600; color: var(--text); }
+        .form-input-att {
+            padding: 10px 12px;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            font-size: 13px;
+            color: var(--text);
+            background: var(--bg);
+            outline: none;
+            transition: border-color var(--transition);
+            width: 100%;
+            box-sizing: border-box;
+        }
+        .form-input-att:focus { border-color: var(--blue); background: #fff; }
+
+        /* ── EXPORT FORMAT TILES ── */
+        .format-tiles { display: flex; gap: 10px; }
+        .format-tile {
+            flex: 1;
+            padding: 12px;
+            border: 2px solid var(--border);
+            border-radius: var(--radius-sm);
+            text-align: center;
+            cursor: pointer;
+            transition: all var(--transition);
+        }
+        .format-tile.selected { border-color: var(--blue); background: var(--blue-light); }
+        .format-tile i { font-size: 20px; display: block; margin-bottom: 6px; }
+        .format-tile span { font-size: 12px; font-weight: 700; }
+
+        /* ── RESPONSIVE ── */
+        @media (max-width: 640px) {
+            .att-header { flex-direction: column; align-items: flex-start; }
+            .att-header-actions { width: 100%; }
+            .att-toolbar { flex-direction: column; align-items: stretch; }
+            .att-search-wrap { width: 100%; }
+            .att-table-header { flex-direction: column; align-items: flex-start; }
         }
     </style>
 </head>
 
 <body>
-    <!--Subtle Background Elements-->
-    <div class="orb orb-1" style="opacity: 0.03;top:-100px;left:-100px;"></div>
-    <div class="orb orb-2" style="opacity: 0.03;bottom:-100px;right:-100px;"></div>
-
-    <!-- Flash Messages Toast -->
-
-    <!--Header Navigation-->
     {% include 'includes/navbar.html' %}
 
     <main class="workspace">
-        <div class="page-header flex-header">
-            <div class="header-main-content">
+
+        <!-- ── PAGE HEADER ── -->
+        <div class="att-header">
+            <div class="att-header-left">
                 {% if request.user.is_staff %}
-                <h1>Attendance Dashboard</h1>
-                <p>Monitor daily attendance, track punctuality, and view employee clock-in logs in real-time.</p>
+                <h1>Attendance</h1>
+                <p>Track employee presence, working hours, and daily attendance.</p>
                 {% else %}
                 <h1>My Attendance</h1>
                 <p>Track your daily clock-ins, clock-outs, and total work hours.</p>
                 {% endif %}
             </div>
-            <div class="header-actions" style="display: flex; gap: 12px; align-items: center;">
-                {% if view_mode == 'visual' %}
-                <a href="{% url 'attendance' %}?view=list&month={{ selected_month_value }}{% if search_query %}&search={{ search_query|urlencode }}{% endif %}" class="btn-visual-attendance active">
-                    <i class="fas fa-list"></i>
-                    <span>List View</span>
-                </a>
-                {% else %}
-                <a href="{% url 'attendance' %}?view=visual&month={{ selected_month_value }}{% if search_query %}&search={{ search_query|urlencode }}{% endif %}" class="btn-visual-attendance">
-                    <i class="fas fa-table-cells-large"></i>
-                    <span>Visual View</span>
+            <div class="att-header-actions">
+                {% if not is_today %}
+                <a href="{% url 'attendance' %}" class="btn-att btn-att-ghost">
+                    <i class="fas fa-calendar-day"></i> Today
                 </a>
                 {% endif %}
                 {% if request.user.is_staff %}
-                <a href="{% url 'manage_corrections' %}" class="btn-ghost btn-corrections {% if pending_corrections_count > 0 %}pending{% endif %}" style="height: 44px; padding: 0 20px; display: flex; align-items: center; gap: 8px; position: relative;">
-                    <i class="fas fa-inbox {% if pending_corrections_count > 0 %}pending{% endif %}" style="font-size: 16px;"></i>
-                    <span style="font-weight: 700;">Corrections</span>
+                <a href="{% url 'attendance' %}?view={% if view_mode == 'list' %}visual{% else %}list{% endif %}&date={{ selected_date|date:'Y-m-d' }}{% if search_query %}&search={{ search_query|urlencode }}{% endif %}" class="btn-att btn-att-ghost">
+                    <i class="fas {% if view_mode == 'list' %}fa-table-cells-large{% else %}fa-list{% endif %}"></i>
+                    {% if view_mode == 'list' %}Visual View{% else %}List View{% endif %}
+                </a>
+                <a href="{% url 'manage_corrections' %}" class="btn-att {% if pending_corrections_count > 0 %}btn-att-danger-outline{% else %}btn-att-ghost{% endif %}" style="position: relative;">
+                    <i class="fas fa-inbox"></i> Corrections
                     {% if pending_corrections_count > 0 %}
-                    <span style="position: absolute; top: -6px; right: -6px; background: #ef4444; color: white; font-size: 10px; font-weight: 800; width: 18px; height: 18px; display: flex; align-items: center; justify-content: center; border-radius: 50%; border: 2px solid #fff; box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);">{{ pending_corrections_count }}</span>
+                    <span style="position:absolute;top:-6px;right:-6px;background:#dc2626;color:#fff;font-size:9px;font-weight:800;width:16px;height:16px;display:flex;align-items:center;justify-content:center;border-radius:50%;border:2px solid #fff;">{{ pending_corrections_count }}</span>
                     {% endif %}
                 </a>
-                <button type="button" class="btn-ghost" onclick="openExportModal()" style="height: 44px; padding: 0 20px; display: flex; align-items: center; gap: 8px; background: rgba(16, 185, 129, 0.1); color: #059669; border: 1px solid rgba(16, 185, 129, 0.2); cursor: pointer;">
-                    <i class="fas fa-file-export" style="font-size: 16px;"></i>
-                    <span style="font-weight: 700;">Export Report</span>
+                <button type="button" class="btn-att btn-att-ghost" onclick="openExportModal()">
+                    <i class="fas fa-file-export"></i> Export
                 </button>
-                <a href="{% url 'assign_shift' %}" class="btn-primary" style="height: 44px; padding: 0 24px; display: flex; align-items: center; gap: 8px; margin: 0;">
-                    <i class="fas fa-calendar-check" style="font-size: 16px;"></i>
-                    <span style="font-weight: 700;">Manage Shifts</span>
+                <a href="{% url 'assign_shift' %}" class="btn-att btn-att-primary">
+                    <i class="fas fa-calendar-check"></i> Manage Shifts
                 </a>
                 {% endif %}
             </div>
         </div>
 
-        <!-- KPI Stat Grid -->
-        {% if request.user.is_staff %}
-        <style>
-            .attendance-stats .stat-card {
-                padding: 16px 20px;
-                min-height: auto;
-                display: flex;
-                flex-direction: row;
-                align-items: center;
-                justify-content: space-between;
-                gap: 16px;
-            }
-            .attendance-stats .stat-info {
-                display: flex;
-                flex-direction: column;
-                gap: 4px;
-            }
-            .attendance-stats .val-primary {
-                font-size: 24px;
-                line-height: 1;
-                margin: 0;
-            }
-            .attendance-stats .label-primary {
-                margin: 0;
-                font-size: 13px;
-                color: var(--text-secondary);
-                font-weight: 600;
-            }
-            .attendance-stats .stat-header {
-                margin: 0;
-            }
-            .attendance-stats .stat-icon {
-                width: 44px;
-                height: 44px;
-                font-size: 18px;
-                border-radius: 12px;
-            }
-        </style>
-        <section class="stat-grid attendance-stats" style="margin-bottom: 24px;">
-            <div class="stat-card">
-                <div class="stat-info">
-                    <div class="val-primary">{{ total_employees }}</div>
-                    <div class="label-primary">Total Workforce</div>
+        <!-- ── DATE NAVIGATION ── -->
+        <div class="date-nav">
+            <a href="{% url 'attendance' %}?date={{ prev_date|date:'Y-m-d' }}{% if search_query %}&search={{ search_query|urlencode }}{% endif %}&view={{ view_mode }}" class="date-nav-btn" aria-label="Previous day">
+                <i class="fas fa-chevron-left"></i>
+            </a>
+
+            <div class="date-nav-picker">
+                <div class="date-nav-label">
+                    <i class="fas fa-calendar-alt"></i>
+                    <span>{{ selected_date|date:"l, d M Y" }}</span>
+                    {% if is_today %}<span style="font-size:11px;font-weight:600;color:var(--blue);background:var(--blue-light);padding:2px 6px;border-radius:4px;">Today</span>{% endif %}
                 </div>
-                <div class="stat-header">
-                    <div class="stat-icon" style="background: rgba(37, 99, 235, 0.08); color: #2563eb;">
-                        <i class="fas fa-users"></i>
-                    </div>
-                </div>
+                <form id="datePickerForm" method="get">
+                    <input type="hidden" name="view" value="{{ view_mode }}">
+                    {% if search_query %}<input type="hidden" name="search" value="{{ search_query }}">{% endif %}
+                    <input type="date" name="date" class="date-input-hidden"
+                           value="{{ selected_date|date:'Y-m-d' }}"
+                           max="{{ today|date:'Y-m-d' }}"
+                           onchange="this.form.submit()"
+                           aria-label="Pick a date">
+                </form>
             </div>
 
-            <div class="stat-card">
-                <div class="stat-info">
-                    <div class="val-primary">{{ present_count }}</div>
-                    <div class="label-primary">Present Entries</div>
-                </div>
-                <div class="stat-header">
-                    <div class="stat-icon" style="background: rgba(34, 197, 94, 0.08); color: #16a34a;">
-                        <i class="fas fa-fingerprint"></i>
-                    </div>
-                </div>
-            </div>
+            <a href="{% url 'attendance' %}?date={{ next_date|date:'Y-m-d' }}{% if search_query %}&search={{ search_query|urlencode }}{% endif %}&view={{ view_mode }}"
+               class="date-nav-btn {% if not is_today and next_date > today %}disabled{% endif %}"
+               aria-label="Next day">
+                <i class="fas fa-chevron-right"></i>
+            </a>
 
-            <div class="stat-card">
-                <div class="stat-info">
-                    <div class="val-primary">{{ absent_count }}</div>
-                    <div class="label-primary">Absent Days</div>
-                </div>
-                <div class="stat-header">
-                    <div class="stat-icon" style="background: rgba(239, 68, 68, 0.08); color: #ef4444;">
-                        <i class="fas fa-user-times"></i>
-                    </div>
-                </div>
-            </div>
+            <div class="date-nav-sep"></div>
 
-            <div class="stat-card">
-                <div class="stat-info">
-                    <div class="val-primary">{{ late_count }}</div>
-                    <div class="label-primary">Late Entries</div>
-                </div>
-                <div class="stat-header">
-                    <div class="stat-icon" style="background: rgba(245, 158, 11, 0.08); color: #d97706;">
-                        <i class="fas fa-clock"></i>
-                    </div>
-                </div>
-            </div>
-        </section>
-        {% endif %}
-
-        <!-- Filters -->
-        <div class="card" style="margin-bottom: 24px; padding: 20px;">
-            <form method="GET" style="display: flex; gap: 16px; align-items: flex-end; flex-wrap: wrap;">
-                <input type="hidden" name="view" value="{{ view_mode }}">
-                {% if request.user.is_staff %}
-                <div class="form-group" style="margin: 0; flex: 1; min-width: 250px;">
-                    <label class="form-label">Search Employee</label>
-                    <div style="position: relative;">
-                        <i class="fas fa-search" style="position: absolute; left: 14px; top: 14px; color: var(--text-secondary);"></i>
-                        <input type="text" name="search" class="form-input" style="padding-left: 40px; width: 100%; box-sizing: border-box;" placeholder="Search by name or ID..." value="{{ search_query }}">
-                    </div>
-                </div>
-                {% endif %}
-                <div class="form-group" style="margin: 0; width: 200px; flex-shrink: 0;">
-                    <label class="form-label">Month</label>
-                    <input type="month" name="month" class="form-input" style="width: 100%; box-sizing: border-box;" value="{{ selected_month_value }}">
-                </div>
-                <div style="display: flex; gap: 12px;">
-                    <button type="submit" class="btn-primary" style="height: 46px; padding: 0 24px; width: auto; flex: none;">Filter Month</button>
-                    <a href="{% url 'attendance' %}?view={{ view_mode }}" class="btn-secondary" style="height: 46px; padding: 0 24px; display: flex; align-items: center; justify-content: center; text-decoration: none; width: auto; flex: none;">Clear</a>
-                </div>
-            </form>
+            {% if not is_today %}
+            <a href="{% url 'attendance' %}?view={{ view_mode }}" class="date-nav-today">
+                <i class="fas fa-arrow-rotate-left" style="margin-right:4px;font-size:11px;"></i> Back to Today
+            </a>
+            {% endif %}
         </div>
 
-        <!-- Visual Attendance Register -->
+        <!-- ── STAT CARDS (staff only) ── -->
+        {% if request.user.is_staff %}
+        <div class="att-stats">
+            <div class="att-stat-card">
+                <div class="att-stat-icon" style="background:var(--blue-light);color:var(--blue);">
+                    <i class="fas fa-users"></i>
+                </div>
+                <div class="att-stat-body">
+                    <div class="att-stat-value">{{ total_employees }}</div>
+                    <div class="att-stat-label">Total Employees</div>
+                </div>
+            </div>
+            <div class="att-stat-card">
+                <div class="att-stat-icon" style="background:var(--green-light);color:var(--green);">
+                    <i class="fas fa-fingerprint"></i>
+                </div>
+                <div class="att-stat-body">
+                    <div class="att-stat-value">{{ present_count }}</div>
+                    <div class="att-stat-label">Present</div>
+                    {% if total_employees > 0 %}
+                    <div class="att-rate-bar">
+                        <div class="att-rate-fill" style="width:{{ attendance_rate }}%;"></div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="att-stat-card">
+                <div class="att-stat-icon" style="background:var(--red-light);color:var(--red);">
+                    <i class="fas fa-user-minus"></i>
+                </div>
+                <div class="att-stat-body">
+                    <div class="att-stat-value">{{ absent_count }}</div>
+                    <div class="att-stat-label">Absent</div>
+                </div>
+            </div>
+            <div class="att-stat-card">
+                <div class="att-stat-icon" style="background:var(--amber-light);color:var(--amber);">
+                    <i class="fas fa-clock"></i>
+                </div>
+                <div class="att-stat-body">
+                    <div class="att-stat-value">{{ late_count }}</div>
+                    <div class="att-stat-label">Late Entries</div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- ── TOOLBAR ── -->
+        <div class="att-toolbar">
+            {% if request.user.is_staff %}
+            <form method="GET" style="flex:1;min-width:200px;display:contents;">
+                <input type="hidden" name="date" value="{{ selected_date|date:'Y-m-d' }}">
+                <input type="hidden" name="view" value="{{ view_mode }}">
+                <div class="att-search-wrap">
+                    <i class="fas fa-search"></i>
+                    <input type="text" name="search" class="att-search-input"
+                           placeholder="Search employee name or ID…"
+                           value="{{ search_query }}"
+                           onchange="this.form.submit()"
+                           id="searchInput"
+                           aria-label="Search employees">
+                </div>
+            </form>
+            {% if search_query %}
+            <a href="{% url 'attendance' %}?date={{ selected_date|date:'Y-m-d' }}&view={{ view_mode }}" class="btn-att btn-att-ghost" style="height:36px;">
+                <i class="fas fa-times"></i> Clear
+            </a>
+            {% endif %}
+            {% endif %}
+        </div>
+
+        <!-- ── VISUAL REGISTER ── -->
         {% if view_mode == 'visual' %}
-        <section class="attendance-register-card">
-            <div class="attendance-register-head">
+        <div class="att-register-card">
+            <div class="att-register-header">
                 <div>
-                    <h3 class="attendance-register-title">Daily Attendance Register</h3>
-                    <p class="attendance-register-subtitle">Month: {{ month_start|date:"F Y" }}</p>
+                    <div style="font-size:15px;font-weight:700;color:var(--text);margin:0;">Monthly Register · {{ month_start|date:"F Y" }}</div>
+                    <div style="font-size:12px;color:var(--text-muted);margin-top:2px;">Visual attendance grid for all employees</div>
                 </div>
-                <div class="attendance-register-legend" aria-label="Attendance status legend">
-                    <span class="legend-item"><span class="legend-dot present"></span> Present</span>
-                    <span class="legend-item"><span class="legend-dot leave"></span> Leave</span>
-                    <span class="legend-item"><span class="legend-dot half"></span> Half</span>
-                    <span class="legend-item"><span class="legend-dot absent"></span> Absent</span>
-                    <span class="legend-item"><span class="legend-dot holiday"></span> Holiday</span>
-                    <span class="legend-item"><span class="legend-dot weekend"></span> Weekend</span>
-                </div>
-            </div>
-
-            <div class="attendance-register-summary">
-                <div class="register-metric">
-                    <strong>{{ attendance_register_counts.present }}</strong>
-                    <span>Present</span>
-                </div>
-                <div class="register-metric">
-                    <strong>{{ attendance_register_counts.leave }}</strong>
-                    <span>Leave</span>
-                </div>
-                <div class="register-metric">
-                    <strong>{{ attendance_register_counts.half }}</strong>
-                    <span>Half Day</span>
-                </div>
-                <div class="register-metric">
-                    <strong>{{ attendance_register_counts.absent }}</strong>
-                    <span>Absent</span>
-                </div>
-                <div class="register-metric">
-                    <strong>{{ attendance_register_counts.holiday }}</strong>
-                    <span>Holiday</span>
-                </div>
-                <div class="register-metric">
-                    <strong>{{ attendance_register_counts.weekend }}</strong>
-                    <span>Weekend</span>
+                <div class="register-legend" aria-label="Legend">
+                    <span class="legend-item"><span class="legend-dot present"></span>Present</span>
+                    <span class="legend-item"><span class="legend-dot leave"></span>Leave</span>
+                    <span class="legend-item"><span class="legend-dot half"></span>Half Day</span>
+                    <span class="legend-item"><span class="legend-dot absent"></span>Absent</span>
+                    <span class="legend-item"><span class="legend-dot holiday"></span>Holiday</span>
+                    <span class="legend-item"><span class="legend-dot weekend"></span>Weekend</span>
                 </div>
             </div>
-
-            <div class="attendance-register-scroll">
-                <table class="attendance-register-table">
+            <div class="register-summary">
+                <div class="reg-metric"><strong>{{ attendance_register_counts.present }}</strong><span>Present</span></div>
+                <div class="reg-metric"><strong>{{ attendance_register_counts.leave }}</strong><span>Leave</span></div>
+                <div class="reg-metric"><strong>{{ attendance_register_counts.half }}</strong><span>Half Day</span></div>
+                <div class="reg-metric"><strong>{{ attendance_register_counts.absent }}</strong><span>Absent</span></div>
+                <div class="reg-metric"><strong>{{ attendance_register_counts.holiday }}</strong><span>Holiday</span></div>
+                <div class="reg-metric"><strong>{{ attendance_register_counts.weekend }}</strong><span>Weekend</span></div>
+            </div>
+            <div class="register-scroll">
+                <table class="register-table">
                     <thead>
                         <tr>
-                            <th class="employee-column">Employee Name</th>
+                            <th class="emp-col">Employee</th>
                             {% for day in attendance_register_days %}
-                            <th class="{% if day.is_today %}today-column{% endif %}">
-                                {{ day.date|date:"d" }}
-                                <span>{{ day.date|date:"D" }}</span>
+                            <th class="{% if day.is_today %}today-col{% endif %}">
+                                {{ day.date|date:"d" }}<span>{{ day.date|date:"D" }}</span>
                             </th>
                             {% endfor %}
                         </tr>
@@ -651,166 +924,170 @@
                     <tbody>
                         {% for row in attendance_register_rows %}
                         <tr>
-                            <td class="employee-column">
-                                <div class="register-employee">
-                                    <div class="register-avatar">
-                                        {% if row.employee.profile_img %}
-                                            <img src="{{ row.employee.profile_img.url }}" alt="{{ row.employee.first_name }}">
-                                        {% else %}
-                                            {{ row.employee.first_name|slice:":1"|upper }}
-                                        {% endif %}
+                            <td class="emp-col">
+                                <div class="reg-emp">
+                                    <div class="reg-avatar">
+                                        {% if row.employee.profile_img %}<img src="{{ row.employee.profile_img.url }}" alt="">{% else %}{{ row.employee.first_name|slice:":1"|upper }}{% endif %}
                                     </div>
-                                    <div style="min-width: 0;">
-                                        <div class="register-employee-name">{{ row.employee.first_name }} {{ row.employee.last_name }}</div>
-                                        <div class="register-employee-meta">{{ row.employee.employee_id }}{% if row.employee.department %} - {{ row.employee.department.name }}{% endif %}</div>
+                                    <div style="min-width:0;">
+                                        <div class="reg-emp-name">{{ row.employee.first_name }} {{ row.employee.last_name }}</div>
+                                        <div class="reg-emp-meta">{{ row.employee.employee_id }}{% if row.employee.department %} · {{ row.employee.department.name }}{% endif %}</div>
                                     </div>
                                 </div>
                             </td>
                             {% for cell in row.days %}
-                            <td>
-                                <span class="att-chip {{ cell.class }}" title="{{ cell.title }}" aria-label="{{ cell.label }} on {{ cell.date|date:'d M Y' }}">{{ cell.code }}</span>
-                            </td>
+                            <td><span class="att-chip {{ cell.class }}" title="{{ cell.title }}" aria-label="{{ cell.label }}">{{ cell.code }}</span></td>
                             {% endfor %}
                         </tr>
                         {% empty %}
                         <tr>
-                            <td colspan="32" style="padding: 42px 24px; text-align: center; color: var(--text-secondary);">
-                                <i class="fas fa-calendar-xmark" style="font-size: 30px; margin-bottom: 12px; opacity: 0.45;"></i>
-                                <p style="margin: 0; font-weight: 700;">No employees found for this register.</p>
+                            <td colspan="32" class="att-empty">
+                                <i class="fas fa-calendar-xmark"></i>
+                                <h3>No employees found</h3>
+                                <p>No employee data for this register.</p>
                             </td>
                         </tr>
                         {% endfor %}
                     </tbody>
                 </table>
             </div>
-        </section>
+        </div>
         {% endif %}
 
-        <!-- Attendance Logs Table -->
+        <!-- ── ATTENDANCE TABLE ── -->
         {% if view_mode == 'list' %}
-        <div class="card" style="padding: 0; overflow: hidden;">
-            <div style="padding: 20px 24px; border-bottom: 1px solid var(--border-light); display: flex; justify-content: space-between; align-items: center;">
-                <h3 style="font-weight: 700; font-size: 16px;">Attendance Logs ({{ month_start|date:"F Y" }})</h3>
+        <div class="att-table-card">
+            <div class="att-table-header">
+                <div>
+                    <div class="att-table-title">Attendance · {{ selected_date|date:"d M Y" }}</div>
+                    <div class="att-table-subtitle">{{ attendances|length }} employee{{ attendances|length|pluralize }}</div>
+                </div>
             </div>
-            
-            <div style="overflow-x: auto;">
-                <table style="width: 100%; border-collapse: collapse; text-align: left;">
+            <div class="att-table-wrap">
+                <table class="att-table" role="grid">
                     <thead>
-                        <tr style="background: #f8fafc; border-bottom: 1px solid var(--border-light);">
-                            <th style="padding: 16px 24px; font-weight: 700; font-size: 12px; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px;">Date</th>
-                            <th style="padding: 16px 24px; font-weight: 700; font-size: 12px; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px;">Employee</th>
-                            <th style="padding: 16px 24px; font-weight: 700; font-size: 12px; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px;">Department</th>
-                            <th style="padding: 16px 24px; font-weight: 700; font-size: 12px; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px;">Clock In</th>
-                            <th style="padding: 16px 24px; font-weight: 700; font-size: 12px; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px;">Clock Out</th>
-                            <th style="padding: 16px 24px; font-weight: 700; font-size: 12px; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px;">Gross Hours</th>
-                            <th style="padding: 16px 24px; font-weight: 700; font-size: 12px; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px;">Break</th>
-                            <th style="padding: 16px 24px; font-weight: 700; font-size: 12px; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px;">Net Productive</th>
-                            <th style="padding: 16px 24px; font-weight: 700; font-size: 12px; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px;">Status</th>
-                            {% if not request.user.is_staff %}
-                            <th style="padding: 16px 24px; font-weight: 700; font-size: 12px; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px;">Action</th>
-                            {% endif %}
+                        <tr>
+                            <th>Employee</th>
+                            <th>Department</th>
+                            <th>Clock In</th>
+                            <th>Clock Out</th>
+                            <th>Hours</th>
+                            <th>Break</th>
+                            <th>Status</th>
+                            {% if not request.user.is_staff %}<th>Action</th>{% else %}<th></th>{% endif %}
                         </tr>
                     </thead>
                     <tbody>
                         {% for log in attendances %}
-                        <tr style="border-bottom: 1px solid var(--border-light); transition: background 0.2s;">
-                            <td style="padding: 16px 24px;">
-                                <div style="display: flex; flex-direction: column; gap: 3px;">
-                                    <span style="font-weight: 800; color: var(--text-primary); white-space: nowrap;">{{ log.date|date:"d M Y" }}</span>
-                                    <span style="font-size: 11px; font-weight: 700; color: var(--text-secondary);">{{ log.date|date:"l" }}</span>
-                                </div>
-                            </td>
-                            <td style="padding: 16px 24px;">
-                                <div style="display: flex; align-items: center; gap: 12px;">
-                                    <div style="width: 40px; height: 40px; border-radius: 50%; background: var(--border-light); display: flex; align-items: center; justify-content: center; font-weight: 700; color: var(--text-primary);">
+                        <tr>
+                            <!-- Employee -->
+                            <td>
+                                <div class="emp-cell">
+                                    <div class="emp-avatar">
                                         {% if log.employee.profile_img %}
-                                            <img src="{{ log.employee.profile_img.url }}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">
+                                        <img src="{{ log.employee.profile_img.url }}" alt="{{ log.employee.first_name }}">
                                         {% else %}
-                                            {{ log.employee.first_name|slice:":1"|upper }}
+                                        {{ log.employee.first_name|slice:":1"|upper }}
                                         {% endif %}
                                     </div>
                                     <div>
-                                        <div style="font-weight: 600; color: var(--text-primary);">{{ log.employee.first_name }} {{ log.employee.last_name }}</div>
-                                        <div style="font-size: 12px; color: var(--text-secondary);">{{ log.employee.employee_id }}</div>
+                                        <div class="emp-name">{{ log.employee.first_name }} {{ log.employee.last_name }}</div>
+                                        <div class="emp-id">{{ log.employee.employee_id }}</div>
                                     </div>
                                 </div>
                             </td>
-                            <td style="padding: 16px 24px; color: var(--text-secondary);">
-                                {{ log.employee.department.name|default:"--" }}
+                            <!-- Department -->
+                            <td style="color:var(--text-muted);font-weight:500;">
+                                {{ log.employee.department.name|default:"—" }}
                             </td>
-                            <td style="padding: 16px 24px;">
+                            <!-- Clock In -->
+                            <td>
                                 {% if log.clock_in %}
-                                    <div style="display: flex; flex-direction: column; gap: 4px;">
-                                        <span style="font-weight: 600;">{{ log.clock_in|time:"h:i A" }}</span>
-                                        {% if log.late_minutes %}
-                                            <span style="display: inline-flex; align-items: center; padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: 700; background: rgba(239, 68, 68, 0.1); color: #ef4444; width: fit-content;">
-                                                <i class="fas fa-exclamation-circle" style="margin-right: 4px; font-size: 9px;"></i> Late by {{ log.formatted_late_time }}
-                                            </span>
-                                        {% endif %}
-                                    </div>
+                                <div class="time-val">{{ log.clock_in|time:"h:i A" }}</div>
+                                {% if log.late_minutes %}
+                                <div class="time-badge late"><i class="fas fa-exclamation-circle" style="font-size:9px;"></i> {{ log.formatted_late_time }} late</div>
+                                {% endif %}
                                 {% else %}
-                                    <span style="color: var(--text-secondary);">--</span>
+                                <span class="time-dash">—</span>
                                 {% endif %}
                             </td>
-                            <td style="padding: 16px 24px;">
+                            <!-- Clock Out -->
+                            <td>
                                 {% if log.clock_out %}
-                                    <div style="display: flex; flex-direction: column; gap: 4px;">
-                                        <span style="font-weight: 600;">{{ log.clock_out|time:"h:i A" }}</span>
-                                        {% if log.early_out_minutes %}
-                                            <span style="display: inline-flex; align-items: center; padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: 700; background: rgba(239, 68, 68, 0.1); color: #ef4444; width: fit-content;">
-                                                <i class="fas fa-sign-out-alt" style="margin-right: 4px; font-size: 9px;"></i> {{ log.formatted_early_out_time }} early
-                                            </span>
-                                        {% endif %}
-                                    </div>
+                                <div class="time-val">{{ log.clock_out|time:"h:i A" }}</div>
+                                {% if log.early_out_minutes %}
+                                <div class="time-badge early"><i class="fas fa-sign-out-alt" style="font-size:9px;"></i> {{ log.formatted_early_out_time }} early</div>
+                                {% endif %}
+                                {% elif log.clock_in and log.status_type == 'working' %}
+                                <div class="working-pill"><span class="working-dot"></span> Working now</div>
                                 {% else %}
-                                    <span style="color: var(--text-secondary);">--</span>
+                                <span class="time-dash">—</span>
                                 {% endif %}
                             </td>
-                            <td style="padding: 16px 24px; font-weight: 600; color: var(--text-primary);">
-                                {{ log.current_work_time }}
-                            </td>
-                            <td style="padding: 16px 24px; color: var(--text-secondary); font-size: 13px;">
-                                {% if log.total_break_minutes %}
-                                    <span style="font-weight: 700; color: #d97706;">{{ log.total_break_minutes }}m</span>
-                                {% else %}
-                                    --
-                                {% endif %}
-                            </td>
-                            <td style="padding: 16px 24px; font-weight: 700; color: #16a34a;">
+                            <!-- Hours -->
+                            <td style="font-weight:600;color:var(--text);">
                                 {% if log.net_work_hours %}
-                                    {{ log.net_work_hours|floatformat:2 }}h
+                                    {{ log.net_work_hours|floatformat:0 }}h {{ log.net_work_hours|floatformat:2|slice:"-2:" }}m
                                 {% else %}
                                     {{ log.current_work_time }}
                                 {% endif %}
                             </td>
-                            <td style="padding: 16px 24px;">
-                                <div style="display: flex; flex-direction: column; gap: 4px;">
-                                    <span class="attendance-status-pill {{ log.status_type }}">{{ log.status_label }}</span>
-                                </div>
-                            </td>
-                            {% if not request.user.is_staff %}
-                            <td style="padding: 16px 24px;">
-                                {% if log.correction %}
-                                    {% with c=log.correction %}
-                                        <span class="correction-status-pill {{ c.status }}">
-                                            <i class="fas {% if c.status == 'PENDING' %}fa-clock{% elif c.status == 'APPROVED' %}fa-check{% else %}fa-times{% endif %}" style="margin-right: 4px; font-size: 10px;"></i> {{ c.get_status_display }}
-                                        </span>
-                                    {% endwith %}
-                                {% elif log.can_request_correction %}
-                                    <button type="button" class="btn-fix-time" onclick="openCorrectionModal('{{ log.id }}')">
-                                        <i class="fas fa-pen" style="margin-right: 4px;"></i> Fix Time
-                                    </button>
+                            <!-- Break -->
+                            <td>
+                                {% if log.total_break_minutes %}
+                                <span style="font-weight:600;color:var(--amber);">{{ log.total_break_minutes }}m</span>
                                 {% else %}
-                                    <span style="color: var(--text-secondary); font-size: 12px; font-weight: 700;">--</span>
+                                <span class="time-dash">—</span>
                                 {% endif %}
                             </td>
-                            {% endif %}
+                            <!-- Status -->
+                            <td>
+                                <span class="status-badge {{ log.status_type }}">{{ log.status_label }}</span>
+                            </td>
+                            <!-- Actions -->
+                            <td>
+                                {% if not request.user.is_staff %}
+                                    {% if log.correction %}
+                                    <span class="correction-pill {{ log.correction.status }}">
+                                        <i class="fas {% if log.correction.status == 'PENDING' %}fa-clock{% elif log.correction.status == 'APPROVED' %}fa-check{% else %}fa-times{% endif %}" style="font-size:9px;"></i>
+                                        {{ log.correction.get_status_display }}
+                                    </span>
+                                    {% elif log.can_request_correction %}
+                                    <button type="button" class="btn-att btn-att-ghost" style="height:30px;font-size:12px;" onclick="openCorrectionModal('{{ log.id }}')">
+                                        <i class="fas fa-pen"></i> Fix Time
+                                    </button>
+                                    {% else %}
+                                    <span class="time-dash">—</span>
+                                    {% endif %}
+                                {% else %}
+                                    <!-- Staff row menu -->
+                                    <div class="action-menu-wrap">
+                                        <button class="action-menu-btn" onclick="toggleMenu(this)" aria-label="Row actions">
+                                            <i class="fas fa-ellipsis"></i>
+                                        </button>
+                                        <div class="action-dropdown">
+                                            {% if log.attendance %}
+                                            <a href="#"><i class="fas fa-eye"></i> View Details</a>
+                                            {% endif %}
+                                            <a href="{% url 'manage_corrections' %}"><i class="fas fa-pen-to-square"></i> Manage Corrections</a>
+                                        </div>
+                                    </div>
+                                {% endif %}
+                            </td>
                         </tr>
                         {% empty %}
                         <tr>
-                            <td colspan="{% if request.user.is_staff %}9{% else %}10{% endif %}" style="padding: 40px 24px; text-align: center; color: var(--text-secondary);">
-                                <i class="fas fa-inbox" style="font-size: 32px; margin-bottom: 12px; opacity: 0.5;"></i>
-                                <p>No attendance rows found for this month.</p>
+                            <td colspan="8">
+                                <div class="att-empty">
+                                    <i class="fas fa-calendar-xmark"></i>
+                                    <h3>No attendance records</h3>
+                                    <p>There are no attendance records for {{ selected_date|date:"d M Y" }}.</p>
+                                    {% if not is_today %}
+                                    <a href="{% url 'attendance' %}" class="btn-att btn-att-ghost">
+                                        <i class="fas fa-arrow-rotate-left"></i> Back to Today
+                                    </a>
+                                    {% endif %}
+                                </div>
                             </td>
                         </tr>
                         {% endfor %}
@@ -819,134 +1096,148 @@
             </div>
         </div>
         {% endif %}
+
     </main>
 
-    <footer
-        style="padding: 32px 0; border-top: 1px solid var(--border-light); text-align: center; color: var(--text-secondary); font-size: 13px;">
-        &copy; 2026 Mulzon Premium HRMS · Platform Version 4.0.2
+    <footer style="padding:24px 0;border-top:1px solid var(--border);text-align:center;color:var(--text-muted);font-size:12px;">
+        &copy; 2026 Mulzon Premium HRMS &middot; Platform Version 4.0.2
     </footer>
 
-    <!-- Correction Modal -->
-    <div id="correctionModal" style="display: none; position: fixed; z-index: 9999; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); align-items: center; justify-content: center; backdrop-filter: blur(4px);">
-        <div style="background: white; padding: 32px; border-radius: 20px; width: 400px; max-width: 90%; box-shadow: 0 20px 40px rgba(0,0,0,0.2);">
-            <h3 style="margin-top: 0; margin-bottom: 24px; font-size: 18px; font-weight: 800;">Request Attendance Correction</h3>
+    <!-- ── CORRECTION MODAL ── -->
+    <div id="correctionModal" class="modal-overlay" onclick="if(event.target===this)closeCorrectionModal()">
+        <div class="modal-box">
+            <div class="modal-hd">
+                <h3>Request Attendance Correction</h3>
+                <button class="modal-close" onclick="closeCorrectionModal()" aria-label="Close">&times;</button>
+            </div>
             <form id="correctionForm" method="POST" action="">
                 {% csrf_token %}
-                <div class="form-group" style="margin-bottom: 16px;">
-                    <label class="form-label">Requested Clock In (Optional)</label>
-                    <input type="time" name="requested_in" class="form-input" style="width: 100%; box-sizing: border-box;">
+                <div class="modal-body">
+                    <div class="form-field">
+                        <label for="corrIn">Requested Clock In <span style="color:var(--text-muted);font-weight:500;">(optional)</span></label>
+                        <input type="time" name="requested_in" id="corrIn" class="form-input-att">
+                    </div>
+                    <div class="form-field">
+                        <label for="corrOut">Requested Clock Out <span style="color:var(--text-muted);font-weight:500;">(optional)</span></label>
+                        <input type="time" name="requested_out" id="corrOut" class="form-input-att">
+                    </div>
+                    <div class="form-field">
+                        <label for="corrReason">Reason <span style="color:var(--red);">*</span></label>
+                        <textarea name="reason" id="corrReason" class="form-input-att" rows="3" placeholder="e.g. Forgot to clock in, internet disconnected…" required style="resize:none;"></textarea>
+                    </div>
                 </div>
-                <div class="form-group" style="margin-bottom: 16px;">
-                    <label class="form-label">Requested Clock Out (Optional)</label>
-                    <input type="time" name="requested_out" class="form-input" style="width: 100%; box-sizing: border-box;">
-                </div>
-                <div class="form-group" style="margin-bottom: 24px;">
-                    <label class="form-label">Reason (Required)</label>
-                    <textarea name="reason" class="form-input" style="width: 100%; height: 80px; box-sizing: border-box; resize: none;" placeholder="e.g. Forgot to clock in, Internet disconnected..." required></textarea>
-                </div>
-                <div style="display: flex; gap: 12px; justify-content: flex-end;">
-                    <button type="button" class="btn-ghost" onclick="closeCorrectionModal()">Cancel</button>
-                    <button type="submit" class="btn-primary" style="padding: 10px 20px; font-size: 14px;">Submit Request</button>
+                <div class="modal-ft">
+                    <button type="button" class="btn-att btn-att-ghost" onclick="closeCorrectionModal()">Cancel</button>
+                    <button type="submit" class="btn-att btn-att-primary">Submit Request</button>
                 </div>
             </form>
         </div>
     </div>
-    <script>
-    function openCorrectionModal(attendanceId) {
-        document.getElementById('correctionModal').style.display = 'flex';
-        document.getElementById('correctionForm').action = '/attendance/request-correction/' + attendanceId + '/';
-    }
-    function closeCorrectionModal() {
-        document.getElementById('correctionModal').style.display = 'none';
-    }
-    </script>
 
-    <script src="{% static 'js/landing.js' %}?v=1.0"></script>
-    <!-- Export Modal -->
-    <div id="exportModal" class="modal-overlay" style="display: none;">
-        <div class="modal-content" style="max-width: 450px;">
-            <div class="modal-header">
-                <h3 class="modal-title">Export Attendance Report</h3>
-                <button class="close-btn" onclick="closeExportModal()">&times;</button>
+    <!-- ── EXPORT MODAL ── -->
+    <div id="exportModal" class="modal-overlay" onclick="if(event.target===this)closeExportModal()">
+        <div class="modal-box">
+            <div class="modal-hd">
+                <h3>Export Attendance Report</h3>
+                <button class="modal-close" onclick="closeExportModal()" aria-label="Close">&times;</button>
             </div>
             <form action="{% url 'export_attendance' %}" method="GET">
-                <div style="display: flex; flex-direction: column; gap: 20px; padding: 20px;">
-                    <!-- Range Selection -->
-                    <div class="form-group">
-                        <label class="form-label">Select Time Range</label>
-                        <select name="range" class="form-input" id="exportRange" onchange="toggleCustomDates()">
-                            <option value="today">Today</option>
+                <div class="modal-body">
+                    <div class="form-field">
+                        <label>Time Range</label>
+                        <select name="range" class="form-input-att" id="exportRange" onchange="toggleCustomDates()">
+                            <option value="today" {% if is_today %}selected{% endif %}>Today ({{ today|date:"d M Y" }})</option>
                             <option value="week">This Week</option>
                             <option value="month">This Month</option>
-                            <option value="custom">Custom Date Range</option>
+                            <option value="custom">Custom Range…</option>
                         </select>
                     </div>
-
-                    <!-- Custom Dates (Hidden by default) -->
-                    <div id="customDateFields" style="display: none; gap: 12px;">
-                        <div class="form-group" style="flex: 1;">
-                            <label class="form-label">From</label>
-                            <input type="date" name="start_date" class="form-input">
+                    <div id="customDateFields" style="display:none;flex-direction:column;gap:12px;">
+                        <div class="form-field">
+                            <label>From</label>
+                            <input type="date" name="start_date" class="form-input-att">
                         </div>
-                        <div class="form-group" style="flex: 1;">
-                            <label class="form-label">To</label>
-                            <input type="date" name="end_date" class="form-input">
+                        <div class="form-field">
+                            <label>To</label>
+                            <input type="date" name="end_date" class="form-input-att">
                         </div>
                     </div>
-
-                    <!-- Format Selection -->
-                    <div class="form-group">
-                        <label class="form-label">Select Format</label>
-                        <div style="display: flex; gap: 12px;">
-                            <label style="flex: 1; cursor: pointer;">
-                                <input type="radio" name="format" value="excel" checked style="display: none;" onchange="updateFormatUI(this)">
-                                <div class="format-option active" id="fmt-excel" style="padding: 12px; border: 2px solid var(--primary); border-radius: 12px; text-align: center; background: rgba(79, 70, 229, 0.05);">
-                                    <i class="fas fa-file-excel" style="font-size: 20px; color: #059669; margin-bottom: 8px;"></i>
-                                    <div style="font-size: 12px; font-weight: 700;">Excel</div>
-                                </div>
+                    <div class="form-field">
+                        <label>Format</label>
+                        <div class="format-tiles">
+                            <label class="format-tile selected" id="tile-excel">
+                                <input type="radio" name="format" value="excel" checked style="display:none;" onchange="selectFormat('excel')">
+                                <i class="fas fa-file-excel" style="color:#16a34a;"></i>
+                                <span>Excel</span>
                             </label>
-                            <label style="flex: 1; cursor: pointer;">
-                                <input type="radio" name="format" value="pdf" style="display: none;" onchange="updateFormatUI(this)">
-                                <div class="format-option" id="fmt-pdf" style="padding: 12px; border: 2px solid var(--border-light); border-radius: 12px; text-align: center;">
-                                    <i class="fas fa-file-pdf" style="font-size: 20px; color: #ef4444; margin-bottom: 8px;"></i>
-                                    <div style="font-size: 12px; font-weight: 700;">PDF</div>
-                                </div>
+                            <label class="format-tile" id="tile-pdf">
+                                <input type="radio" name="format" value="pdf" style="display:none;" onchange="selectFormat('pdf')">
+                                <i class="fas fa-file-pdf" style="color:#dc2626;"></i>
+                                <span>PDF</span>
                             </label>
                         </div>
                     </div>
-
-                    <button type="submit" class="btn-primary" style="width: 100%; justify-content: center; height: 48px;">
-                        <i class="fas fa-download"></i> Generate Report
-                    </button>
+                </div>
+                <div class="modal-ft">
+                    <button type="button" class="btn-att btn-att-ghost" onclick="closeExportModal()">Cancel</button>
+                    <button type="submit" class="btn-att btn-att-primary"><i class="fas fa-download"></i> Generate</button>
                 </div>
             </form>
         </div>
     </div>
 
+    <script src="{% static 'js/landing.js' %}?v=1.0"></script>
     <script>
-        function openExportModal() {
-            document.getElementById('exportModal').style.display = 'flex';
+        // ── Correction modal ──
+        function openCorrectionModal(id) {
+            document.getElementById('correctionForm').action = '/attendance/request-correction/' + id + '/';
+            document.getElementById('correctionModal').classList.add('open');
         }
-        function closeExportModal() {
-            document.getElementById('exportModal').style.display = 'none';
-        }
-        function toggleCustomDates() {
-            const range = document.getElementById('exportRange').value;
-            document.getElementById('customDateFields').style.display = range === 'custom' ? 'flex' : 'none';
-        }
-        function updateFormatUI(radio) {
-            document.getElementById('fmt-excel').classList.remove('active');
-            document.getElementById('fmt-pdf').classList.remove('active');
-            if (radio.value === 'excel') document.getElementById('fmt-excel').classList.add('active');
-            else document.getElementById('fmt-pdf').classList.add('active');
+        function closeCorrectionModal() {
+            document.getElementById('correctionModal').classList.remove('open');
         }
 
-        // Close on click outside
-        window.addEventListener('click', function(event) {
-            const exportModal = document.getElementById('exportModal');
-            const correctionModal = document.getElementById('correctionModal');
-            if (event.target == exportModal) closeExportModal();
-            if (event.target == correctionModal) closeCorrectionModal();
+        // ── Export modal ──
+        function openExportModal()  { document.getElementById('exportModal').classList.add('open'); }
+        function closeExportModal() { document.getElementById('exportModal').classList.remove('open'); }
+        function toggleCustomDates() {
+            var v = document.getElementById('exportRange').value;
+            document.getElementById('customDateFields').style.display = v === 'custom' ? 'flex' : 'none';
+        }
+        function selectFormat(fmt) {
+            document.getElementById('tile-excel').classList.toggle('selected', fmt === 'excel');
+            document.getElementById('tile-pdf').classList.toggle('selected', fmt === 'pdf');
+        }
+
+        // ── Row action menus ──
+        function toggleMenu(btn) {
+            var drop = btn.nextElementSibling;
+            var isOpen = drop.classList.contains('open');
+            // Close all open menus
+            document.querySelectorAll('.action-dropdown.open').forEach(function(d) { d.classList.remove('open'); });
+            if (!isOpen) drop.classList.add('open');
+        }
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('.action-menu-wrap')) {
+                document.querySelectorAll('.action-dropdown.open').forEach(function(d) { d.classList.remove('open'); });
+            }
+        });
+
+        // ── Search on Enter ──
+        var si = document.getElementById('searchInput');
+        if (si) {
+            si.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter') { this.form.submit(); }
+            });
+        }
+
+        // ── Animate stat bars ──
+        document.addEventListener('DOMContentLoaded', function() {
+            document.querySelectorAll('.att-rate-fill').forEach(function(el) {
+                var w = el.style.width;
+                el.style.width = '0';
+                setTimeout(function() { el.style.width = w; }, 100);
+            });
         });
     </script>
 </body>

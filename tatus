@@ -1,0 +1,85 @@
+[33mcommit 2f5704e914c9434be1ba75fcfe89173300873a4f[m
+Author: Ratandeep-purohit <rajatpurohit183@outlook.com>
+Date:   Mon Aug 24 17:15:22 2026 +0530
+
+    enhance Employee module
+
+ .env.example                                      |    4 [32m+[m[31m-[m
+ AWS_DEPLOYMENT_GUIDE.md                           |  224 [32m++[m[31m--[m
+ DEPLOYMENT.md                                     |    2 [32m+[m[31m-[m
+ README.md                                         |   14 [32m+[m[31m-[m
+ accounts/templates/landing_page.html              |   18 [32m+[m[31m-[m
+ accounts/templates/login.html                     |    6 [32m+[m[31m-[m
+ accounts/templates/oauth_org_setup.html           |    6 [32m+[m[31m-[m
+ accounts/templates/register.html                  |    6 [32m+[m[31m-[m
+ announcements/templates/announcements/list.html   |    2 [32m+[m[31m-[m
+ announcements/templates/announcements/manage.html |    2 [32m+[m[31m-[m
+ announcements/tests.py                            |    2 [32m+[m[31m-[m
+ assets/templates/assets/asset_form.html           |    2 [32m+[m[31m-[m
+ assets/templates/assets/assign_asset.html         |    2 [32m+[m[31m-[m
+ assets/templates/assets/dashboard.html            |    2 [32m+[m[31m-[m
+ assets/templates/assets/inventory_list.html       |    2 [32m+[m[31m-[m
+ assets/templates/assets/manage_categories.html    |    2 [32m+[m[31m-[m
+ assets/templates/assets/manage_requests.html      |    2 [32m+[m[31m-[m
+ assets/templates/assets/my_assets.html            |    2 [32m+[m[31m-[m
+ assets/templates/assets/request_asset.html        |    2 [32m+[m[31m-[m
+ assets/templates/assets/return_asset.html         |    2 [32m+[m[31m-[m
+ assets/tests.py                                   |    8 [32m+[m[31m-[m
+ attendance/templates/assignshift.html             |    2 [32m+[m[31m-[m
+ attendance/templates/attendance_calendar.html     |    4 [32m+[m[31m-[m
+ attendance/templates/attendance_dashboard.html    |    4 [32m+[m[31m-[m
+ attendance/templates/createshift.html             |    2 [32m+[m[31m-[m
+ attendance/templates/manage_corrections.html      |    4 [32m+[m[31m-[m
+ employees/templates/addemployee.html              | 1060 [32m++++++++++++[m[31m-----[m
+ employees/templates/approve_employee.html         |    4 [32m+[m[31m-[m
+ employees/templates/bulk_import.html              |    6 [32m+[m[31m-[m
+ employees/templates/department.html               |  536 [32m+++++++[m[31m--[m
+ employees/templates/designation.html              |  567 [32m++++++++[m[31m--[m
+ employees/templates/edit_profile.html             |    2 [32m+[m[31m-[m
+ employees/templates/editemployee.html             |    2 [32m+[m[31m-[m
+ employees/templates/employee.html                 | 1254 [32m+++++++++++++++++[m[31m----[m
+ employees/templates/employee_directory.html       |    2 [32m+[m[31m-[m
+ employees/templates/viewemployee.html             |    4 [32m+[m[31m-[m
+ home/templates/home.html                          |    4 [32m+[m[31m-[m
+ leaves/templates/leaves/calendar.html             |    2 [32m+[m[31m-[m
+ letters/templates/letters/create.html             |    4 [32m+[m[31m-[m
+ letters/templates/letters/detail.html             |    2 [32m+[m[31m-[m
+ letters/templates/letters/manage.html             |    2 [32m+[m[31m-[m
+ payroll/PAYROLL_FEATURES.md                       |    4 [32m+[m[31m-[m
+ payroll/models.py                                 |    2 [32m+[m[31m-[m
+ payroll/templates/admin_arrears.html              |    2 [32m+[m[31m-[m
+ payroll/templates/admin_loans.html                |    2 [32m+[m[31m-[m
+ payroll/templates/admin_tax_audit_log.html        |    2 [32m+[m[31m-[m
+ payroll/templates/admin_tax_review.html           |    2 [32m+[m[31m-[m
+ payroll/templates/admin_verify_proof.html         |    2 [32m+[m[31m-[m
+ payroll/templates/manage_salary.html              |    2 [32m+[m[31m-[m
+ payroll/templates/my_arrears.html                 |    2 [32m+[m[31m-[m
+ payroll/templates/my_loans.html                   |    2 [32m+[m[31m-[m
+ payroll/templates/my_payslips.html                |    2 [32m+[m[31m-[m
+ payroll/templates/my_salary_structure.html        |    4 [32m+[m[31m-[m
+ payroll/templates/payroll.html                    |    4 [32m+[m[31m-[m
+ payroll/templates/payroll_preview.html            |    2 [32m+[m[31m-[m
+ payroll/templates/payslip_detail.html             |   12 [32m+[m[31m-[m
+ payroll/templates/payslip_list.html               |    2 [32m+[m[31m-[m
+ payroll/templates/salary_components.html          |    2 [32m+[m[31m-[m
+ payroll/templates/salary_list.html                |    2 [32m+[m[31m-[m
+ payroll/templates/tax_declarations.html           |    2 [32m+[m[31m-[m
+ project_review_report.md                          |    6 [32m+[m[31m-[m
+ seed_payroll.py                                   |    4 [32m+[m[31m-[m
+ static/css/dashboard.css                          |    2 [32m+[m[31m-[m
+ static/css/home.css                               |   16 [32m+[m[31m-[m
+ static/css/landing.css                            |    2 [32m+[m[31m-[m
+ static/css/leaves.css                             |    2 [32m+[m[31m-[m
+ templates/assets/asset_form.html                  |    2 [32m+[m[31m-[m
+ templates/assets/assign_asset.html                |    2 [32m+[m[31m-[m
+ templates/assets/dashboard.html                   |    2 [32m+[m[31m-[m
+ templates/assets/inventory_list.html              |    2 [32m+[m[31m-[m
+ templates/assets/manage_categories.html           |    2 [32m+[m[31m-[m
+ templates/assets/manage_requests.html             |    2 [32m+[m[31m-[m
+ templates/assets/my_assets.html                   |    2 [32m+[m[31m-[m
+ templates/assets/request_asset.html               |    2 [32m+[m[31m-[m
+ templates/assets/return_asset.html                |    2 [32m+[m[31m-[m
+ templates/base.html                               |    4 [32m+[m[31m-[m
+ templates/errors/error_page.html                  |    4 [32m+[m[31m-[m
+ templates/includes/navbar.html                    |    2 [32m+[m[31m-[m
+ 78 files changed, 2979 insertions(+), 914 deletions(-)

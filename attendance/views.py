@@ -227,36 +227,34 @@ def attendance_view(request):
     organization = request.user.organization
     today = timezone.localdate()
     
-    # Month filter. The old date parameter is still accepted for bookmarked URLs.
-    month_str = request.GET.get('month', '')
+    # --- Date Resolution ---
+    # Priority: ?date= param (single-day) > ?month= param (legacy) > today
     filter_date_str = request.GET.get('date', '')
+    month_str = request.GET.get('month', '')
     view_mode = request.GET.get('view', 'list')
     if view_mode not in ('list', 'visual'):
         view_mode = 'list'
-    if month_str:
-        try:
-            display_date = datetime.strptime(f"{month_str}-01", '%Y-%m-%d').date()
-        except ValueError:
-            display_date = today
-    elif filter_date_str:
-        try:
-            display_date = datetime.strptime(filter_date_str, '%Y-%m-%d').date()
-        except ValueError:
-            display_date = today
-    else:
-        display_date = today
 
-    month_start, month_end = _month_bounds(display_date)
+    if filter_date_str:
+        try:
+            selected_date = datetime.strptime(filter_date_str, '%Y-%m-%d').date()
+        except ValueError:
+            selected_date = today
+    elif month_str:
+        # Legacy month param – show first day of that month
+        try:
+            selected_date = datetime.strptime(f"{month_str}-01", '%Y-%m-%d').date()
+        except ValueError:
+            selected_date = today
+    else:
+        # DEFAULT: today only
+        selected_date = today
+
+    display_date = selected_date
+    month_start, month_end = _month_bounds(selected_date)
     current_month_start = today.replace(day=1)
-    if month_start > today:
-        period_end = month_start - timedelta(days=1)
-    elif month_start == current_month_start:
-        period_end = min(month_end, today)
-    else:
-        period_end = month_end
 
-    # Clamp period_start to HRMS_GO_LIVE_DATE so pre-deployment days
-    # are not shown as Absent rows in the attendance log.
+    # Clamp period_start to HRMS_GO_LIVE_DATE
     period_start = month_start
     _go_live_str = getattr(settings, 'HRMS_GO_LIVE_DATE', '')
     if _go_live_str:
@@ -265,8 +263,8 @@ def attendance_view(request):
             if _go_live > period_start:
                 period_start = _go_live
         except ValueError:
-            pass  # Bad format - ignore and show full month
-    
+            pass
+
     employee_qs = Employee.objects.filter(
         organization=organization,
         is_active=True,
@@ -286,6 +284,8 @@ def attendance_view(request):
 
     employees = list(employee_qs)
 
+    # Load attendance for the entire month (needed for visual register)
+    # but build the list view for selected_date ONLY
     attendance_map = {}
     if employees:
         attendance_qs = Attendance.objects.filter(
@@ -298,23 +298,18 @@ def attendance_view(request):
         ).prefetch_related('corrections')
         attendance_map = {(att.employee_id, att.date): att for att in attendance_qs}
 
-    month_dates = []
-    if period_end >= period_start:
-        total_days = (period_end - period_start).days + 1
-        month_dates = [period_start + timedelta(days=offset) for offset in range(total_days)]
-
+    # Single-day attendance rows for the selected date
     attendance_rows = []
-    for row_date in reversed(month_dates):
-        for employee in employees:
-            attendance_rows.append(
-                _attendance_row(
-                    employee,
-                    row_date,
-                    attendance_map.get((employee.id, row_date)),
-                    is_staff=request.user.is_staff,
-                    today=today,
-                )
+    for employee in employees:
+        attendance_rows.append(
+            _attendance_row(
+                employee,
+                selected_date,
+                attendance_map.get((employee.id, selected_date)),
+                is_staff=request.user.is_staff,
+                today=today,
             )
+        )
 
     visual_register = _build_visual_attendance_register(
         employees=employees,
@@ -325,16 +320,23 @@ def attendance_view(request):
         today=today,
     )
 
-    # Stats
+    # Stats for selected date only
     total_employees = Employee.objects.filter(organization=organization, is_active=True, is_deleted=False).count()
     present_count = sum(1 for row in attendance_rows if row["clock_in"])
     late_count = sum(1 for row in attendance_rows if row["late_minutes"] > 0)
     absent_count = sum(1 for row in attendance_rows if row["status_type"] == "absent")
     
+    # Attendance rate (present / total, expressed as percentage)
+    attendance_rate = round((present_count / total_employees * 100), 1) if total_employees > 0 else 0
+
     pending_corrections_count = 0
     if request.user.is_staff:
         from .models import AttendanceCorrection
         pending_corrections_count = AttendanceCorrection.objects.filter(employee__organization=organization, status='PENDING').count()
+
+    # Prev / next date for navigation
+    prev_date = selected_date - timedelta(days=1)
+    next_date = selected_date + timedelta(days=1)
     
     context = {
         'attendances': attendance_rows,
@@ -342,10 +344,13 @@ def attendance_view(request):
         'present_count': present_count,
         'absent_count': absent_count,
         'late_count': late_count,
+        'attendance_rate': attendance_rate,
         'display_date': display_date,
+        'selected_date': selected_date,
+        'prev_date': prev_date,
+        'next_date': next_date,
         'month_start': month_start,
         'month_end': month_end,
-        'period_end': period_end,
         'selected_month_value': month_start.strftime('%Y-%m'),
         'today': today,
         'search_query': search_query,
@@ -354,8 +359,10 @@ def attendance_view(request):
         'attendance_register_rows': visual_register['rows'],
         'attendance_register_counts': visual_register['counts'],
         'view_mode': view_mode,
+        'is_today': selected_date == today,
     }
     return render(request, 'attendance_dashboard.html', context)
+
 
 
 @login_required
