@@ -339,6 +339,10 @@ def attendance_view(request):
     prev_date = selected_date - timedelta(days=1)
     next_date = selected_date + timedelta(days=1)
     
+    # Prev / next month for visual view
+    prev_month_date = (month_start - timedelta(days=1)).replace(day=1)
+    next_month_date = (month_end + timedelta(days=1))
+    
     context = {
         'attendances': attendance_rows,
         'total_employees': total_employees,
@@ -353,6 +357,8 @@ def attendance_view(request):
         'month_start': month_start,
         'month_end': month_end,
         'selected_month_value': month_start.strftime('%Y-%m'),
+        'prev_month_value': prev_month_date.strftime('%Y-%m'),
+        'next_month_value': next_month_date.strftime('%Y-%m'),
         'today': today,
         'search_query': search_query,
         'pending_corrections_count': pending_corrections_count,

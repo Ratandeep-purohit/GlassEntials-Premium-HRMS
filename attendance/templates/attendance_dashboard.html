@@ -585,7 +585,13 @@
         }
         .reg-metric strong { display: block; font-size: 20px; font-weight: 800; color: var(--text); }
         .reg-metric span { font-size: 10px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.04em; }
-        .register-scroll { overflow-x: auto; }
+        .register-scroll { 
+            overflow-x: auto; 
+            width: 100%; 
+            max-width: 100%; 
+            display: block; 
+            -webkit-overflow-scrolling: touch; 
+        }
         .att-chip {
             width: 28px; height: 28px;
             display: inline-flex;
@@ -777,7 +783,47 @@
 
         <!-- ── DATE NAVIGATION ── -->
         <div class="date-nav">
-            <a href="{% url 'attendance' %}?date={{ prev_date|date:'Y-m-d' }}{% if search_query %}&search={{ search_query|urlencode }}{% endif %}&view={{ view_mode }}" class="date-nav-btn" aria-label="Previous day">
+            {% if view_mode == 'visual' %}
+            <a href="{% url 'attendance' %}?month={{ prev_month_value }}&view=visual{% if search_query %}&search={{ search_query|urlencode }}{% endif %}" class="date-nav-btn" aria-label="Previous month">
+                <i class="fas fa-chevron-left"></i>
+            </a>
+
+            <div class="date-nav-picker">
+                <div class="date-nav-label">
+                    <i class="fas fa-calendar-alt"></i>
+                    <span>{{ month_start|date:"F Y" }}</span>
+                    {% if month_start.month == today.month and month_start.year == today.year %}
+                    <span style="font-size:11px;font-weight:600;color:var(--blue);background:var(--blue-light);padding:2px 6px;border-radius:4px;">This Month</span>
+                    {% endif %}
+                </div>
+                <form id="monthPickerForm" method="get">
+                    <input type="hidden" name="view" value="visual">
+                    {% if search_query %}<input type="hidden" name="search" value="{{ search_query }}">{% endif %}
+                    <input type="month" name="month" class="date-input-hidden"
+                           value="{{ selected_month_value }}"
+                           max="{{ today|date:'Y-m' }}"
+                           onchange="this.form.submit()"
+                           aria-label="Pick a month">
+                </form>
+            </div>
+
+            <a href="{% url 'attendance' %}?month={{ next_month_value }}&view=visual{% if search_query %}&search={{ search_query|urlencode }}{% endif %}"
+               class="date-nav-btn {% if month_start.month == today.month and month_start.year == today.year %}disabled{% endif %}"
+               aria-label="Next month">
+                <i class="fas fa-chevron-right"></i>
+            </a>
+
+            <div class="date-nav-sep"></div>
+
+            {% if month_start.month != today.month or month_start.year != today.year %}
+            <a href="{% url 'attendance' %}?view=visual" class="date-nav-today">
+                <i class="fas fa-arrow-rotate-left" style="margin-right:4px;font-size:11px;"></i> Back to This Month
+            </a>
+            {% endif %}
+
+            {% else %}
+            
+            <a href="{% url 'attendance' %}?date={{ prev_date|date:'Y-m-d' }}{% if search_query %}&search={{ search_query|urlencode }}{% endif %}&view=list" class="date-nav-btn" aria-label="Previous day">
                 <i class="fas fa-chevron-left"></i>
             </a>
 
@@ -788,7 +834,7 @@
                     {% if is_today %}<span style="font-size:11px;font-weight:600;color:var(--blue);background:var(--blue-light);padding:2px 6px;border-radius:4px;">Today</span>{% endif %}
                 </div>
                 <form id="datePickerForm" method="get">
-                    <input type="hidden" name="view" value="{{ view_mode }}">
+                    <input type="hidden" name="view" value="list">
                     {% if search_query %}<input type="hidden" name="search" value="{{ search_query }}">{% endif %}
                     <input type="date" name="date" class="date-input-hidden"
                            value="{{ selected_date|date:'Y-m-d' }}"
@@ -798,7 +844,7 @@
                 </form>
             </div>
 
-            <a href="{% url 'attendance' %}?date={{ next_date|date:'Y-m-d' }}{% if search_query %}&search={{ search_query|urlencode }}{% endif %}&view={{ view_mode }}"
+            <a href="{% url 'attendance' %}?date={{ next_date|date:'Y-m-d' }}{% if search_query %}&search={{ search_query|urlencode }}{% endif %}&view=list"
                class="date-nav-btn {% if not is_today and next_date > today %}disabled{% endif %}"
                aria-label="Next day">
                 <i class="fas fa-chevron-right"></i>
@@ -807,9 +853,11 @@
             <div class="date-nav-sep"></div>
 
             {% if not is_today %}
-            <a href="{% url 'attendance' %}?view={{ view_mode }}" class="date-nav-today">
+            <a href="{% url 'attendance' %}?view=list" class="date-nav-today">
                 <i class="fas fa-arrow-rotate-left" style="margin-right:4px;font-size:11px;"></i> Back to Today
             </a>
+            {% endif %}
+
             {% endif %}
         </div>
 
