@@ -235,6 +235,11 @@ def create_user_view(request):
         first_name=first_name,
         last_name=last_name,
     )
+
+    # Ensure the linked employee has the same email so they stay linked
+    if employee:
+        employee.email = email
+        employee.save(update_fields=['email'])
     new_user.organization     = org
     new_user.is_approved      = True
     new_user.is_staff         = (role == 'staff')
