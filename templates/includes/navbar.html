@@ -74,16 +74,13 @@
         <!-- Attendance Dropdown -->
         <div class="nav-item-dropdown">
             <a href="#"
-                class="nav-pill {% if request.resolver_match.url_name == 'attendance' or request.resolver_match.url_name == 'attendance_visual' or request.resolver_match.url_name == 'create_shift' or request.resolver_match.url_name == 'assign_shift' or request.resolver_match.url_name == 'attendance_calendar' or request.resolver_match.url_name == 'attendance_analytics' or request.resolver_match.url_name == 'overtime_dashboard' %}active{% endif %}">
+                class="nav-pill {% if request.resolver_match.url_name == 'attendance' or request.resolver_match.url_name == 'create_shift' or request.resolver_match.url_name == 'assign_shift' or request.resolver_match.url_name == 'attendance_calendar' or request.resolver_match.url_name == 'attendance_analytics' or request.resolver_match.url_name == 'overtime_dashboard' %}active{% endif %}">
                 <i class="fas fa-fingerprint"></i> Attendance
                 <i class="fas fa-chevron-down"></i>
             </a>
             <div class="dropdown-content">
                 <a href="{% url 'attendance' %}" class="dropdown-item">
                     <i class="fas fa-list-ul"></i> Attendance Dashboard
-                </a>
-                <a href="{% url 'attendance_visual' %}" class="dropdown-item">
-                    <i class="fas fa-table-cells-large"></i> Visual View
                 </a>
                 <a href="{% url 'create_shift' %}" class="dropdown-item">
                     <i class="fas fa-sitemap"></i> Create Shift
@@ -220,16 +217,13 @@
         <!-- Attendance Dropdown for Employee -->
         <div class="nav-item-dropdown">
             <a href="#"
-                class="nav-pill {% if request.resolver_match.url_name == 'attendance' or request.resolver_match.url_name == 'attendance_visual' or request.resolver_match.url_name == 'attendance_calendar' or request.resolver_match.url_name == 'overtime_dashboard' %}active{% endif %}">
+                class="nav-pill {% if request.resolver_match.url_name == 'attendance' or request.resolver_match.url_name == 'attendance_calendar' or request.resolver_match.url_name == 'overtime_dashboard' %}active{% endif %}">
                 <i class="fas fa-fingerprint"></i> Attendance
                 <i class="fas fa-chevron-down"></i>
             </a>
             <div class="dropdown-content">
                 <a href="{% url 'attendance' %}" class="dropdown-item">
                     <i class="fas fa-list-ul"></i> Dashboard
-                </a>
-                <a href="{% url 'attendance_visual' %}" class="dropdown-item">
-                    <i class="fas fa-table-cells-large"></i> Visual View
                 </a>
                 <a href="{% url 'attendance_calendar' %}" class="dropdown-item">
                     <i class="fas fa-calendar"></i> My Calendar
