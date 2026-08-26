@@ -152,7 +152,7 @@ def user_management_view(request):
     inactive_count = all_org.filter(Q(is_active=False) | Q(is_approved=False)).count()
 
     # Available employees without existing accounts (for create user form)
-    existing_emails = set(all_org.values_list('email', flat=True))
+    existing_emails = set(all_org.exclude(email='').values_list('email', flat=True))
     available_employees = Employee.objects.filter(
         organization=org,
         is_active=True,
