@@ -17,4 +17,8 @@ urlpatterns = [
     path('analytics/', views.attendance_analytics_view, name='attendance_analytics'),
     path('overtime/', views.overtime_dashboard_view, name='overtime_dashboard'),
     path('overtime/action/<int:request_id>/', views.overtime_action_view, name='overtime_action'),
+    # Admin overrides
+    path('admin/create/<int:employee_id>/', views.admin_attendance_create_view, name='admin_attendance_create'),
+    path('admin/edit/<int:attendance_id>/', views.admin_attendance_edit_view, name='admin_attendance_edit'),
+    path('admin/history/<int:attendance_id>/', views.admin_attendance_history_view, name='admin_attendance_history'),
 ]

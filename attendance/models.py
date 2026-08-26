@@ -171,3 +171,32 @@ class OvertimeRequest(BaseModel):
     
     def __str__(self):
         return f"Overtime {self.hours_requested}h for {self.employee} on {self.date}"
+
+
+class AttendanceAdminAction(BaseModel):
+    """Audit log for every attendance record created or edited by an Admin/Super Admin."""
+    ACTION_CHOICES = [
+        ('CREATE', 'Create'),
+        ('UPDATE', 'Update'),
+    ]
+    attendance       = models.ForeignKey(Attendance, on_delete=models.CASCADE, related_name='admin_actions')
+    employee         = models.ForeignKey(Employee, on_delete=models.CASCADE, related_name='admin_attendance_actions')
+    performed_by     = models.ForeignKey('accounts.CustomUser', on_delete=models.SET_NULL, null=True, related_name='attendance_admin_actions')
+    action_type      = models.CharField(max_length=20, choices=ACTION_CHOICES)
+    attendance_date  = models.DateField()
+
+    # Before values (NULL for CREATE)
+    old_clock_in     = models.TimeField(null=True, blank=True)
+    old_clock_out    = models.TimeField(null=True, blank=True)
+    old_late_minutes = models.PositiveIntegerField(null=True, blank=True)
+
+    # After values
+    new_clock_in     = models.TimeField(null=True, blank=True)
+    new_clock_out    = models.TimeField(null=True, blank=True)
+    new_late_minutes = models.PositiveIntegerField(null=True, blank=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.action_type} on {self.attendance_date} for {self.employee} by {self.performed_by}"

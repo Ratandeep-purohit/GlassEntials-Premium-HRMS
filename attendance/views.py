@@ -77,6 +77,7 @@ def _attendance_row(employee, row_date, attendance=None, is_staff=False, today=N
         "status_type": status_type,
         "correction": correction,
         "can_request_correction": bool(attendance and not is_staff),
+        "admin_adjusted": bool(attendance and attendance.admin_actions.exists()),
     }
 
 
@@ -295,7 +296,7 @@ def attendance_view(request):
             'employee',
             'employee__department',
             'shift',
-        ).prefetch_related('corrections')
+        ).prefetch_related('corrections', 'admin_actions')
         attendance_map = {(att.employee_id, att.date): att for att in attendance_qs}
 
     # Single-day attendance rows for the selected date
@@ -1242,5 +1243,202 @@ def overtime_action_view(request, request_id):
             messages.success(request, "Overtime rejected.")
             
     return redirect('overtime_dashboard')
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# ADMIN ATTENDANCE OVERRIDE (Create / Edit)
+# ─────────────────────────────────────────────────────────────────────────────
+
+from .models import AttendanceAdminAction
+from django.views.decorators.http import require_POST
+from django.shortcuts import get_object_or_404 as _get_object_or_404
+
+
+def _parse_time(value):
+    """Parse 'HH:MM' or 'HH:MM:SS' string → datetime.time or None."""
+    if not value:
+        return None
+    try:
+        parts = value.split(':')
+        return time(int(parts[0]), int(parts[1]))
+    except (ValueError, IndexError, AttributeError):
+        return None
+
+
+@login_required
+@require_POST
+def admin_attendance_create_view(request, employee_id):
+    """Admin creates a fresh attendance record for an employee on a given date."""
+    if not request.user.is_staff:
+        return JsonResponse({'ok': False, 'error': 'Permission denied.'}, status=403)
+
+    org = request.user.organization
+    employee = _get_object_or_404(Employee, pk=employee_id, organization=org, is_active=True, is_deleted=False)
+
+    date_str    = request.POST.get('attendance_date', '')
+    clock_in_s  = request.POST.get('clock_in', '').strip()
+    clock_out_s = request.POST.get('clock_out', '').strip()
+    late_min_s  = request.POST.get('late_minutes', '0').strip()
+
+    # --- Validate date ---
+    try:
+        att_date = datetime.strptime(date_str, '%Y-%m-%d').date()
+    except ValueError:
+        return JsonResponse({'ok': False, 'error': 'Invalid date.'}, status=400)
+
+    # --- Parse times ---
+    clock_in  = _parse_time(clock_in_s)
+    clock_out = _parse_time(clock_out_s) if clock_out_s else None
+
+    if not clock_in:
+        return JsonResponse({'ok': False, 'error': 'Check-in time is required.'}, status=400)
+
+    if clock_out and clock_out <= clock_in:
+        return JsonResponse({'ok': False, 'error': 'Check-out cannot be earlier than check-in.'}, status=400)
+
+    try:
+        late_minutes = int(late_min_s)
+        if late_minutes < 0:
+            raise ValueError
+    except ValueError:
+        return JsonResponse({'ok': False, 'error': 'Late minutes must be a non-negative integer.'}, status=400)
+
+    # --- Guard: must not already have a record ---
+    if Attendance.objects.filter(employee=employee, date=att_date).exists():
+        return JsonResponse({'ok': False, 'error': 'Attendance already exists for this date. Use Edit instead.'}, status=400)
+
+    with transaction.atomic():
+        att = Attendance.objects.create(
+            organization=org,
+            employee=employee,
+            date=att_date,
+            clock_in=clock_in,
+            clock_out=clock_out,
+            late_minutes=late_minutes,
+            created_by=request.user,
+        )
+        AttendanceAdminAction.objects.create(
+            organization=org,
+            attendance=att,
+            employee=employee,
+            performed_by=request.user,
+            action_type='CREATE',
+            attendance_date=att_date,
+            old_clock_in=None,
+            old_clock_out=None,
+            old_late_minutes=None,
+            new_clock_in=clock_in,
+            new_clock_out=clock_out,
+            new_late_minutes=late_minutes,
+            created_by=request.user,
+        )
+
+    return JsonResponse({
+        'ok': True,
+        'message': 'Attendance created successfully.',
+        'clock_in': clock_in.strftime('%I:%M %p') if clock_in else '—',
+        'clock_out': clock_out.strftime('%I:%M %p') if clock_out else '—',
+        'late_minutes': late_minutes,
+    })
+
+
+@login_required
+@require_POST
+def admin_attendance_edit_view(request, attendance_id):
+    """Admin edits an existing attendance record."""
+    if not request.user.is_staff:
+        return JsonResponse({'ok': False, 'error': 'Permission denied.'}, status=403)
+
+    org = request.user.organization
+    att = _get_object_or_404(Attendance, pk=attendance_id, employee__organization=org)
+
+    clock_in_s  = request.POST.get('clock_in', '').strip()
+    clock_out_s = request.POST.get('clock_out', '').strip()
+    late_min_s  = request.POST.get('late_minutes', '0').strip()
+
+    clock_in  = _parse_time(clock_in_s)
+    clock_out = _parse_time(clock_out_s) if clock_out_s else None
+
+    if not clock_in:
+        return JsonResponse({'ok': False, 'error': 'Check-in time is required.'}, status=400)
+
+    if clock_out and clock_out <= clock_in:
+        return JsonResponse({'ok': False, 'error': 'Check-out cannot be earlier than check-in.'}, status=400)
+
+    try:
+        late_minutes = int(late_min_s)
+        if late_minutes < 0:
+            raise ValueError
+    except ValueError:
+        return JsonResponse({'ok': False, 'error': 'Late minutes must be a non-negative integer.'}, status=400)
+
+    with transaction.atomic():
+        # Snapshot old values
+        old_ci   = att.clock_in
+        old_co   = att.clock_out
+        old_late = att.late_minutes
+
+        att.clock_in      = clock_in
+        att.clock_out     = clock_out
+        att.late_minutes  = late_minutes
+        att.updated_by    = request.user
+        att.save()
+
+        AttendanceAdminAction.objects.create(
+            organization=org,
+            attendance=att,
+            employee=att.employee,
+            performed_by=request.user,
+            action_type='UPDATE',
+            attendance_date=att.date,
+            old_clock_in=old_ci,
+            old_clock_out=old_co,
+            old_late_minutes=old_late,
+            new_clock_in=clock_in,
+            new_clock_out=clock_out,
+            new_late_minutes=late_minutes,
+            created_by=request.user,
+        )
+
+    return JsonResponse({
+        'ok': True,
+        'message': 'Attendance updated successfully.',
+        'clock_in': clock_in.strftime('%I:%M %p') if clock_in else '—',
+        'clock_out': clock_out.strftime('%I:%M %p') if clock_out else '—',
+        'late_minutes': late_minutes,
+    })
+
+
+@login_required
+def admin_attendance_history_view(request, attendance_id):
+    """Return audit history for a given attendance record (staff only)."""
+    if not request.user.is_staff:
+        return JsonResponse({'ok': False, 'error': 'Permission denied.'}, status=403)
+
+    org = request.user.organization
+    att = _get_object_or_404(Attendance, pk=attendance_id, employee__organization=org)
+
+    logs = AttendanceAdminAction.objects.filter(attendance=att).select_related('performed_by').order_by('-created_at')
+
+    def fmt_t(t):
+        return t.strftime('%I:%M %p') if t else '—'
+
+    history = []
+    for log in logs:
+        history.append({
+            'action_type': log.action_type,
+            'performed_by': f"{log.performed_by.get_full_name() or log.performed_by.username}" if log.performed_by else '—',
+            'is_staff': log.performed_by.is_staff if log.performed_by else False,
+            'created_at': log.created_at.strftime('%d %b %Y · %I:%M %p'),
+            'old_clock_in':  fmt_t(log.old_clock_in),
+            'old_clock_out': fmt_t(log.old_clock_out),
+            'old_late_minutes': log.old_late_minutes,
+            'new_clock_in':  fmt_t(log.new_clock_in),
+            'new_clock_out': fmt_t(log.new_clock_out),
+            'new_late_minutes': log.new_late_minutes,
+        })
+
+    return JsonResponse({'ok': True, 'history': history, 'employee': str(att.employee), 'date': att.date.strftime('%d %b %Y')})
+
 
 
