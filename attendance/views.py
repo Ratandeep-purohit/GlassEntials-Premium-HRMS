@@ -36,7 +36,7 @@ def _month_bounds(anchor_date):
     return month_start, month_end
 
 
-def _attendance_row(employee, row_date, attendance=None, is_staff=False, today=None):
+def _attendance_row(employee, row_date, attendance=None, is_staff=False, today=None, holiday=None, leave_info=None):
     today = today or timezone.localdate()
     correction = None
     if attendance:
@@ -52,9 +52,22 @@ def _attendance_row(employee, row_date, attendance=None, is_staff=False, today=N
     elif attendance and attendance.clock_in:
         status_label = "Missed Out"
         status_type = "missing"
+    elif leave_info:
+        if leave_info.get('is_half_day'):
+            status_label = "Half Day Leave"
+            status_type = "half_leave"
+        else:
+            status_label = "On Leave"
+            status_type = "leave"
+    elif holiday:
+        status_label = "Holiday"
+        status_type = "holiday"
     elif row_date.weekday() == 6:  # Sunday only
         status_label = "Weekly Off"
         status_type = "weekend"
+    elif row_date > today:
+        status_label = "Upcoming"
+        status_type = "future"
     else:
         status_label = "Absent"
         status_type = "absent"
@@ -300,6 +313,35 @@ def attendance_view(request):
         attendance_map = {(att.employee_id, att.date): att for att in attendance_qs}
 
     # Single-day attendance rows for the selected date
+    from leaves.models import Holiday, LeaveRequest
+    
+    # Fetch holidays for the selected date
+    holiday = Holiday.objects.filter(
+        organization=organization,
+        date=selected_date,
+        is_deleted=False
+    ).first()
+
+    # Fetch approved leaves that span the selected date
+    leave_qs = LeaveRequest.objects.filter(
+        employee__in=employees,
+        status='APPROVED',
+        start_date__lte=selected_date,
+        end_date__gte=selected_date,
+        is_deleted=False,
+    ).prefetch_related('dates')
+    
+    # Create a map for fast lookup: employee.id -> LeaveRequest
+    leave_map = {}
+    for lr in leave_qs:
+        for d in lr.dates.all():
+            if d.date == selected_date:
+                leave_map[lr.employee_id] = {
+                    'leave_type': lr.leave_type.name,
+                    'is_half_day': d.is_half_day
+                }
+                break
+
     attendance_rows = []
     for employee in employees:
         attendance_rows.append(
@@ -309,6 +351,8 @@ def attendance_view(request):
                 attendance_map.get((employee.id, selected_date)),
                 is_staff=request.user.is_staff,
                 today=today,
+                holiday=holiday,
+                leave_info=leave_map.get(employee.id)
             )
         )
 
