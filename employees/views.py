@@ -7,6 +7,7 @@ from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
 from django.contrib import messages
 from django.db.models import Q, Count
+from django.db.models.functions import Length
 from django.core.exceptions import PermissionDenied
 from functools import wraps
 from .models import Department, Designation, Employee
@@ -28,7 +29,7 @@ def employee_view(request):
         return redirect('employee_directory')
         
     # Base query
-    employees_list = Employee.objects.filter(organization=request.user.organization, is_deleted=False).order_by('-created_at')
+    employees_list = Employee.objects.filter(organization=request.user.organization, is_deleted=False).order_by(Length('employee_id').asc(), 'employee_id')
     
     # Get filter parameters
     search_query = request.GET.get('search', '')
@@ -91,7 +92,7 @@ def employee_directory(request):
         Q(organization=organization) | Q(organization__isnull=True),
         is_active=True,
         is_deleted=False
-    ).order_by('first_name', 'last_name')
+    ).order_by(Length('employee_id').asc(), 'employee_id')
     
     # Search filtering
     search_query = request.GET.get('search', '')

@@ -13,6 +13,8 @@
     <link rel="stylesheet" href="{% static 'css/landing.css' %}?v=4.4">
     <link rel="stylesheet" href="{% static 'css/home.css' %}?v=4.4">
     <link rel="stylesheet" href="{% static 'css/dashboard.css' %}?v=4.4">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/plugins/monthSelect/style.css">
 
     <style>
         /* ── DESIGN TOKENS ── */
@@ -778,6 +780,9 @@
                 <button type="button" class="btn-att btn-att-ghost" onclick="openExportModal()">
                     <i class="fas fa-file-export"></i> Export
                 </button>
+                <a href="{% url 'import_attendance' %}" class="btn-att btn-att-ghost">
+                    <i class="fas fa-file-import"></i> Import Excel
+                </a>
                 <a href="{% url 'assign_shift' %}" class="btn-att btn-att-primary">
                     <i class="fas fa-calendar-check"></i> Manage Shifts
                 </a>
@@ -793,21 +798,18 @@
             </a>
 
             <div class="date-nav-picker">
-                <div class="date-nav-label">
+                <div class="date-nav-label" id="monthPickerBtn">
                     <i class="fas fa-calendar-alt"></i>
                     <span>{{ month_start|date:"F Y" }}</span>
+                    <i class="fas fa-chevron-down" style="font-size:10px;margin-left:4px;"></i>
                     {% if month_start.month == today.month and month_start.year == today.year %}
-                    <span style="font-size:11px;font-weight:600;color:var(--blue);background:var(--blue-light);padding:2px 6px;border-radius:4px;">This Month</span>
+                    <span style="font-size:11px;font-weight:600;color:var(--blue);background:var(--blue-light);padding:2px 6px;border-radius:4px;margin-left:6px;">This Month</span>
                     {% endif %}
                 </div>
                 <form id="monthPickerForm" method="get">
                     <input type="hidden" name="view" value="visual">
                     {% if search_query %}<input type="hidden" name="search" value="{{ search_query }}">{% endif %}
-                    <input type="month" name="month" class="date-input-hidden"
-                           value="{{ selected_month_value }}"
-                           max="{{ today|date:'Y-m' }}"
-                           onchange="this.form.submit()"
-                           aria-label="Pick a month">
+                    <input type="hidden" name="month" id="monthInputHidden" value="{{ selected_month_value }}">
                 </form>
             </div>
 
@@ -832,19 +834,16 @@
             </a>
 
             <div class="date-nav-picker">
-                <div class="date-nav-label">
+                <div class="date-nav-label" id="datePickerBtn">
                     <i class="fas fa-calendar-alt"></i>
                     <span>{{ selected_date|date:"l, d M Y" }}</span>
-                    {% if is_today %}<span style="font-size:11px;font-weight:600;color:var(--blue);background:var(--blue-light);padding:2px 6px;border-radius:4px;">Today</span>{% endif %}
+                    <i class="fas fa-chevron-down" style="font-size:10px;margin-left:4px;"></i>
+                    {% if is_today %}<span style="font-size:11px;font-weight:600;color:var(--blue);background:var(--blue-light);padding:2px 6px;border-radius:4px;margin-left:6px;">Today</span>{% endif %}
                 </div>
                 <form id="datePickerForm" method="get">
                     <input type="hidden" name="view" value="list">
                     {% if search_query %}<input type="hidden" name="search" value="{{ search_query }}">{% endif %}
-                    <input type="date" name="date" class="date-input-hidden"
-                           value="{{ selected_date|date:'Y-m-d' }}"
-                           max="{{ today|date:'Y-m-d' }}"
-                           onchange="this.form.submit()"
-                           aria-label="Pick a date">
+                    <input type="hidden" name="date" id="dateInputHidden" value="{{ selected_date|date:'Y-m-d' }}">
                 </form>
             </div>
 
@@ -1565,6 +1564,42 @@
         }
         function closeHistoryModal() { document.getElementById('historyAttModal').classList.remove('open'); }
 
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/plugins/monthSelect/index.js"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            var datePickerBtn = document.getElementById("datePickerBtn");
+            if (datePickerBtn) {
+                flatpickr(datePickerBtn, {
+                    defaultDate: "{{ selected_date|date:'Y-m-d' }}",
+                    maxDate: "today",
+                    onChange: function(selectedDates, dateStr, instance) {
+                        document.getElementById("dateInputHidden").value = dateStr;
+                        document.getElementById("datePickerForm").submit();
+                    }
+                });
+            }
+
+            var monthPickerBtn = document.getElementById("monthPickerBtn");
+            if (monthPickerBtn) {
+                flatpickr(monthPickerBtn, {
+                    plugins: [
+                        new monthSelectPlugin({
+                            shorthand: true,
+                            dateFormat: "Y-m",
+                            altFormat: "F Y"
+                        })
+                    ],
+                    defaultDate: "{{ selected_month_value }}-01",
+                    maxDate: "today",
+                    onChange: function(selectedDates, dateStr, instance) {
+                        document.getElementById("monthInputHidden").value = dateStr;
+                        document.getElementById("monthPickerForm").submit();
+                    }
+                });
+            }
+        });
     </script>
 </body>
 </html>

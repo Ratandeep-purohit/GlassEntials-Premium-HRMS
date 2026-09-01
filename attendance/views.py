@@ -329,18 +329,15 @@ def attendance_view(request):
         start_date__lte=selected_date,
         end_date__gte=selected_date,
         is_deleted=False,
-    ).prefetch_related('dates')
+    ).select_related('leave_type')
     
     # Create a map for fast lookup: employee.id -> LeaveRequest
     leave_map = {}
     for lr in leave_qs:
-        for d in lr.dates.all():
-            if d.date == selected_date:
-                leave_map[lr.employee_id] = {
-                    'leave_type': lr.leave_type.name,
-                    'is_half_day': d.is_half_day
-                }
-                break
+        leave_map[lr.employee_id] = {
+            'leave_type': lr.leave_type.name if lr.leave_type else 'Leave',
+            'is_half_day': lr.session_type != 'FULL'
+        }
 
     attendance_rows = []
     for employee in employees:
@@ -1489,6 +1486,728 @@ def admin_attendance_history_view(request, attendance_id):
         })
 
     return JsonResponse({'ok': True, 'history': history, 'employee': str(att.employee), 'date': att.date.strftime('%d %b %Y')})
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# BULK EXCEL EXPORT / IMPORT
+# ─────────────────────────────────────────────────────────────────────────────
+
+import calendar as _cal_module
+import io
+
+
+@login_required
+def export_monthly_template_view(request):
+    """Generate and download a pre-filled monthly attendance Excel template."""
+    if not request.user.is_staff:
+        from django.http import HttpResponseForbidden
+        return HttpResponseForbidden("Permission denied.")
+
+    try:
+        month = int(request.GET.get('month', timezone.localdate().month))
+        year  = int(request.GET.get('year',  timezone.localdate().year))
+    except ValueError:
+        messages.error(request, "Invalid month/year.")
+        return redirect('attendance')
+
+    if not (1 <= month <= 12):
+        messages.error(request, "Month must be between 1 and 12.")
+        return redirect('attendance')
+
+    import openpyxl
+    from openpyxl.styles import (
+        PatternFill, Font, Alignment, Border, Side, Protection
+    )
+    from openpyxl.utils import get_column_letter
+    from openpyxl.worksheet.datavalidation import DataValidation
+    from leaves.models import Holiday
+
+    org          = request.user.organization
+    month_start  = date(year, month, 1)
+    month_end    = date(year, month, _cal_module.monthrange(year, month)[1])
+    month_days   = [month_start + timedelta(days=i) for i in range((month_end - month_start).days + 1)]
+
+    # Fetch all active employees
+    employees = list(
+        Employee.objects.filter(organization=org, is_active=True, is_deleted=False)
+        .select_related('department')
+        .order_by('first_name', 'last_name', 'employee_id')
+    )
+
+    # Fetch holidays
+    holidays = Holiday.objects.filter(
+        organization=org,
+        date__range=(month_start, month_end),
+        is_deleted=False,
+    )
+    holiday_dates = {h.date: h.name for h in holidays}
+
+    # ── Styles ──────────────────────────────────────────────────────────────
+    wb = openpyxl.Workbook()
+
+    # ── Attendance Sheet ─────────────────────────────────────────────────────
+    ws = wb.active
+    ws.title = "Attendance"
+
+    BLUE_FILL   = PatternFill("solid", fgColor="2563EB")
+    GRAY_FILL   = PatternFill("solid", fgColor="F1F5F9")
+    WKND_FILL   = PatternFill("solid", fgColor="CBD5E1")
+    HOLI_FILL   = PatternFill("solid", fgColor="DBEAFE")
+    ALT_FILL    = PatternFill("solid", fgColor="F8FAFC")
+    WHITE_FILL  = PatternFill("solid", fgColor="FFFFFF")
+
+    HDR_FONT    = Font(name="Calibri", bold=True, color="FFFFFF", size=10)
+    SUBHDR_FONT = Font(name="Calibri", bold=True, color="1E3A5F", size=9)
+    EMP_FONT    = Font(name="Calibri", bold=True, color="0F172A", size=9)
+    CELL_FONT   = Font(name="Calibri", size=9)
+    WKND_FONT   = Font(name="Calibri", color="64748B", size=9, italic=True)
+    HOLI_FONT   = Font(name="Calibri", color="1D4ED8", size=9, italic=True)
+
+    CENTER = Alignment(horizontal="center", vertical="center", wrap_text=True)
+    LEFT   = Alignment(horizontal="left",   vertical="center")
+
+    thin = Side(style="thin", color="E2E8F0")
+    med  = Side(style="medium", color="CBD5E1")
+    THIN_BORDER = Border(left=thin, right=thin, top=thin, bottom=thin)
+    MED_BORDER  = Border(left=med,  right=med,  top=med,  bottom=med)
+
+    # Row 1 – title
+    ws.row_dimensions[1].height = 22
+    ws.merge_cells(f"A1:{get_column_letter(3 + len(month_days) * 3)}1")
+    title_cell = ws["A1"]
+    title_cell.value       = f"Monthly Attendance Template — {month_start.strftime('%B %Y')}  |  {org.name}"
+    title_cell.font        = Font(name="Calibri", bold=True, color="FFFFFF", size=12)
+    title_cell.fill        = BLUE_FILL
+    title_cell.alignment   = CENTER
+
+    # Row 2 – date group headers (merged per date triplet)
+    ws.row_dimensions[2].height = 28
+    ws["A2"].value = "Employee ID";  ws["A2"].font = SUBHDR_FONT; ws["A2"].fill = GRAY_FILL; ws["A2"].alignment = CENTER; ws["A2"].border = THIN_BORDER
+    ws["B2"].value = "Employee Name"; ws["B2"].font = SUBHDR_FONT; ws["B2"].fill = GRAY_FILL; ws["B2"].alignment = LEFT;   ws["B2"].border = THIN_BORDER
+    ws["C2"].value = "Department";    ws["C2"].font = SUBHDR_FONT; ws["C2"].fill = GRAY_FILL; ws["C2"].alignment = LEFT;   ws["C2"].border = THIN_BORDER
+
+    for idx, d in enumerate(month_days):
+        base_col = 4 + idx * 3          # 1-indexed
+        is_weekend = (d.weekday() == 6)  # Sunday
+        is_holiday = d in holiday_dates
+        hdr_fill = HOLI_FILL if is_holiday else (WKND_FILL if is_weekend else GRAY_FILL)
+        hdr_font = HOLI_FONT if is_holiday else (WKND_FONT if is_weekend else SUBHDR_FONT)
+        lbl = d.strftime("%d %b")
+        if is_holiday:
+            lbl += f"\n({holiday_dates[d][:12]})"
+        elif is_weekend:
+            lbl += "\n(Sun)"
+
+        merge_start = get_column_letter(base_col)
+        merge_end   = get_column_letter(base_col + 2)
+        ws.merge_cells(f"{merge_start}2:{merge_end}2")
+        cell = ws[f"{merge_start}2"]
+        cell.value     = lbl
+        cell.font      = hdr_font
+        cell.fill      = hdr_fill
+        cell.alignment = CENTER
+        cell.border    = MED_BORDER
+
+    # Row 3 – sub-headers: Status | Clock In | Clock Out per day
+    ws.row_dimensions[3].height = 18
+    ws["A3"].value = ""; ws["A3"].fill = GRAY_FILL; ws["A3"].border = THIN_BORDER
+    ws["B3"].value = ""; ws["B3"].fill = GRAY_FILL; ws["B3"].border = THIN_BORDER
+    ws["C3"].value = ""; ws["C3"].fill = GRAY_FILL; ws["C3"].border = THIN_BORDER
+    for idx, d in enumerate(month_days):
+        base_col = 4 + idx * 3
+        is_weekend = (d.weekday() == 6)
+        is_holiday = d in holiday_dates
+        hdr_fill = HOLI_FILL if is_holiday else (WKND_FILL if is_weekend else GRAY_FILL)
+        for offset, label in enumerate(["Status", "Clock In", "Clock Out"]):
+            c = ws.cell(row=3, column=base_col + offset)
+            c.value     = label
+            c.font      = SUBHDR_FONT
+            c.fill      = hdr_fill
+            c.alignment = CENTER
+            c.border    = THIN_BORDER
+
+    # ── Dropdown validation for Status (working days only) ─────────────────
+    valid_statuses = '"Present,Absent,Half Day,Leave"'
+    dv = DataValidation(type="list", formula1=valid_statuses, allow_blank=True, showDropDown=False)
+    dv.error       = "Invalid status. Use: Present, Absent, Half Day, Leave"
+    dv.errorTitle  = "Invalid Value"
+    dv.prompt      = "Select attendance status"
+    dv.promptTitle = "Status"
+    ws.add_data_validation(dv)
+
+    # ── Employee rows ────────────────────────────────────────────────────────
+    for emp_idx, emp in enumerate(employees):
+        row = 4 + emp_idx
+        ws.row_dimensions[row].height = 16
+        row_fill = ALT_FILL if emp_idx % 2 == 0 else WHITE_FILL
+
+        # Employee ID
+        c = ws.cell(row=row, column=1, value=emp.employee_id)
+        c.font = EMP_FONT; c.alignment = CENTER; c.fill = row_fill; c.border = THIN_BORDER
+
+        # Name
+        c = ws.cell(row=row, column=2, value=f"{emp.first_name} {emp.last_name}")
+        c.font = EMP_FONT; c.alignment = LEFT; c.fill = row_fill; c.border = THIN_BORDER
+
+        # Department
+        c = ws.cell(row=row, column=3, value=emp.department.name if emp.department else "")
+        c.font = EMP_FONT; c.alignment = LEFT; c.fill = row_fill; c.border = THIN_BORDER
+
+        for idx, d in enumerate(month_days):
+            base_col   = 4 + idx * 3
+            is_weekend = (d.weekday() == 6)
+            is_holiday = d in holiday_dates
+
+            # Check joining date
+            if emp.joining_date and d < emp.joining_date:
+                status_val = "N/A"
+                protect    = True
+                s_fill     = GRAY_FILL
+                s_font     = WKND_FONT
+            elif is_holiday:
+                status_val = "HOLIDAY"
+                protect    = True
+                s_fill     = HOLI_FILL
+                s_font     = HOLI_FONT
+            elif is_weekend:
+                status_val = "WEEKOFF"
+                protect    = True
+                s_fill     = WKND_FILL
+                s_font     = WKND_FONT
+            else:
+                status_val = ""
+                protect    = False
+                s_fill     = row_fill
+                s_font     = CELL_FONT
+
+            # Status cell
+            sc = ws.cell(row=row, column=base_col, value=status_val)
+            sc.font = s_font; sc.fill = s_fill; sc.alignment = CENTER; sc.border = THIN_BORDER
+            if not protect:
+                dv.add(sc)
+
+            # Clock In
+            ci = ws.cell(row=row, column=base_col + 1, value="" if protect else "")
+            ci.font = CELL_FONT; ci.fill = s_fill if protect else row_fill
+            ci.alignment = CENTER; ci.border = THIN_BORDER
+            ci.number_format = "HH:MM"
+
+            # Clock Out
+            co = ws.cell(row=row, column=base_col + 2, value="" if protect else "")
+            co.font = CELL_FONT; co.fill = s_fill if protect else row_fill
+            co.alignment = CENTER; co.border = THIN_BORDER
+            co.number_format = "HH:MM"
+
+    # ── Column widths ────────────────────────────────────────────────────────
+    ws.column_dimensions["A"].width = 14
+    ws.column_dimensions["B"].width = 22
+    ws.column_dimensions["C"].width = 18
+    for idx in range(len(month_days)):
+        base_col = 4 + idx * 3
+        ws.column_dimensions[get_column_letter(base_col)].width     = 10  # Status
+        ws.column_dimensions[get_column_letter(base_col + 1)].width = 9   # Clock In
+        ws.column_dimensions[get_column_letter(base_col + 2)].width = 9   # Clock Out
+
+    # Freeze panes: freeze first 3 rows and first 3 columns
+    ws.freeze_panes = "D4"
+
+    # ── Instructions Sheet ───────────────────────────────────────────────────
+    ws_instr = wb.create_sheet("Instructions")
+    ws_instr.sheet_view.showGridLines = False
+    instructions = [
+        ("MULZON HRMS — Attendance Import Instructions", True, 14, "2563EB"),
+        ("", False, 10, None),
+        ("HOW TO USE THIS TEMPLATE", True, 11, "1E3A5F"),
+        ("1. Do NOT rename or rearrange columns.", False, 10, None),
+        ("2. Do NOT change Employee IDs — they are used to identify employees during import.", False, 10, None),
+        ("3. Do NOT modify HOLIDAY or WEEKOFF cells — they are auto-filled.", False, 10, None),
+        ("4. Fill only Status, Clock In, and Clock Out for working days.", False, 10, None),
+        ("5. Upload the completed file via: Attendance → Import Attendance", False, 10, None),
+        ("", False, 10, None),
+        ("ACCEPTED STATUS VALUES", True, 11, "1E3A5F"),
+        ("Present   — Employee was present.", False, 10, None),
+        ("Absent    — Employee was absent (leave Clock In & Clock Out empty).", False, 10, None),
+        ("Half Day  — Employee worked a half day.", False, 10, None),
+        ("Leave     — Employee was on approved leave.", False, 10, None),
+        ("HOLIDAY   — Auto-filled. Do not modify.", False, 10, None),
+        ("WEEKOFF   — Auto-filled (Sunday). Do not modify.", False, 10, None),
+        ("", False, 10, None),
+        ("TIME FORMAT", True, 11, "1E3A5F"),
+        ("Use 24-hour format:  HH:MM   e.g.  09:30  or  18:15", False, 10, None),
+        ("", False, 10, None),
+        ("RULES", True, 11, "1E3A5F"),
+        ("• Clock Out cannot be earlier than Clock In.", False, 10, None),
+        ("• For Absent status, leave Clock In and Clock Out empty.", False, 10, None),
+        ("• Duplicate records will be flagged during import — you can choose to Skip or Update.", False, 10, None),
+        ("• All changes are recorded in the audit log.", False, 10, None),
+    ]
+    for r, (text, bold, size, color) in enumerate(instructions, start=1):
+        cell = ws_instr.cell(row=r, column=1, value=text)
+        cell.font = Font(
+            name="Calibri", bold=bold, size=size,
+            color=color if color else "0F172A"
+        )
+        cell.alignment = Alignment(horizontal="left", vertical="center")
+    ws_instr.column_dimensions["A"].width = 80
+
+    # ── Build response ───────────────────────────────────────────────────────
+    buf = io.BytesIO()
+    wb.save(buf)
+    buf.seek(0)
+
+    fname = f"Attendance_Template_{month_start.strftime('%B_%Y')}_{org.name.replace(' ','_')}.xlsx"
+    response = HttpResponse(
+        buf.read(),
+        content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    )
+    response["Content-Disposition"] = f'attachment; filename="{fname}"'
+    return response
+
+
+# ─── IMPORT: Parse & Preview ─────────────────────────────────────────────────
+
+def _parse_excel_time(raw):
+    """Convert an openpyxl cell value to datetime.time or None."""
+    if raw is None or raw == "":
+        return None
+    import datetime as _dt
+    if isinstance(raw, _dt.time):
+        return raw
+    if isinstance(raw, _dt.datetime):
+        return raw.time()
+    if isinstance(raw, float):
+        # Excel stores time as fraction of a day
+        total_sec = round(raw * 86400)
+        h, rem    = divmod(total_sec, 3600)
+        m, _      = divmod(rem, 60)
+        return _dt.time(h % 24, m)
+    s = str(raw).strip()
+    for fmt in ("%H:%M:%S", "%H:%M", "%I:%M %p", "%I:%M%p"):
+        try:
+            return _dt.datetime.strptime(s, fmt).time()
+        except ValueError:
+            pass
+    return None
+
+
+@login_required
+def import_attendance_view(request):
+    """Show upload form; on POST validate file and store parsed data in session for preview."""
+    if not request.user.is_staff:
+        from django.http import HttpResponseForbidden
+        return HttpResponseForbidden("Permission denied.")
+
+    if request.method == "GET":
+        today = timezone.localdate()
+        return render(request, "attendance_import.html", {
+            "current_month": today.month,
+            "current_year":  today.year,
+            "years": range(today.year - 2, today.year + 1),
+        })
+
+    # POST — parse & validate
+    uploaded = request.FILES.get("excel_file")
+    if not uploaded:
+        messages.error(request, "Please upload an Excel file.")
+        return redirect("import_attendance")
+
+    # File type check
+    if not uploaded.name.lower().endswith((".xlsx", ".xls")):
+        messages.error(request, "Only .xlsx files are accepted.")
+        return redirect("import_attendance")
+
+    if uploaded.size > 20 * 1024 * 1024:  # 20 MB
+        messages.error(request, "File too large. Maximum allowed size is 20 MB.")
+        return redirect("import_attendance")
+
+    try:
+        month = int(request.POST.get("month", 0))
+        year  = int(request.POST.get("year",  0))
+    except ValueError:
+        messages.error(request, "Invalid month/year.")
+        return redirect("import_attendance")
+
+    if not (1 <= month <= 12):
+        messages.error(request, "Invalid month.")
+        return redirect("import_attendance")
+
+    import openpyxl
+    from leaves.models import Holiday
+
+    try:
+        wb = openpyxl.load_workbook(uploaded, data_only=True)
+    except Exception:
+        messages.error(request, "Cannot read the Excel file. Make sure it is a valid .xlsx generated by this system.")
+        return redirect("import_attendance")
+
+    if "Attendance" not in wb.sheetnames:
+        messages.error(request, "Invalid template: 'Attendance' sheet not found.")
+        return redirect("import_attendance")
+
+    ws = wb["Attendance"]
+    org = request.user.organization
+
+    # Load org employees keyed by employee_id
+    employees = {
+        emp.employee_id: emp
+        for emp in Employee.objects.filter(organization=org, is_active=True, is_deleted=False)
+    }
+
+    # Build date → column mapping from row 2 (merged date headers) and row 3 sub-headers
+    # Row 2: merged cells with date label; row 3: Status / Clock In / Clock Out
+    month_start = date(year, month, 1)
+    month_end   = date(year, month, _cal_module.monthrange(year, month)[1])
+    month_dates = {month_start + timedelta(days=i) for i in range((month_end - month_start).days + 1)}
+
+    # Parse column layout from row 3 sub-headers
+    # Columns 1-3: EmpID, Name, Dept; then triplets: Status, Clock In, Clock Out
+    date_col_map = {}  # date -> (status_col, ci_col, co_col) all 1-indexed
+    col = 4
+    while col <= ws.max_column:
+        # Find date from row 2 merged cell value
+        cell_val = ws.cell(row=2, column=col).value
+        if cell_val is None:
+            col += 3
+            continue
+        # Extract the date portion (first line before \n)
+        date_part = str(cell_val).split("\n")[0].strip()
+        try:
+            parsed_date = datetime.strptime(date_part, "%d %b").replace(year=year).date()
+        except ValueError:
+            col += 3
+            continue
+        if parsed_date in month_dates:
+            date_col_map[parsed_date] = (col, col + 1, col + 2)
+        col += 3
+
+    if not date_col_map:
+        messages.error(request, "Could not read date columns from the template. Make sure this file was generated by MULZON HRMS for the correct month/year.")
+        return redirect("import_attendance")
+
+    # Existing attendance for this month
+    existing_att = {
+        (att.employee_id, att.date): att
+        for att in Attendance.objects.filter(
+            employee__organization=org,
+            date__range=(month_start, month_end),
+        ).select_related("employee")
+    }
+
+    # Holidays
+    holiday_dates = {
+        h.date for h in Holiday.objects.filter(
+            organization=org, date__range=(month_start, month_end), is_deleted=False
+        )
+    }
+
+    ALLOWED_STATUSES = {"PRESENT", "ABSENT", "HALF DAY", "LEAVE", "HOLIDAY", "WEEKOFF", "N/A"}
+    SKIP_STATUSES    = {"HOLIDAY", "WEEKOFF", "N/A", ""}
+
+    records      = []
+    errors       = []
+    create_count = 0
+    update_count = 0
+    skip_count   = 0
+
+    for row_num in range(4, ws.max_row + 1):
+        emp_id_cell = ws.cell(row=row_num, column=1).value
+        if emp_id_cell is None:
+            break
+        emp_id = str(emp_id_cell).strip()
+
+        emp = employees.get(emp_id)
+        if not emp:
+            errors.append({
+                "row": row_num,
+                "emp_id": emp_id,
+                "date": "—",
+                "message": f"Employee ID '{emp_id}' not found in this organization.",
+            })
+            continue
+
+        for d, (sc, cic, coc) in date_col_map.items():
+            status_raw = ws.cell(row=row_num, column=sc).value
+            ci_raw     = ws.cell(row=row_num, column=cic).value
+            co_raw     = ws.cell(row=row_num, column=coc).value
+
+            status = str(status_raw).strip().upper() if status_raw else ""
+
+            if status in SKIP_STATUSES:
+                skip_count += 1
+                continue
+
+            if status not in {s.upper() for s in ["Present", "Absent", "Half Day", "Leave"]}:
+                errors.append({
+                    "row": row_num,
+                    "emp_id": emp_id,
+                    "date": d.strftime("%d %b %Y"),
+                    "message": f"Invalid status '{status_raw}'. Accepted: Present, Absent, Half Day, Leave.",
+                })
+                continue
+
+            # Validate joining date
+            if emp.joining_date and d < emp.joining_date:
+                skip_count += 1
+                continue
+
+            clock_in  = _parse_excel_time(ci_raw)
+            clock_out = _parse_excel_time(co_raw)
+
+            # Absent: no times allowed
+            if status == "ABSENT" and (clock_in or clock_out):
+                errors.append({
+                    "row": row_num,
+                    "emp_id": emp_id,
+                    "date": d.strftime("%d %b %Y"),
+                    "message": "Absent cannot have Clock In or Clock Out times.",
+                })
+                continue
+
+            # Present: clock_in required
+            if status == "PRESENT" and not clock_in:
+                errors.append({
+                    "row": row_num,
+                    "emp_id": emp_id,
+                    "date": d.strftime("%d %b %Y"),
+                    "message": "Present requires a Clock In time.",
+                })
+                continue
+
+            # Clock out before clock in
+            if clock_in and clock_out and clock_out <= clock_in:
+                errors.append({
+                    "row": row_num,
+                    "emp_id": emp_id,
+                    "date": d.strftime("%d %b %Y"),
+                    "message": f"Clock Out ({clock_out}) cannot be earlier than Clock In ({clock_in}).",
+                })
+                continue
+
+            existing = existing_att.get((emp.id, d))
+            action   = "UPDATE" if existing else "CREATE"
+            if action == "UPDATE":
+                update_count += 1
+            else:
+                create_count += 1
+
+            records.append({
+                "row":        row_num,
+                "emp_id":     emp_id,
+                "emp_name":   f"{emp.first_name} {emp.last_name}",
+                "date":       d.isoformat(),
+                "date_label": d.strftime("%d %b %Y"),
+                "status":     status,
+                "clock_in":   clock_in.strftime("%H:%M") if clock_in else "",
+                "clock_out":  clock_out.strftime("%H:%M") if clock_out else "",
+                "action":     action,
+                "att_id":     existing.id if existing else None,
+            })
+
+    # Store in session for confirmation step
+    request.session["att_import_preview"] = {
+        "month":        month,
+        "year":         year,
+        "records":      records,
+        "errors":       errors,
+        "create_count": create_count,
+        "update_count": update_count,
+        "skip_count":   skip_count,
+        "file_name":    uploaded.name,
+    }
+
+    return redirect("import_attendance_preview")
+
+
+@login_required
+def import_attendance_preview_view(request):
+    """Display the parsed preview data from session."""
+    if not request.user.is_staff:
+        from django.http import HttpResponseForbidden
+        return HttpResponseForbidden("Permission denied.")
+
+    preview = request.session.get("att_import_preview")
+    if not preview:
+        messages.warning(request, "No import session found. Please upload a file first.")
+        return redirect("import_attendance")
+
+    return render(request, "attendance_import_preview.html", {
+        "preview":      preview,
+        "records":      preview.get("records", []),
+        "errors":       preview.get("errors", []),
+        "month_label":  date(preview["year"], preview["month"], 1).strftime("%B %Y"),
+        "create_count": preview.get("create_count", 0),
+        "update_count": preview.get("update_count", 0),
+        "skip_count":   preview.get("skip_count", 0),
+        "total":        len(preview.get("records", [])),
+        "error_count":  len(preview.get("errors", [])),
+    })
+
+
+@login_required
+def import_attendance_confirm_view(request):
+    """Commit the previewed import atomically."""
+    if not request.user.is_staff:
+        from django.http import HttpResponseForbidden
+        return HttpResponseForbidden("Permission denied.")
+
+    if request.method != "POST":
+        return redirect("import_attendance")
+
+    preview = request.session.get("att_import_preview")
+    if not preview:
+        messages.error(request, "Import session expired. Please upload again.")
+        return redirect("import_attendance")
+
+    conflict_strategy = request.POST.get("conflict_strategy", "skip")  # skip | update
+    records           = preview.get("records", [])
+    errors            = preview.get("errors", [])
+
+    if errors and request.POST.get("abort_on_errors") == "1":
+        messages.error(request, f"Import cancelled. Fix {len(errors)} error(s) and re-upload.")
+        return redirect("import_attendance")
+
+    org = request.user.organization
+
+    # Reload employees + existing attendance fresh (session may be stale)
+    employees = {
+        emp.employee_id: emp
+        for emp in Employee.objects.filter(organization=org, is_active=True, is_deleted=False)
+    }
+
+    if not records:
+        messages.warning(request, "Nothing to import.")
+        return redirect("import_attendance")
+
+    month = preview["month"]
+    year  = preview["year"]
+
+    created_count = 0
+    updated_count = 0
+    skipped_count = 0
+
+    from .models import AttendanceImportBatch, AttendanceAdminAction
+
+    with transaction.atomic():
+        batch = AttendanceImportBatch.objects.create(
+            organization  = org,
+            imported_by   = request.user,
+            month         = month,
+            year          = year,
+            file_name     = preview.get("file_name", ""),
+            total_records = len(records),
+            status        = "VALIDATING",
+            created_by    = request.user,
+        )
+
+        audit_bulk = []
+
+        for rec in records:
+            emp = employees.get(rec["emp_id"])
+            if not emp:
+                skipped_count += 1
+                continue
+
+            att_date  = date.fromisoformat(rec["date"])
+            clock_in  = _parse_time(rec["clock_in"])  if rec["clock_in"]  else None
+            clock_out = _parse_time(rec["clock_out"]) if rec["clock_out"] else None
+
+            existing = Attendance.objects.filter(employee=emp, date=att_date).first()
+
+            if existing:
+                if conflict_strategy == "skip":
+                    skipped_count += 1
+                    continue
+                # Update
+                old_ci   = existing.clock_in
+                old_co   = existing.clock_out
+                old_late = existing.late_minutes
+
+                existing.clock_in    = clock_in
+                existing.clock_out   = clock_out
+                existing.updated_by  = request.user
+                existing.save()
+
+                audit_bulk.append(AttendanceAdminAction(
+                    organization     = org,
+                    attendance       = existing,
+                    employee         = emp,
+                    performed_by     = request.user,
+                    action_type      = "UPDATE",
+                    attendance_date  = att_date,
+                    old_clock_in     = old_ci,
+                    old_clock_out    = old_co,
+                    old_late_minutes = old_late,
+                    new_clock_in     = clock_in,
+                    new_clock_out    = clock_out,
+                    new_late_minutes = 0,
+                    created_by       = request.user,
+                ))
+                updated_count += 1
+
+            else:
+                att = Attendance(
+                    organization = org,
+                    employee     = emp,
+                    date         = att_date,
+                    clock_in     = clock_in,
+                    clock_out    = clock_out,
+                    late_minutes = 0,
+                    created_by   = request.user,
+                )
+                att.save()
+
+                audit_bulk.append(AttendanceAdminAction(
+                    organization     = org,
+                    attendance       = att,
+                    employee         = emp,
+                    performed_by     = request.user,
+                    action_type      = "CREATE",
+                    attendance_date  = att_date,
+                    old_clock_in     = None,
+                    old_clock_out    = None,
+                    old_late_minutes = None,
+                    new_clock_in     = clock_in,
+                    new_clock_out    = clock_out,
+                    new_late_minutes = 0,
+                    created_by       = request.user,
+                ))
+                created_count += 1
+
+        # Bulk create audit records
+        AttendanceAdminAction.objects.bulk_create(audit_bulk, batch_size=500)
+
+        # Update batch record
+        batch.created_records = created_count
+        batch.updated_records = updated_count
+        batch.skipped_records = skipped_count
+        batch.total_records   = created_count + updated_count + skipped_count
+        batch.status          = "COMPLETED"
+        batch.save()
+
+    # Clear session
+    del request.session["att_import_preview"]
+
+    messages.success(
+        request,
+        f"Import complete: {created_count} created, {updated_count} updated, {skipped_count} skipped."
+    )
+    return redirect("import_attendance_history")
+
+
+@login_required
+def import_attendance_history_view(request):
+    """Show all past import batches for this organization."""
+    if not request.user.is_staff:
+        from django.http import HttpResponseForbidden
+        return HttpResponseForbidden("Permission denied.")
+
+    from .models import AttendanceImportBatch
+    batches = AttendanceImportBatch.objects.filter(
+        organization=request.user.organization
+    ).select_related("imported_by").order_by("-created_at")[:50]
+
+    return render(request, "attendance_import_history.html", {"batches": batches})
+
 
 
 

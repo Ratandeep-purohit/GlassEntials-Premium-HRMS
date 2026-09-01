@@ -1,0 +1,201 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Import Attendance | Mulzon HRMS</title>
+    <link rel="icon" type="image/png" href="{% static 'img/favicon_logo.png' %}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link rel="stylesheet" href="{% static 'css/landing.css' %}?v=4.4">
+    <link rel="stylesheet" href="{% static 'css/home.css' %}?v=4.4">
+    <link rel="stylesheet" href="{% static 'css/dashboard.css' %}?v=4.4">
+    <style>
+        :root{--blue:#2563eb;--blue-light:rgba(37,99,235,.08);--green:#16a34a;--green-light:rgba(22,163,74,.08);--amber:#d97706;--red:#dc2626;--red-light:rgba(220,38,38,.08);--border:#e2e8f0;--text:#0f172a;--muted:#64748b;--surface:#fff;--bg:#f8fafc;--radius:12px;--radius-sm:8px;--shadow:0 2px 8px rgba(0,0,0,.06);}
+        body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--bg);color:var(--text);}
+        .page-wrap{max-width:860px;margin:0 auto;padding:32px 20px 80px;}
+        .page-title{font-size:22px;font-weight:800;margin:0 0 4px;}
+        .page-sub{color:var(--muted);font-size:13px;margin:0 0 28px;}
+        .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:28px;margin-bottom:20px;box-shadow:var(--shadow);}
+        .card-title{font-size:15px;font-weight:700;margin:0 0 6px;display:flex;align-items:center;gap:8px;}
+        .card-sub{font-size:12px;color:var(--muted);margin:0 0 20px;}
+        .form-row{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;}
+        .form-field label{display:block;font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px;}
+        .form-input{width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:var(--radius-sm);font-size:13px;font-family:inherit;color:var(--text);background:var(--surface);box-sizing:border-box;transition:border .15s;}
+        .form-input:focus{outline:none;border-color:var(--blue);box-shadow:0 0 0 3px rgba(37,99,235,.1);}
+        .btn{display:inline-flex;align-items:center;gap:7px;height:38px;padding:0 18px;font-size:13px;font-weight:700;border-radius:var(--radius-sm);cursor:pointer;text-decoration:none;border:1px solid transparent;font-family:inherit;transition:all .15s;}
+        .btn-primary{background:var(--blue);color:#fff;border-color:var(--blue);}
+        .btn-primary:hover{background:#1d4ed8;}
+        .btn-ghost{background:var(--surface);color:var(--muted);border-color:var(--border);}
+        .btn-ghost:hover{background:var(--bg);color:var(--text);}
+        .btn-green{background:var(--green);color:#fff;border-color:var(--green);}
+        .btn-green:hover{background:#15803d;}
+        .drop-zone{border:2px dashed var(--border);border-radius:var(--radius);padding:40px 24px;text-align:center;cursor:pointer;transition:border-color .2s,background .2s;}
+        .drop-zone:hover,.drop-zone.drag-over{border-color:var(--blue);background:var(--blue-light);}
+        .drop-zone i{font-size:32px;color:var(--muted);margin-bottom:10px;display:block;}
+        .drop-zone p{margin:0 0 6px;font-weight:600;color:var(--text);}
+        .drop-zone small{color:var(--muted);font-size:12px;}
+        .file-chosen{display:none;margin-top:12px;padding:10px 14px;background:var(--green-light);border:1px solid rgba(22,163,74,.2);border-radius:var(--radius-sm);font-size:13px;color:var(--green);font-weight:600;align-items:center;gap:8px;}
+        .steps{display:flex;gap:12px;margin-bottom:24px;}
+        .step{flex:1;padding:14px;border:1px solid var(--border);border-radius:var(--radius-sm);text-align:center;}
+        .step-num{width:28px;height:28px;background:var(--blue-light);color:var(--blue);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;margin:0 auto 8px;}
+        .step p{font-size:12px;font-weight:600;margin:0;color:var(--muted);}
+        .alert{padding:12px 16px;border-radius:var(--radius-sm);font-size:13px;font-weight:600;margin-bottom:16px;}
+        .alert-info{background:var(--blue-light);color:var(--blue);border:1px solid rgba(37,99,235,.2);}
+        .actions-row{display:flex;gap:10px;align-items:center;margin-top:20px;}
+        select.form-input{appearance:auto;}
+    </style>
+</head>
+<body>
+{% include 'includes/navbar.html' %}
+<div class="page-wrap">
+    {% include 'includes/_messages.html' %}
+
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+        <div>
+            <h1 class="page-title"><i class="fas fa-file-import" style="color:var(--blue);font-size:18px;"></i> Attendance Import</h1>
+            <p class="page-sub">Bulk create or update employee attendance from an Excel file.</p>
+        </div>
+        <div style="display:flex;gap:8px;">
+            <a href="{% url 'import_attendance_history' %}" class="btn btn-ghost"><i class="fas fa-history"></i> Import History</a>
+            <a href="{% url 'attendance' %}" class="btn btn-ghost"><i class="fas fa-arrow-left"></i> Dashboard</a>
+        </div>
+    </div>
+
+    <!-- Workflow steps -->
+    <div class="steps">
+        <div class="step">
+            <div class="step-num">1</div>
+            <p>Export Monthly Template</p>
+        </div>
+        <div class="step">
+            <div class="step-num">2</div>
+            <p>Fill Attendance Data</p>
+        </div>
+        <div class="step">
+            <div class="step-num">3</div>
+            <p>Upload &amp; Validate</p>
+        </div>
+        <div class="step">
+            <div class="step-num">4</div>
+            <p>Preview &amp; Confirm</p>
+        </div>
+    </div>
+
+    <!-- Export Template -->
+    <div class="card">
+        <div class="card-title"><i class="fas fa-file-excel" style="color:#16a34a;"></i> Step 1 — Export Monthly Template</div>
+        <div class="card-sub">Download a pre-filled Excel template with all employees, holidays, and weekoffs for the selected month.</div>
+        <form method="get" action="{% url 'export_monthly_template' %}" style="display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap;">
+            <div class="form-field" style="flex:1;min-width:140px;">
+                <label>Month</label>
+                <select name="month" class="form-input">
+                    {% for m, name in months %}
+                    <option value="{{ m }}" {% if m == current_month %}selected{% endif %}>{{ name }}</option>
+                    {% empty %}
+                    {% for i in "123456789012" %}{% endfor %}
+                    <option value="1">January</option><option value="2">February</option><option value="3">March</option>
+                    <option value="4">April</option><option value="5">May</option><option value="6">June</option>
+                    <option value="7">July</option><option value="8">August</option><option value="9">September</option>
+                    <option value="10">October</option><option value="11">November</option><option value="12">December</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-field" style="flex:1;min-width:120px;">
+                <label>Year</label>
+                <select name="year" class="form-input">
+                    {% for y in years %}
+                    <option value="{{ y }}" {% if y == current_year %}selected{% endif %}>{{ y }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <button type="submit" class="btn btn-green" style="height:38px;">
+                <i class="fas fa-download"></i> Download Template
+            </button>
+        </form>
+        <div class="alert alert-info" style="margin-top:16px;margin-bottom:0;">
+            <i class="fas fa-info-circle"></i>
+            The template already contains all employees, auto-filled holidays (blue) and weekoffs (grey).
+            Only fill <strong>Status</strong>, <strong>Clock In</strong>, and <strong>Clock Out</strong> for working days.
+        </div>
+    </div>
+
+    <!-- Import -->
+    <div class="card">
+        <div class="card-title"><i class="fas fa-upload" style="color:var(--blue);"></i> Step 2 — Upload Completed Template</div>
+        <div class="card-sub">Upload the filled Excel file. The system will validate every record before importing.</div>
+        <form method="post" enctype="multipart/form-data" id="importForm">
+            {% csrf_token %}
+            <div class="form-row">
+                <div class="form-field">
+                    <label>Month</label>
+                    <select name="month" class="form-input">
+                        <option value="1" {% if current_month == 1 %}selected{% endif %}>January</option>
+                        <option value="2" {% if current_month == 2 %}selected{% endif %}>February</option>
+                        <option value="3" {% if current_month == 3 %}selected{% endif %}>March</option>
+                        <option value="4" {% if current_month == 4 %}selected{% endif %}>April</option>
+                        <option value="5" {% if current_month == 5 %}selected{% endif %}>May</option>
+                        <option value="6" {% if current_month == 6 %}selected{% endif %}>June</option>
+                        <option value="7" {% if current_month == 7 %}selected{% endif %}>July</option>
+                        <option value="8" {% if current_month == 8 %}selected{% endif %}>August</option>
+                        <option value="9" {% if current_month == 9 %}selected{% endif %}>September</option>
+                        <option value="10" {% if current_month == 10 %}selected{% endif %}>October</option>
+                        <option value="11" {% if current_month == 11 %}selected{% endif %}>November</option>
+                        <option value="12" {% if current_month == 12 %}selected{% endif %}>December</option>
+                    </select>
+                </div>
+                <div class="form-field">
+                    <label>Year</label>
+                    <select name="year" class="form-input">
+                        {% for y in years %}
+                        <option value="{{ y }}" {% if y == current_year %}selected{% endif %}>{{ y }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+
+            <div class="drop-zone" id="dropZone" onclick="document.getElementById('fileInput').click()">
+                <i class="fas fa-cloud-upload-alt"></i>
+                <p>Click to browse or drag &amp; drop your Excel file here</p>
+                <small>Accepted formats: .xlsx &nbsp;·&nbsp; Maximum size: 20 MB</small>
+            </div>
+            <input type="file" name="excel_file" id="fileInput" accept=".xlsx,.xls" style="display:none;" onchange="handleFileSelect(this)">
+            <div class="file-chosen" id="fileChosen"><i class="fas fa-check-circle"></i> <span id="fileName"></span></div>
+
+            <div class="actions-row">
+                <button type="submit" class="btn btn-primary" id="submitBtn" disabled>
+                    <i class="fas fa-search"></i> Validate &amp; Preview
+                </button>
+                <span style="font-size:12px;color:var(--muted);">Validation errors will be shown before any data is imported.</span>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+function handleFileSelect(input) {
+    if (input.files && input.files[0]) {
+        document.getElementById('fileName').textContent = input.files[0].name;
+        document.getElementById('fileChosen').style.display = 'flex';
+        document.getElementById('submitBtn').disabled = false;
+    }
+}
+const dz = document.getElementById('dropZone');
+dz.addEventListener('dragover', function(e){e.preventDefault();dz.classList.add('drag-over');});
+dz.addEventListener('dragleave', function(){dz.classList.remove('drag-over');});
+dz.addEventListener('drop', function(e){
+    e.preventDefault();dz.classList.remove('drag-over');
+    const fi = document.getElementById('fileInput');
+    fi.files = e.dataTransfer.files;
+    handleFileSelect(fi);
+});
+// Inject month options with correct labels
+(function(){
+    const names=['January','February','March','April','May','June','July','August','September','October','November','December'];
+    ['export','import'].forEach(function(){});
+})();
+</script>
+</body>
+</html>

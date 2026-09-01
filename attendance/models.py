@@ -200,3 +200,30 @@ class AttendanceAdminAction(BaseModel):
 
     def __str__(self):
         return f"{self.action_type} on {self.attendance_date} for {self.employee} by {self.performed_by}"
+
+
+class AttendanceImportBatch(BaseModel):
+    """Tracks every bulk Excel import operation for auditing and history."""
+    STATUS_CHOICES = [
+        ('VALIDATING', 'Validating'),
+        ('COMPLETED',  'Completed'),
+        ('FAILED',     'Failed'),
+        ('CANCELLED',  'Cancelled'),
+    ]
+    imported_by     = models.ForeignKey('accounts.CustomUser', on_delete=models.SET_NULL, null=True, related_name='attendance_import_batches')
+    month           = models.PositiveSmallIntegerField()
+    year            = models.PositiveIntegerField()
+    file_name       = models.CharField(max_length=255, blank=True)
+    total_records   = models.PositiveIntegerField(default=0)
+    created_records = models.PositiveIntegerField(default=0)
+    updated_records = models.PositiveIntegerField(default=0)
+    skipped_records = models.PositiveIntegerField(default=0)
+    failed_records  = models.PositiveIntegerField(default=0)
+    status          = models.CharField(max_length=20, choices=STATUS_CHOICES, default='VALIDATING')
+    error_details   = models.JSONField(default=list, blank=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"Import {self.month}/{self.year} by {self.imported_by} [{self.status}]"

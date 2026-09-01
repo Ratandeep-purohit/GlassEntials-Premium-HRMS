@@ -1,0 +1,245 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Import Preview | Mulzon HRMS</title>
+    <link rel="icon" type="image/png" href="{% static 'img/favicon_logo.png' %}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link rel="stylesheet" href="{% static 'css/landing.css' %}?v=4.4">
+    <link rel="stylesheet" href="{% static 'css/home.css' %}?v=4.4">
+    <link rel="stylesheet" href="{% static 'css/dashboard.css' %}?v=4.4">
+    <style>
+        :root{--blue:#2563eb;--blue-light:rgba(37,99,235,.08);--green:#16a34a;--green-light:rgba(22,163,74,.08);--amber:#d97706;--amber-light:rgba(217,119,6,.08);--red:#dc2626;--red-light:rgba(220,38,38,.08);--border:#e2e8f0;--text:#0f172a;--muted:#64748b;--surface:#fff;--bg:#f8fafc;--radius:12px;--radius-sm:8px;--shadow:0 2px 8px rgba(0,0,0,.06);}
+        body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--bg);color:var(--text);}
+        .page-wrap{max-width:1080px;margin:0 auto;padding:32px 20px 80px;}
+        .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px;margin-bottom:20px;box-shadow:var(--shadow);}
+        .summary-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:24px;}
+        .sum-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);padding:16px;text-align:center;}
+        .sum-val{font-size:26px;font-weight:800;display:block;line-height:1;}
+        .sum-lbl{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin-top:4px;display:block;}
+        .sum-card.blue .sum-val{color:var(--blue);}
+        .sum-card.green .sum-val{color:var(--green);}
+        .sum-card.amber .sum-val{color:var(--amber);}
+        .sum-card.red .sum-val{color:var(--red);}
+        .sum-card.slate .sum-val{color:var(--muted);}
+        .btn{display:inline-flex;align-items:center;gap:7px;height:38px;padding:0 18px;font-size:13px;font-weight:700;border-radius:var(--radius-sm);cursor:pointer;text-decoration:none;border:1px solid transparent;font-family:inherit;transition:all .15s;}
+        .btn-primary{background:var(--blue);color:#fff;border-color:var(--blue);}
+        .btn-primary:hover{background:#1d4ed8;}
+        .btn-green{background:var(--green);color:#fff;}
+        .btn-green:hover{background:#15803d;}
+        .btn-ghost{background:var(--surface);color:var(--muted);border-color:var(--border);}
+        .btn-ghost:hover{background:var(--bg);color:var(--text);}
+        .btn-red{background:var(--red);color:#fff;}
+        .btn-red:hover{background:#b91c1c;}
+        .tbl{width:100%;border-collapse:collapse;font-size:13px;}
+        .tbl thead th{padding:10px 12px;font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;background:#f8fafc;border-bottom:1px solid var(--border);text-align:left;white-space:nowrap;}
+        .tbl tbody tr{border-bottom:1px solid var(--border);}
+        .tbl tbody tr:last-child{border-bottom:none;}
+        .tbl tbody tr:hover{background:#f8fafc;}
+        .tbl td{padding:10px 12px;vertical-align:middle;}
+        .badge{display:inline-flex;align-items:center;padding:3px 8px;border-radius:20px;font-size:11px;font-weight:700;white-space:nowrap;}
+        .badge-create{background:var(--green-light);color:var(--green);}
+        .badge-update{background:var(--blue-light);color:var(--blue);}
+        .badge-error{background:var(--red-light);color:var(--red);}
+        .sect-title{font-size:14px;font-weight:700;margin:0 0 14px;display:flex;align-items:center;gap:8px;}
+        .alert{padding:12px 16px;border-radius:var(--radius-sm);font-size:13px;font-weight:600;margin-bottom:16px;}
+        .alert-warn{background:var(--amber-light);color:var(--amber);border:1px solid rgba(217,119,6,.2);}
+        .alert-error{background:var(--red-light);color:var(--red);border:1px solid rgba(220,38,38,.2);}
+        .conflict-radio{display:flex;gap:12px;flex-wrap:wrap;margin:12px 0;}
+        .conflict-opt{display:flex;align-items:center;gap:8px;padding:12px 16px;border:2px solid var(--border);border-radius:var(--radius-sm);cursor:pointer;transition:border-color .15s;}
+        .conflict-opt input[type=radio]{accent-color:var(--blue);}
+        .conflict-opt.selected{border-color:var(--blue);background:var(--blue-light);}
+        .tab-btns{display:flex;gap:2px;margin-bottom:0;border-bottom:2px solid var(--border);}
+        .tab-btn{padding:9px 16px;font-size:13px;font-weight:600;border:none;background:none;cursor:pointer;color:var(--muted);border-bottom:2px solid transparent;margin-bottom:-2px;font-family:inherit;}
+        .tab-btn.active{color:var(--blue);border-bottom-color:var(--blue);}
+        .tab-pane{display:none;padding-top:16px;}
+        .tab-pane.active{display:block;}
+        .tbl-wrap{max-height:400px;overflow-y:auto;}
+        .form-input{padding:9px 12px;border:1px solid var(--border);border-radius:var(--radius-sm);font-size:13px;font-family:inherit;color:var(--text);background:var(--surface);}
+        select.form-input{appearance:auto;}
+    </style>
+</head>
+<body>
+{% include 'includes/navbar.html' %}
+<div class="page-wrap">
+    {% include 'includes/_messages.html' %}
+
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:12px;">
+        <div>
+            <h1 style="font-size:22px;font-weight:800;margin:0 0 4px;"><i class="fas fa-eye" style="color:var(--blue);font-size:18px;"></i> Import Preview</h1>
+            <p style="color:var(--muted);font-size:13px;margin:0;">Month: <strong>{{ month_label }}</strong> &nbsp;·&nbsp; File: <strong>{{ preview.file_name }}</strong></p>
+        </div>
+        <a href="{% url 'import_attendance' %}" class="btn btn-ghost"><i class="fas fa-arrow-left"></i> Back to Upload</a>
+    </div>
+
+    <!-- Summary cards -->
+    <div class="summary-grid">
+        <div class="sum-card blue">
+            <span class="sum-val">{{ total }}</span>
+            <span class="sum-lbl">Total Records</span>
+        </div>
+        <div class="sum-card green">
+            <span class="sum-val">{{ create_count }}</span>
+            <span class="sum-lbl">To Create</span>
+        </div>
+        <div class="sum-card blue">
+            <span class="sum-val">{{ update_count }}</span>
+            <span class="sum-lbl">To Update</span>
+        </div>
+        <div class="sum-card slate">
+            <span class="sum-val">{{ skip_count }}</span>
+            <span class="sum-lbl">Skipped</span>
+        </div>
+        <div class="sum-card red">
+            <span class="sum-val">{{ error_count }}</span>
+            <span class="sum-lbl">Errors</span>
+        </div>
+    </div>
+
+    {% if errors %}
+    <div class="alert alert-warn">
+        <i class="fas fa-exclamation-triangle"></i>
+        <strong>{{ error_count }} validation error(s) found.</strong>
+        Rows with errors will not be imported. Review them in the Errors tab below.
+    </div>
+    {% endif %}
+
+    <!-- Tabs -->
+    <div class="card" style="padding:0;overflow:hidden;">
+        <div style="padding:20px 24px 0;">
+            <div class="tab-btns">
+                <button class="tab-btn active" onclick="switchTab('records',this)">
+                    Records <span style="background:var(--blue-light);color:var(--blue);padding:1px 7px;border-radius:10px;font-size:11px;font-weight:700;">{{ total }}</span>
+                </button>
+                <button class="tab-btn" onclick="switchTab('errors',this)" {% if not errors %}style="color:#cbd5e1;cursor:default;"{% endif %}>
+                    Errors <span style="background:var(--red-light);color:var(--red);padding:1px 7px;border-radius:10px;font-size:11px;font-weight:700;">{{ error_count }}</span>
+                </button>
+            </div>
+        </div>
+
+        <div id="tab-records" class="tab-pane active" style="padding:0 24px 20px;">
+            {% if records %}
+            <div class="tbl-wrap">
+                <table class="tbl">
+                    <thead>
+                        <tr>
+                            <th>Employee</th>
+                            <th>Date</th>
+                            <th>Status</th>
+                            <th>Clock In</th>
+                            <th>Clock Out</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for r in records|slice:":500" %}
+                        <tr>
+                            <td><strong>{{ r.emp_id }}</strong> <span style="color:var(--muted);font-size:12px;">· {{ r.emp_name }}</span></td>
+                            <td>{{ r.date_label }}</td>
+                            <td>{{ r.status|capfirst }}</td>
+                            <td>{{ r.clock_in|default:"—" }}</td>
+                            <td>{{ r.clock_out|default:"—" }}</td>
+                            <td>
+                                {% if r.action == 'CREATE' %}
+                                <span class="badge badge-create"><i class="fas fa-plus" style="font-size:9px;"></i> Create</span>
+                                {% else %}
+                                <span class="badge badge-update"><i class="fas fa-pen" style="font-size:9px;"></i> Update</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr><td colspan="6" style="text-align:center;color:var(--muted);padding:24px;">No records to import.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% if records|length > 500 %}
+            <p style="font-size:12px;color:var(--muted);text-align:center;padding:8px;">Showing first 500 of {{ records|length }} records.</p>
+            {% endif %}
+            {% else %}
+            <p style="text-align:center;color:var(--muted);padding:24px;">No valid records to import.</p>
+            {% endif %}
+        </div>
+
+        <div id="tab-errors" class="tab-pane" style="padding:0 24px 20px;">
+            {% if errors %}
+            <div class="tbl-wrap">
+                <table class="tbl">
+                    <thead><tr><th>Row</th><th>Employee ID</th><th>Date</th><th>Issue</th></tr></thead>
+                    <tbody>
+                        {% for e in errors %}
+                        <tr>
+                            <td style="color:var(--muted);">{{ e.row }}</td>
+                            <td><strong>{{ e.emp_id }}</strong></td>
+                            <td>{{ e.date }}</td>
+                            <td><span class="badge badge-error">{{ e.message }}</span></td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <p style="text-align:center;color:var(--green);padding:24px;font-weight:600;"><i class="fas fa-check-circle"></i> No errors found.</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Confirm / conflict -->
+    {% if records %}
+    <div class="card">
+        <div class="sect-title"><i class="fas fa-shield-halved" style="color:var(--blue);"></i> Conflict Resolution</div>
+        <p style="font-size:13px;color:var(--muted);margin:0 0 4px;">{{ update_count }} record(s) already exist for the selected month. Choose how to handle them:</p>
+        <form method="post" action="{% url 'import_attendance_confirm' %}">
+            {% csrf_token %}
+            <div class="conflict-radio" id="conflictOptions">
+                <label class="conflict-opt selected" id="opt-skip">
+                    <input type="radio" name="conflict_strategy" value="skip" checked onchange="selectOpt('skip')">
+                    <div>
+                        <div style="font-weight:700;font-size:13px;">Skip Existing</div>
+                        <div style="font-size:12px;color:var(--muted);">Leave existing records untouched. Only create new ones.</div>
+                    </div>
+                </label>
+                <label class="conflict-opt" id="opt-update">
+                    <input type="radio" name="conflict_strategy" value="update" onchange="selectOpt('update')">
+                    <div>
+                        <div style="font-weight:700;font-size:13px;">Update Existing</div>
+                        <div style="font-size:12px;color:var(--muted);">Overwrite existing records with new values. Full audit log is preserved.</div>
+                    </div>
+                </label>
+            </div>
+            {% if errors %}
+            <div class="alert alert-warn" style="margin-bottom:16px;">
+                <i class="fas fa-exclamation-triangle"></i> Import will proceed without the {{ error_count }} errored row(s). They will be skipped automatically.
+            </div>
+            {% endif %}
+            <div style="display:flex;gap:10px;align-items:center;margin-top:4px;">
+                <button type="submit" class="btn btn-green">
+                    <i class="fas fa-check"></i> Confirm &amp; Import
+                </button>
+                <a href="{% url 'import_attendance' %}" class="btn btn-ghost">Cancel</a>
+                <span style="font-size:12px;color:var(--muted);">All changes are recorded in the attendance audit log.</span>
+            </div>
+        </form>
+    </div>
+    {% endif %}
+</div>
+
+<script>
+function switchTab(name, btn) {
+    document.querySelectorAll('.tab-pane').forEach(function(p){p.classList.remove('active');});
+    document.querySelectorAll('.tab-btn').forEach(function(b){b.classList.remove('active');});
+    document.getElementById('tab-' + name).classList.add('active');
+    btn.classList.add('active');
+}
+function selectOpt(val) {
+    ['skip','update'].forEach(function(v){
+        document.getElementById('opt-'+v).classList.toggle('selected', v===val);
+    });
+}
+</script>
+</body>
+</html>
