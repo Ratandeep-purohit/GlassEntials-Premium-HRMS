@@ -1,5 +1,10 @@
 from django.contrib import admin
-from .models import Shift, ShiftAssignment, AttendanceStatus, Attendance
+from .models import Shift, ShiftAssignment, AttendanceStatus, Attendance, AttendanceSettings
+
+@admin.register(AttendanceSettings)
+class AttendanceSettingsAdmin(admin.ModelAdmin):
+    list_display = ('organization', 'network_restriction_enabled')
+    readonly_fields = ('organization',)
 
 @admin.register(Shift)
 class ShiftAdmin(admin.ModelAdmin):

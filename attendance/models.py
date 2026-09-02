@@ -227,3 +227,14 @@ class AttendanceImportBatch(BaseModel):
 
     def __str__(self):
         return f"Import {self.month}/{self.year} by {self.imported_by} [{self.status}]"
+
+class AttendanceSettings(BaseModel):
+    """Stores organization-level attendance configuration."""
+    network_restriction_enabled = models.BooleanField(default=False)
+    allowed_ip_addresses = models.JSONField(default=list, blank=True)
+
+    class Meta:
+        verbose_name_plural = "Attendance Settings"
+
+    def __str__(self):
+        return f"Attendance Settings for {self.organization.name if self.organization else 'Unknown'}"

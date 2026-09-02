@@ -612,10 +612,30 @@ def clock_in_out_view(request):
         action = request.POST.get('action')
         # Find employee
         employee = Employee.objects.filter(email=request.user.email, organization=request.user.organization, is_active=True, is_deleted=False).first()
-        
+
         if not employee:
             messages.error(request, "Your account is not linked to an active employee profile in this organization.")
             return redirect('home')
+
+        # --- IP Restriction Check ---
+        from .models import AttendanceSettings
+        att_settings = AttendanceSettings.objects.filter(organization=request.user.organization).first()
+        if att_settings and att_settings.network_restriction_enabled:
+            allowed_ips = att_settings.allowed_ip_addresses or []
+            if allowed_ips:
+                x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+                if x_forwarded_for:
+                    client_ip = x_forwarded_for.split(',')[0].strip()
+                else:
+                    client_ip = request.META.get('REMOTE_ADDR', '')
+                if client_ip not in allowed_ips:
+                    messages.error(
+                        request,
+                        f"Attendance check-in is restricted to approved office networks. "
+                        f"Your current IP ({client_ip}) is not allowed. "
+                        f"Please connect to the office network and try again."
+                    )
+                    return redirect('home')
 
         _now_local = timezone.localtime(timezone.now())
         today = _now_local.date()
@@ -2207,6 +2227,49 @@ def import_attendance_history_view(request):
     ).select_related("imported_by").order_by("-created_at")[:50]
 
     return render(request, "attendance_import_history.html", {"batches": batches})
+
+
+@login_required
+def attendance_settings_view(request):
+    """Attendance Settings – GET loads data, POST saves via AJAX."""
+    if not request.user.is_staff:
+        raise PermissionDenied("Only authorized staff can access this page.")
+
+    from .models import AttendanceSettings
+    import json
+
+    att_settings, _ = AttendanceSettings.objects.get_or_create(
+        organization=request.user.organization,
+        defaults={'network_restriction_enabled': False, 'allowed_ip_addresses': []}
+    )
+
+    if request.method == 'POST':
+        try:
+            body = json.loads(request.body)
+            att_settings.network_restriction_enabled = bool(body.get('network_restriction_enabled', False))
+            raw_ips = body.get('allowed_ip_addresses', [])
+            # Validate and clean IPs
+            import ipaddress
+            cleaned_ips = []
+            errors = []
+            for ip in raw_ips:
+                ip = ip.strip()
+                if not ip:
+                    continue
+                try:
+                    ipaddress.ip_address(ip)
+                    cleaned_ips.append(ip)
+                except ValueError:
+                    errors.append(f"'{ip}' is not a valid IP address.")
+            if errors:
+                return JsonResponse({'success': False, 'errors': errors}, status=400)
+            att_settings.allowed_ip_addresses = cleaned_ips
+            att_settings.save()
+            return JsonResponse({'success': True, 'message': 'Settings saved successfully.'})
+        except Exception as e:
+            return JsonResponse({'success': False, 'errors': [str(e)]}, status=500)
+
+    return render(request, 'attendance_settings.html', {'att_settings': att_settings})
 
 
 
