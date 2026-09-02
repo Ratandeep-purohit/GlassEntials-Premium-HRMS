@@ -631,9 +631,7 @@ def clock_in_out_view(request):
                 if client_ip not in allowed_ips:
                     messages.error(
                         request,
-                        f"Attendance check-in is restricted to approved office networks. "
-                        f"Your current IP ({client_ip}) is not allowed. "
-                        f"Please connect to the office network and try again."
+                        "attendance check in is restricted outside the office network Please connect to your office wifi and try again."
                     )
                     return redirect('home')
 
