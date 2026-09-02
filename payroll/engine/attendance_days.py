@@ -130,7 +130,7 @@ class PayrollAttendanceService:
                 | Q(status__isnull=True, clock_in__isnull=False)
             )
             .select_related("status")
-            .values("employee_id", "date", "status_id", "status__payable_day_value", "net_work_hours", "clock_in")
+            .values("employee_id", "date", "status_id", "status__payable_day_value", "net_work_hours", "clock_in", "clock_out")
         )
 
         day_values = {}
@@ -142,6 +142,12 @@ class PayrollAttendanceService:
                 payable = self._money_days(row["status__payable_day_value"] or ZERO)
             else:
                 net_hours = row.get("net_work_hours")
+                if net_hours is None and row.get("clock_in") and row.get("clock_out"):
+                    import datetime
+                    t1 = datetime.datetime.combine(attendance_date, row.get("clock_in"))
+                    t2 = datetime.datetime.combine(attendance_date, row.get("clock_out"))
+                    net_hours = (t2 - t1).total_seconds() / 3600.0
+
                 if net_hours is not None:
                     if 3 <= float(net_hours) < 7:
                         payable = Decimal("0.5")

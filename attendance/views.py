@@ -44,7 +44,15 @@ def _attendance_row(employee, row_date, attendance=None, is_staff=False, today=N
         correction = corrections[0] if corrections else None
 
     if attendance and attendance.clock_in and attendance.clock_out:
-        if attendance.net_work_hours is not None and 3 <= attendance.net_work_hours < 7:
+        # Calculate hours if net_work_hours is missing (e.g., from imports)
+        worked_hours = attendance.net_work_hours
+        if worked_hours is None:
+            import datetime
+            t1 = datetime.datetime.combine(attendance.date, attendance.clock_in)
+            t2 = datetime.datetime.combine(attendance.date, attendance.clock_out)
+            worked_hours = (t2 - t1).total_seconds() / 3600.0
+            
+        if worked_hours is not None and 3 <= float(worked_hours) < 7:
             status_label = "Half Day"
             status_type = "half_day"
         else:
