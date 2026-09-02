@@ -44,8 +44,12 @@ def _attendance_row(employee, row_date, attendance=None, is_staff=False, today=N
         correction = corrections[0] if corrections else None
 
     if attendance and attendance.clock_in and attendance.clock_out:
-        status_label = "Completed"
-        status_type = "completed"
+        if attendance.net_work_hours is not None and 3 <= attendance.net_work_hours < 7:
+            status_label = "Half Day"
+            status_type = "half_day"
+        else:
+            status_label = "Completed"
+            status_type = "completed"
     elif attendance and attendance.clock_in and row_date == today:
         status_label = "Working"
         status_type = "working"
@@ -618,8 +622,44 @@ def assign_shift_view(request, pk=None):
     return render(request, 'assignshift.html', context)
 
 from django.contrib.auth.decorators import login_required
+from django.views.decorators.http import require_POST
 from datetime import datetime
 from .models import Attendance
+
+@login_required
+@require_POST
+def mark_half_day_view(request, attendance_id):
+    if not request.user.is_staff:
+        messages.error(request, "Permission denied.")
+        return redirect('attendance')
+        
+    try:
+        att = Attendance.objects.get(id=attendance_id, organization=request.user.organization)
+        
+        # Override the net_work_hours to force it into the half-day bracket (e.g. 4.0 hours)
+        # This will make it show as "Half Day" in the UI and payroll will give 0.5 days.
+        att.net_work_hours = 4.0
+        att.save()
+        
+        # Log the action
+        from .models import AttendanceAdminAction
+        AttendanceAdminAction.objects.create(
+            organization=request.user.organization,
+            attendance=att,
+            employee=att.employee,
+            performed_by=request.user,
+            action_type='UPDATE',
+            attendance_date=att.date,
+            new_clock_in=att.clock_in,
+            new_clock_out=att.clock_out,
+            created_by=request.user
+        )
+        
+        messages.success(request, f"Successfully marked half day for {att.employee.first_name}")
+    except Attendance.DoesNotExist:
+        messages.error(request, "Attendance record not found.")
+        
+    return redirect('attendance')
 
 @login_required
 def clock_in_out_view(request):

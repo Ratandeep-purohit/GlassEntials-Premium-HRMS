@@ -130,16 +130,28 @@ class PayrollAttendanceService:
                 | Q(status__isnull=True, clock_in__isnull=False)
             )
             .select_related("status")
-            .values("employee_id", "date", "status_id", "status__payable_day_value")
+            .values("employee_id", "date", "status_id", "status__payable_day_value", "net_work_hours", "clock_in")
         )
 
         day_values = {}
         for row in rows:
             employee_id = row["employee_id"]
             attendance_date = row["date"]
-            # Legacy/manual punch rows may not have an AttendanceStatus. If a
-            # clock-in exists and no status was set, count it as a full paid day.
-            payable = ONE if not row["status_id"] else self._money_days(row["status__payable_day_value"] or ZERO)
+            
+            if row["status_id"]:
+                payable = self._money_days(row["status__payable_day_value"] or ZERO)
+            else:
+                net_hours = row.get("net_work_hours")
+                if net_hours is not None:
+                    if 3 <= float(net_hours) < 7:
+                        payable = Decimal("0.5")
+                    elif float(net_hours) < 3:
+                        payable = ZERO
+                    else:
+                        payable = ONE
+                else:
+                    payable = ONE if row.get("clock_in") else ZERO
+                    
             payable = max(min(payable, ONE), ZERO)
             key = (employee_id, attendance_date)
             day_values[key] = max(day_values.get(key, ZERO), payable)

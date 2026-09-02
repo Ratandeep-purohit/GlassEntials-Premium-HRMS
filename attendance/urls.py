@@ -22,6 +22,7 @@ urlpatterns = [
     path('admin/create/<int:employee_id>/', views.admin_attendance_create_view, name='admin_attendance_create'),
     path('admin/edit/<int:attendance_id>/', views.admin_attendance_edit_view, name='admin_attendance_edit'),
     path('admin/history/<int:attendance_id>/', views.admin_attendance_history_view, name='admin_attendance_history'),
+    path('admin/mark-half-day/<int:attendance_id>/', views.mark_half_day_view, name='mark_half_day'),
     # Bulk Excel export / import
     path('export-template/', views.export_monthly_template_view, name='export_monthly_template'),
     path('import/', views.import_attendance_view, name='import_attendance'),
