@@ -94,7 +94,7 @@ def _attendance_row(employee, row_date, attendance=None, is_staff=False, today=N
     }
 
 
-def _build_visual_attendance_register(employees, month_start, month_end, attendance_map, organization, today):
+def _build_visual_attendance_register(employees, month_start, month_end, attendance_map, organization, today, go_live_date=None):
     from leaves.models import Holiday, LeaveRequest
 
     register_dates = [
@@ -155,6 +155,10 @@ def _build_visual_attendance_register(employees, month_start, month_end, attenda
             is_weekend = row_date.weekday() == 6  # Sunday only
             title_date = row_date.strftime('%d %b %Y')
 
+            # Days before go-live with NO attendance data → show as not tracked (neutral)
+            # Days before go-live WITH imported attendance data → show normally
+            is_before_go_live = go_live_date and row_date < go_live_date and not attendance
+
             if leave_cell:
                 cell = {
                     'date': row_date,
@@ -196,6 +200,16 @@ def _build_visual_attendance_register(employees, month_start, month_end, attenda
                     'is_today': row_date == today,
                 }
                 counts['weekend'] += 1
+            elif is_before_go_live:
+                # Before system go-live with no data: show as not tracked (not counted as absent)
+                cell = {
+                    'date': row_date,
+                    'class': 'future',
+                    'code': '-',
+                    'label': 'Not Tracked',
+                    'title': f"{title_date}: Before system go-live",
+                    'is_today': False,
+                }
             elif row_date <= today:
                 cell = {
                     'date': row_date,
@@ -268,14 +282,14 @@ def attendance_view(request):
     month_start, month_end = _month_bounds(selected_date)
     current_month_start = today.replace(day=1)
 
-    # Clamp period_start to HRMS_GO_LIVE_DATE
-    period_start = month_start
+    # Resolve HRMS_GO_LIVE_DATE – used only to mark pre-go-live empty cells as
+    # "not tracked" instead of "absent". It no longer cuts off the display range,
+    # so imported historical data for dates before the go-live date still shows.
+    _go_live_date = None
     _go_live_str = getattr(settings, 'HRMS_GO_LIVE_DATE', '')
     if _go_live_str:
         try:
-            _go_live = datetime.strptime(_go_live_str, '%Y-%m-%d').date()
-            if _go_live > period_start:
-                period_start = _go_live
+            _go_live_date = datetime.strptime(_go_live_str, '%Y-%m-%d').date()
         except ValueError:
             pass
 
@@ -355,11 +369,12 @@ def attendance_view(request):
 
     visual_register = _build_visual_attendance_register(
         employees=employees,
-        month_start=period_start,
+        month_start=month_start,  # Always show the full month — go_live_date only hides untracked empty cells
         month_end=month_end,
         attendance_map=attendance_map,
         organization=organization,
         today=today,
+        go_live_date=_go_live_date,
     )
 
     # Stats for selected date only
