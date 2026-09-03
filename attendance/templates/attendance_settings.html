@@ -12,12 +12,14 @@
     <link rel="stylesheet" href="{% static 'css/landing.css' %}?v=4.4">
     <link rel="stylesheet" href="{% static 'css/home.css' %}?v=4.4">
     <link rel="stylesheet" href="{% static 'css/dashboard.css' %}?v=4.4">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
     <style>
         :root {
             --blue:#2563eb;--blue-mid:#1d4ed8;--blue-light:rgba(37,99,235,.07);--blue-border:rgba(37,99,235,.18);
             --green:#16a34a;--green-light:rgba(22,163,74,.08);--green-border:rgba(22,163,74,.2);
-            --amber:#d97706;--red:#dc2626;--red-light:rgba(220,38,38,.07);
-            --s50:#f8fafc;--s100:#f1f5f9;--s200:#e2e8f0;--s300:#cbd5e1;--s400:#94a3b8;--s500:#64748b;--s700:#334155;--s900:#0f172a;
+            --amber:#d97706;--amber-light:rgba(217,119,6,.08);
+            --red:#dc2626;--red-light:rgba(220,38,38,.07);
+            --s50:#f8fafc;--s100:#f1f5f9;--s200:#e2e8f0;--s300:#cbd5e1;--s400:#94a3b8;--s500:#64748b;--s600:#475569;--s700:#334155;--s900:#0f172a;
             --surface:#fff;--radius-xs:6px;--radius-sm:8px;--radius:12px;--radius-lg:16px;
             --shadow-sm:0 1px 3px rgba(0,0,0,.06),0 1px 2px rgba(0,0,0,.04);
             --shadow:0 4px 16px rgba(0,0,0,.07),0 1px 4px rgba(0,0,0,.04);
@@ -40,7 +42,6 @@
         .sidebar { position: sticky; top: 100px; }
         .sidebar-section { margin-bottom: 24px; }
         .sidebar-label { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.08em; color: var(--s400); margin: 0 0 8px 12px; }
-        
         .nav-item {
             display: flex; align-items: center; gap: 10px;
             padding: 10px 12px; border-radius: var(--radius-sm);
@@ -54,7 +55,7 @@
 
         /* CONTENT */
         .content-area { min-width: 0; }
-        
+
         /* CARD */
         .settings-card {
             background: var(--surface);
@@ -62,14 +63,14 @@
             border-radius: var(--radius-lg);
             box-shadow: var(--shadow-sm);
             padding: 32px;
+            margin-bottom: 24px;
         }
-
-        .card-header { margin-bottom: 32px; }
+        .card-header { margin-bottom: 28px; }
         .card-title { font-size: 18px; font-weight: 800; color: var(--s900); margin: 0 0 6px; letter-spacing: -0.3px; }
         .card-sub { font-size: 13.5px; color: var(--s500); margin: 0; }
-        
+
         /* SECTION: TOGGLE */
-        .setting-section { display: flex; align-items: flex-start; justify-content: space-between; gap: 20px; margin-bottom: 32px; }
+        .setting-section { display: flex; align-items: flex-start; justify-content: space-between; gap: 20px; margin-bottom: 28px; }
         .setting-info { flex: 1; }
         .setting-title { font-size: 15px; font-weight: 700; color: var(--s900); margin: 0 0 6px; display: flex; align-items: center; gap: 8px; }
         .setting-title i { color: var(--blue); font-size: 14px; }
@@ -93,17 +94,14 @@
         input[type="checkbox"]:checked + .toggle-switch .toggle-label { color: var(--green); }
         .toggle-input { display: none; }
 
-        .divider { height: 1px; background: var(--s200); margin: 0 0 32px; }
+        .divider { height: 1px; background: var(--s200); margin: 0 0 28px; }
 
         /* IP ROWS */
         .ip-list-title { font-size: 14px; font-weight: 700; color: var(--s700); margin: 0 0 6px; }
         .ip-list-desc { font-size: 13px; color: var(--s500); margin: 0 0 20px; }
-        
         .ip-rows { display: flex; flex-direction: column; gap: 12px; margin-bottom: 20px; }
         .ip-row { display: flex; align-items: center; gap: 12px; }
-        .ip-input-wrap {
-            flex: 1; position: relative;
-        }
+        .ip-input-wrap { flex: 1; position: relative; }
         .ip-input-wrap i { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--s400); font-size: 13px; }
         .ip-input {
             width: 100%; height: 42px; padding: 0 14px 0 36px;
@@ -113,7 +111,7 @@
         }
         .ip-input:focus { border-color: var(--blue); box-shadow: 0 0 0 3px rgba(37,99,235,.12); }
         .ip-input::placeholder { color: var(--s400); }
-        
+
         .btn-delete {
             width: 42px; height: 42px; border-radius: var(--radius-sm);
             border: 1.5px solid var(--s200); background: var(--surface);
@@ -121,7 +119,7 @@
             cursor: pointer; transition: all var(--t); flex-shrink: 0;
         }
         .btn-delete:hover { border-color: var(--red-light); background: var(--red-light); color: var(--red); }
-        
+
         /* ADD BUTTON */
         .btn-add {
             display: inline-flex; align-items: center; gap: 8px;
@@ -132,9 +130,58 @@
         }
         .btn-add:hover { border-color: var(--blue); color: var(--blue); background: var(--blue-light); }
 
+        /* FORM FIELD */
+        .field-group { margin-bottom: 20px; }
+        .field-label { font-size: 13px; font-weight: 700; color: var(--s700); margin: 0 0 6px; display: block; }
+        .field-hint { font-size: 12px; color: var(--s400); margin: 5px 0 0; }
+        .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+        .field-input {
+            width: 100%; height: 42px; padding: 0 14px;
+            border: 1.5px solid var(--s200); border-radius: var(--radius-sm);
+            font-size: 14px; font-family: inherit; color: var(--s900);
+            transition: all var(--t); outline: none;
+        }
+        .field-input:focus { border-color: var(--blue); box-shadow: 0 0 0 3px rgba(37,99,235,.12); }
+        .field-input::placeholder { color: var(--s400); }
+        .input-suffix-wrap { position: relative; }
+        .input-suffix {
+            position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
+            font-size: 12px; font-weight: 700; color: var(--s400); pointer-events: none;
+        }
+        .input-suffix-wrap .field-input { padding-right: 56px; }
+
+        /* GPS ACCURACY BADGE */
+        .accuracy-badge {
+            display: inline-flex; align-items: center; gap: 6px;
+            padding: 5px 12px; border-radius: 20px; font-size: 12px; font-weight: 700;
+            background: var(--green-light); color: var(--green); margin-top: 10px;
+        }
+        .accuracy-badge.poor { background: var(--amber-light); color: var(--amber); }
+
+        /* CURRENT LOCATION BTN */
+        .btn-loc {
+            display: inline-flex; align-items: center; gap: 8px;
+            height: 40px; padding: 0 18px; border-radius: var(--radius-sm);
+            background: var(--blue-light); border: 1.5px solid var(--blue-border);
+            color: var(--blue-mid); font-size: 13px; font-weight: 700;
+            cursor: pointer; transition: all var(--t);
+        }
+        .btn-loc:hover { background: var(--blue); color: #fff; border-color: var(--blue); }
+        .btn-loc:disabled { opacity: 0.6; cursor: not-allowed; }
+
+        /* MAP */
+        #locationMap {
+            width: 100%; height: 240px; border-radius: var(--radius-sm);
+            border: 1.5px solid var(--s200); margin-top: 16px;
+            background: var(--s100);
+        }
+
+        /* LOCATION SECTION WRAPPER */
+        #locationSectionWrap { transition: opacity 0.3s ease; }
+        .disabled-section { opacity: 0.45; pointer-events: none; }
+
         /* FOOTER ACTIONS */
-        .form-actions { display: flex; justify-content: flex-end; margin-top: 40px; padding-top: 24px; border-top: 1px solid var(--s100); }
-        
+        .form-actions { display: flex; justify-content: flex-end; align-items: center; margin-top: 32px; padding-top: 24px; border-top: 1px solid var(--s100); gap: 14px; }
         .btn {
             display: inline-flex; align-items: center; gap: 8px;
             height: 42px; padding: 0 24px; font-size: 14px; font-weight: 700;
@@ -144,13 +191,12 @@
         .btn-primary { background: var(--blue); color: #fff; }
         .btn-primary:hover { background: var(--blue-mid); box-shadow: 0 4px 14px rgba(37,99,235,.35); transform: translateY(-1px); }
 
-        /* IP SECTION WRAPPER */
         #ipSectionWrap { transition: opacity 0.3s ease; }
-        .disabled-section { opacity: 0.5; pointer-events: none; }
 
         @media (max-width: 800px) {
             .settings-layout { grid-template-columns: 1fr; gap: 24px; }
             .sidebar { position: static; }
+            .field-row { grid-template-columns: 1fr; }
         }
         @media (max-width: 600px) {
             .setting-section { flex-direction: column; align-items: flex-start; }
@@ -168,7 +214,7 @@
     </div>
 
     <div class="settings-layout">
-        
+
         <!-- LEFT SIDEBAR -->
         <div class="sidebar">
             <div class="sidebar-section">
@@ -176,31 +222,23 @@
                 <div class="nav-item active">
                     <i class="fas fa-fingerprint"></i> Attendance Settings
                 </div>
-                <!-- Future items could go here, e.g. -->
-                <!-- <div class="nav-item"><i class="fas fa-clock"></i> Shifts & Times</div> -->
             </div>
-            
-            <!-- Future categories could go here -->
-            <!-- <div class="sidebar-section">
-                <div class="sidebar-label">ORGANIZATION</div>
-                <div class="nav-item"><i class="fas fa-building"></i> Company Profile</div>
-            </div> -->
         </div>
 
         <!-- RIGHT CONTENT AREA -->
         <div class="content-area">
+
+            <!-- ── CARD 1: Network Restriction ── -->
             <div class="settings-card">
-                
                 <div class="card-header">
-                    <h2 class="card-title">Attendance Settings</h2>
-                    <p class="card-sub">Configure attendance security and office network access.</p>
+                    <h2 class="card-title">Network & IP Restriction</h2>
+                    <p class="card-sub">Control which office networks employees can clock in from.</p>
                 </div>
-        
-        <!-- Setting: Network Restriction -->
+
                 <div class="setting-section">
                     <div class="setting-info">
                         <h3 class="setting-title"><i class="fas fa-shield-halved"></i> Office Network Restriction</h3>
-                        <p class="setting-desc">Restrict employee attendance check-in to approved office networks. If disabled, employees can check in from anywhere.</p>
+                        <p class="setting-desc">Restrict employee attendance check-in to approved office networks. If disabled, employees can check in from any network.</p>
                     </div>
                     <div>
                         <input type="checkbox" id="networkToggle" class="toggle-input"
@@ -217,7 +255,6 @@
 
                 <div class="divider"></div>
 
-                <!-- Setting: IP List -->
                 <div id="ipSectionWrap" {% if not att_settings.network_restriction_enabled %}class="disabled-section"{% endif %}>
                     <h3 class="ip-list-title">Allowed Public IP Addresses</h3>
                     <p class="ip-list-desc">Employees can check in only when connected through one of these approved office networks.</p>
@@ -247,28 +284,145 @@
                     </button>
                 </div>
 
-                <!-- Submit -->
                 <div class="form-actions">
-                    <button type="button" class="btn btn-primary" id="saveBtn" onclick="saveSettings()">
+                    <span id="saveStatus1" style="font-size:13px;font-weight:600;"></span>
+                    <button type="button" class="btn btn-primary" id="saveBtn1" onclick="saveSettings()">
                         <i class="fas fa-check"></i> Save Settings
                     </button>
-                    <span id="saveStatus" style="font-size:13px;font-weight:600;margin-left:14px;"></span>
+                </div>
+            </div><!-- /.settings-card -->
+
+            <!-- ── CARD 2: Location Restriction ── -->
+            <div class="settings-card">
+                <div class="card-header">
+                    <h2 class="card-title">Location-Based Attendance</h2>
+                    <p class="card-sub">Require employees to be within an approved office location when checking in.</p>
                 </div>
 
+                <!-- Toggle -->
+                <div class="setting-section">
+                    <div class="setting-info">
+                        <h3 class="setting-title"><i class="fas fa-location-dot"></i> Attendance Location Restriction</h3>
+                        <p class="setting-desc">Restrict employee attendance check-in based on their current GPS location. When enabled, employees must be within the configured radius of the office.</p>
+                    </div>
+                    <div>
+                        <input type="checkbox" id="locationToggle" class="toggle-input"
+                            {% if att_settings.location_restriction_enabled %}checked{% endif %}
+                            onchange="toggleLocationSection()">
+                        <label for="locationToggle" class="toggle-switch">
+                            <span class="toggle-track"><span class="toggle-thumb"></span></span>
+                            <span class="toggle-label" id="locationToggleLabelText">
+                                {% if att_settings.location_restriction_enabled %}Enabled{% else %}Disabled{% endif %}
+                            </span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="divider"></div>
+
+                <div id="locationSectionWrap" {% if not att_settings.location_restriction_enabled %}class="disabled-section"{% endif %}>
+
+                    <!-- Office Location Coordinates -->
+                    <div style="margin-bottom: 24px;">
+                        <h3 class="ip-list-title" style="margin-bottom:4px;">Office Location</h3>
+                        <p class="ip-list-desc">Set the GPS coordinates of your office. Employees must be within the allowed radius of this point to check in.</p>
+
+                        <div class="field-row" style="margin-bottom: 14px;">
+                            <div class="field-group" style="margin:0;">
+                                <label class="field-label" for="officeLatitude">Latitude</label>
+                                <input type="number" class="field-input" id="officeLatitude" name="office_latitude"
+                                    placeholder="e.g. 28.6139" step="0.0000001" min="-90" max="90"
+                                    value="{{ att_settings.office_latitude|default:'' }}"
+                                    oninput="onCoordsChange()">
+                                <span class="field-hint">Between -90 and 90</span>
+                            </div>
+                            <div class="field-group" style="margin:0;">
+                                <label class="field-label" for="officeLongitude">Longitude</label>
+                                <input type="number" class="field-input" id="officeLongitude" name="office_longitude"
+                                    placeholder="e.g. 77.2090" step="0.0000001" min="-180" max="180"
+                                    value="{{ att_settings.office_longitude|default:'' }}"
+                                    oninput="onCoordsChange()">
+                                <span class="field-hint">Between -180 and 180</span>
+                            </div>
+                        </div>
+
+                        <!-- Use Current Location button -->
+                        <button type="button" class="btn-loc" id="useCurrentLocBtn" onclick="useCurrentLocation()">
+                            <i class="fas fa-crosshairs"></i> Use Current Location
+                        </button>
+                        <div id="accuracyDisplay" style="display:none; margin-top:10px;">
+                            <span class="accuracy-badge" id="accuracyBadge">
+                                <i class="fas fa-satellite-dish"></i>
+                                <span id="accuracyText">Detecting…</span>
+                            </span>
+                        </div>
+
+                        <!-- Map Preview -->
+                        <div id="locationMap"></div>
+                        <p style="font-size:12px;color:var(--s400);margin:6px 0 0;">Map preview updates as you type coordinates. © OpenStreetMap contributors.</p>
+                    </div>
+
+                    <div class="divider"></div>
+
+                    <!-- Allowed Radius -->
+                    <div class="field-group">
+                        <label class="field-label" for="allowedRadius">Allowed Radius</label>
+                        <div class="input-suffix-wrap" style="max-width: 260px;">
+                            <input type="number" class="field-input" id="allowedRadius" name="allowed_radius_meters"
+                                placeholder="100" min="1" max="50000"
+                                value="{{ att_settings.allowed_radius_meters|default:100 }}"
+                                oninput="onCoordsChange()">
+                            <span class="input-suffix">meters</span>
+                        </div>
+                        <span class="field-hint">Employees must be within this distance from the configured office location. (1 – 50,000 m)</span>
+                    </div>
+
+                    <!-- GPS Accuracy -->
+                    <div class="field-group">
+                        <label class="field-label" for="maxGpsAccuracy">Maximum GPS Accuracy Allowed</label>
+                        <div class="input-suffix-wrap" style="max-width: 260px;">
+                            <input type="number" class="field-input" id="maxGpsAccuracy" name="max_gps_accuracy_meters"
+                                placeholder="50" min="5" max="500"
+                                value="{{ att_settings.max_gps_accuracy_meters|default:50 }}">
+                            <span class="input-suffix">meters</span>
+                        </div>
+                        <span class="field-hint">
+                            Attendance check-in will be rejected if the device reports a location accuracy <em>worse</em> than this value.
+                            A <strong>lower</strong> number means stricter precision is required.
+                            Example: if set to 30, a device reporting ±80 m accuracy will be rejected. (5 – 500 m)
+                        </span>
+                    </div>
+
+                </div><!-- /#locationSectionWrap -->
+
+                <div class="form-actions">
+                    <span id="saveStatus2" style="font-size:13px;font-weight:600;"></span>
+                    <button type="button" class="btn btn-primary" id="saveBtn2" onclick="saveSettings()">
+                        <i class="fas fa-check"></i> Save Settings
+                    </button>
+                </div>
             </div><!-- /.settings-card -->
+
         </div><!-- /.content-area -->
     </div><!-- /.settings-layout -->
 </div><!-- /.page-wrap -->
 
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV/XN/WPvE=" crossorigin=""></script>
 <script>
+    // ── Toggle helpers ──────────────────────────────────────────────
     function toggleIpSection() {
         const toggle = document.getElementById('networkToggle');
-        const labelText = document.getElementById('toggleLabelText');
-        const ipSection = document.getElementById('ipSectionWrap');
-        labelText.textContent = toggle.checked ? 'Enabled' : 'Disabled';
-        ipSection.classList.toggle('disabled-section', !toggle.checked);
+        document.getElementById('toggleLabelText').textContent = toggle.checked ? 'Enabled' : 'Disabled';
+        document.getElementById('ipSectionWrap').classList.toggle('disabled-section', !toggle.checked);
     }
 
+    function toggleLocationSection() {
+        const toggle = document.getElementById('locationToggle');
+        document.getElementById('locationToggleLabelText').textContent = toggle.checked ? 'Enabled' : 'Disabled';
+        document.getElementById('locationSectionWrap').classList.toggle('disabled-section', !toggle.checked);
+    }
+
+    // ── IP rows ──────────────────────────────────────────────────────
     function addIpRow() {
         const container = document.getElementById('ipRowsContainer');
         const row = document.createElement('div');
@@ -287,27 +441,129 @@
     function deleteRow(btn) {
         const rows = document.querySelectorAll('#ipRowsContainer .ip-row');
         if (rows.length === 1) {
-            // Clear value instead of removing the last row
             btn.closest('.ip-row').querySelector('input').value = '';
         } else {
             btn.closest('.ip-row').remove();
         }
     }
 
-    function saveSettings() {
-        const btn = document.getElementById('saveBtn');
-        const statusEl = document.getElementById('saveStatus');
-        const originalContent = btn.innerHTML;
+    // ── Leaflet map ──────────────────────────────────────────────────
+    let _map = null;
+    let _marker = null;
+    let _circle = null;
+    const DEFAULT_LAT = {{ att_settings.office_latitude|default:"20.5937" }};
+    const DEFAULT_LNG = {{ att_settings.office_longitude|default:"78.9629" }};
+    const HAS_SAVED_COORDS = {{ att_settings.office_latitude|yesno:"true,false" }};
 
-        // Collect data
+    function initMap() {
+        const startLat = HAS_SAVED_COORDS ? DEFAULT_LAT : 20.5937;
+        const startLng = HAS_SAVED_COORDS ? DEFAULT_LNG : 78.9629;
+        const zoom = HAS_SAVED_COORDS ? 16 : 5;
+
+        _map = L.map('locationMap').setView([startLat, startLng], zoom);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap contributors',
+            maxZoom: 19,
+        }).addTo(_map);
+
+        if (HAS_SAVED_COORDS) {
+            const radius = parseInt(document.getElementById('allowedRadius').value) || 100;
+            placeMarkerAndCircle(startLat, startLng, radius);
+        }
+    }
+
+    function placeMarkerAndCircle(lat, lng, radius) {
+        if (_marker) { _map.removeLayer(_marker); _marker = null; }
+        if (_circle) { _map.removeLayer(_circle); _circle = null; }
+
+        _marker = L.marker([lat, lng]).addTo(_map)
+            .bindPopup('<b>Office Location</b>').openPopup();
+        _circle = L.circle([lat, lng], {
+            color: '#2563eb',
+            fillColor: 'rgba(37,99,235,0.12)',
+            fillOpacity: 0.4,
+            weight: 2,
+            radius: radius,
+        }).addTo(_map);
+
+        _map.setView([lat, lng], Math.max(_map.getZoom(), 16));
+    }
+
+    function onCoordsChange() {
+        const lat = parseFloat(document.getElementById('officeLatitude').value);
+        const lng = parseFloat(document.getElementById('officeLongitude').value);
+        const radius = parseInt(document.getElementById('allowedRadius').value) || 100;
+        if (!isNaN(lat) && !isNaN(lng) && lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180) {
+            placeMarkerAndCircle(lat, lng, radius);
+        }
+    }
+
+    // ── Use Current Location ─────────────────────────────────────────
+    function useCurrentLocation() {
+        if (!navigator.geolocation) {
+            alert('Your browser does not support geolocation.');
+            return;
+        }
+        const btn = document.getElementById('useCurrentLocBtn');
+        const originalLabel = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Detecting…';
+
+        navigator.geolocation.getCurrentPosition(
+            function(pos) {
+                btn.disabled = false;
+                btn.innerHTML = originalLabel;
+
+                const lat = pos.coords.latitude;
+                const lng = pos.coords.longitude;
+                const acc = Math.round(pos.coords.accuracy);
+
+                document.getElementById('officeLatitude').value = lat.toFixed(7);
+                document.getElementById('officeLongitude').value = lng.toFixed(7);
+
+                const accDisplay = document.getElementById('accuracyDisplay');
+                const accBadge = document.getElementById('accuracyBadge');
+                const accText = document.getElementById('accuracyText');
+                accDisplay.style.display = 'block';
+                accText.textContent = '± ' + acc + ' meters';
+                accBadge.className = 'accuracy-badge' + (acc > 50 ? ' poor' : '');
+
+                onCoordsChange();
+            },
+            function(err) {
+                btn.disabled = false;
+                btn.innerHTML = originalLabel;
+                if (err.code === 1) {
+                    alert('Location permission denied. Please allow location access and try again.');
+                } else {
+                    alert('Could not get your location. Please enter coordinates manually.');
+                }
+            },
+            { enableHighAccuracy: true, timeout: 12000, maximumAge: 0 }
+        );
+    }
+
+    // ── Save settings ────────────────────────────────────────────────
+    function saveSettings() {
+        // Disable both buttons while saving
+        ['saveBtn1', 'saveBtn2'].forEach(function(id) {
+            const b = document.getElementById(id);
+            if (b) { b._orig = b.innerHTML; b.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving…'; b.disabled = true; }
+        });
+        ['saveStatus1', 'saveStatus2'].forEach(function(id) {
+            const s = document.getElementById(id);
+            if (s) { s.textContent = ''; s.style.color = ''; }
+        });
+
         const networkEnabled = document.getElementById('networkToggle').checked;
         const ipInputs = document.querySelectorAll('#ipRowsContainer .ip-input');
         const ips = Array.from(ipInputs).map(i => i.value.trim()).filter(v => v !== '');
 
-        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
-        btn.disabled = true;
-        statusEl.textContent = '';
-        statusEl.style.color = '';
+        const locationEnabled = document.getElementById('locationToggle').checked;
+        const latVal = document.getElementById('officeLatitude').value.trim();
+        const lngVal = document.getElementById('officeLongitude').value.trim();
+        const radiusVal = document.getElementById('allowedRadius').value.trim();
+        const accuracyVal = document.getElementById('maxGpsAccuracy').value.trim();
 
         fetch(window.location.href, {
             method: 'POST',
@@ -317,36 +573,66 @@
             },
             body: JSON.stringify({
                 network_restriction_enabled: networkEnabled,
-                allowed_ip_addresses: ips
+                allowed_ip_addresses: ips,
+                location_restriction_enabled: locationEnabled,
+                office_latitude: latVal === '' ? null : latVal,
+                office_longitude: lngVal === '' ? null : lngVal,
+                allowed_radius_meters: radiusVal === '' ? 100 : parseInt(radiusVal),
+                max_gps_accuracy_meters: accuracyVal === '' ? 50 : parseInt(accuracyVal),
             })
         })
         .then(r => r.json())
         .then(data => {
-            btn.disabled = false;
+            ['saveBtn1', 'saveBtn2'].forEach(function(id) {
+                const b = document.getElementById(id);
+                if (b) { b.disabled = false; }
+            });
+
             if (data.success) {
-                btn.innerHTML = '<i class="fas fa-check-circle"></i> Saved';
-                btn.style.background = 'var(--green)';
-                statusEl.textContent = 'Settings saved successfully.';
-                statusEl.style.color = 'var(--green)';
-                setTimeout(() => {
-                    btn.innerHTML = originalContent;
-                    btn.style.background = '';
-                    statusEl.textContent = '';
+                ['saveBtn1', 'saveBtn2'].forEach(function(id) {
+                    const b = document.getElementById(id);
+                    if (b) { b.innerHTML = '<i class="fas fa-check-circle"></i> Saved'; b.style.background = 'var(--green)'; }
+                });
+                ['saveStatus1', 'saveStatus2'].forEach(function(id) {
+                    const s = document.getElementById(id);
+                    if (s) { s.textContent = 'Settings saved successfully.'; s.style.color = 'var(--green)'; }
+                });
+                setTimeout(function() {
+                    ['saveBtn1', 'saveBtn2'].forEach(function(id) {
+                        const b = document.getElementById(id);
+                        if (b) { b.innerHTML = b._orig || '<i class="fas fa-check"></i> Save Settings'; b.style.background = ''; }
+                    });
+                    ['saveStatus1', 'saveStatus2'].forEach(function(id) {
+                        const s = document.getElementById(id);
+                        if (s) { s.textContent = ''; }
+                    });
                 }, 3000);
             } else {
-                btn.innerHTML = originalContent;
+                ['saveBtn1', 'saveBtn2'].forEach(function(id) {
+                    const b = document.getElementById(id);
+                    if (b) { b.innerHTML = b._orig || '<i class="fas fa-check"></i> Save Settings'; }
+                });
                 const msgs = data.errors ? data.errors.join(' ') : 'Save failed.';
-                statusEl.textContent = '⚠ ' + msgs;
-                statusEl.style.color = 'var(--red)';
+                ['saveStatus1', 'saveStatus2'].forEach(function(id) {
+                    const s = document.getElementById(id);
+                    if (s) { s.textContent = '⚠ ' + msgs; s.style.color = 'var(--red)'; }
+                });
             }
         })
-        .catch(() => {
-            btn.disabled = false;
-            btn.innerHTML = originalContent;
-            statusEl.textContent = '⚠ Network error. Please try again.';
-            statusEl.style.color = 'var(--red)';
+        .catch(function() {
+            ['saveBtn1', 'saveBtn2'].forEach(function(id) {
+                const b = document.getElementById(id);
+                if (b) { b.disabled = false; b.innerHTML = b._orig || '<i class="fas fa-check"></i> Save Settings'; }
+            });
+            ['saveStatus1', 'saveStatus2'].forEach(function(id) {
+                const s = document.getElementById(id);
+                if (s) { s.textContent = '⚠ Network error. Please try again.'; s.style.color = 'var(--red)'; }
+            });
         });
     }
+
+    // Init map after DOM + Leaflet loaded
+    document.addEventListener('DOMContentLoaded', initMap);
 </script>
 </body>
 </html>

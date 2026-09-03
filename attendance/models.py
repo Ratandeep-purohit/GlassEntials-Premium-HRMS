@@ -230,11 +230,39 @@ class AttendanceImportBatch(BaseModel):
 
 class AttendanceSettings(BaseModel):
     """Stores organization-level attendance configuration."""
+    # Network restriction
     network_restriction_enabled = models.BooleanField(default=False)
     allowed_ip_addresses = models.JSONField(default=list, blank=True)
+
+    # Location restriction
+    location_restriction_enabled = models.BooleanField(default=False)
+    office_latitude = models.DecimalField(max_digits=10, decimal_places=7, null=True, blank=True)
+    office_longitude = models.DecimalField(max_digits=10, decimal_places=7, null=True, blank=True)
+    allowed_radius_meters = models.PositiveIntegerField(default=100)
+    max_gps_accuracy_meters = models.PositiveIntegerField(default=50)
 
     class Meta:
         verbose_name_plural = "Attendance Settings"
 
     def __str__(self):
         return f"Attendance Settings for {self.organization.name if self.organization else 'Unknown'}"
+
+
+class AttendanceLocationLog(BaseModel):
+    """Audit record of GPS location captured at employee check-in."""
+    attendance = models.OneToOneField(
+        Attendance, on_delete=models.CASCADE, related_name='location_log'
+    )
+    latitude = models.DecimalField(max_digits=10, decimal_places=7)
+    longitude = models.DecimalField(max_digits=10, decimal_places=7)
+    location_accuracy_meters = models.DecimalField(max_digits=8, decimal_places=2)
+    distance_from_office_meters = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    location_verified = models.BooleanField(default=False)
+    verified_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-verified_at']
+
+    def __str__(self):
+        status = "✓" if self.location_verified else "✗"
+        return f"{status} Location for {self.attendance.employee} on {self.attendance.date}"

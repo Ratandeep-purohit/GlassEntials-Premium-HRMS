@@ -65,16 +65,21 @@
                         <span>00</span>
                         <span>00</span>
                     </div>
-                    <form method="POST" action="{% url 'clock_in_out' %}" class="employee-attendance-action">
+                    <form method="POST" action="{% url 'clock_in_out' %}" class="employee-attendance-action" id="attendanceForm">
                         {% csrf_token %}
+                        <input type="hidden" name="ajax" value="1">
+                        <input type="hidden" name="loc_lat" id="loc_lat" value="">
+                        <input type="hidden" name="loc_lng" id="loc_lng" value="">
+                        <input type="hidden" name="loc_accuracy" id="loc_accuracy" value="">
                         {% if not today_attendance or not today_attendance.clock_in %}
-                        <button type="submit" name="action" value="clock_in">Check-in</button>
+                        <button type="button" id="checkInBtn" onclick="handleCheckIn(this)">Check-in</button>
                         {% elif not today_attendance.clock_out %}
                         <button type="submit" name="action" value="clock_out">Check-out</button>
                         {% else %}
                         <button type="button" disabled>Completed</button>
                         {% endif %}
                     </form>
+
                 {% else %}
                     <div class="employee-attendance-avatar"><span>{{ request.user.username|slice:":1"|upper }}</span></div>
                     <div class="employee-attendance-identity">
@@ -518,6 +523,119 @@
     </script>
     <script src="{% static 'js/ui-effects.js' %}?v=1.0" defer></script>
     <script src="{% static 'js/landing.js' %}?v=1.0"></script>
+
+    <script>
+    // Location-Based Check-In
+    const LOCATION_RESTRICTION_ENABLED = {{ location_restriction_enabled|yesno:"true,false" }};
+
+    function handleCheckIn(btn) {
+        if (!LOCATION_RESTRICTION_ENABLED) {
+            // No location restriction — submit normally
+            const form = document.getElementById('attendanceForm');
+            const hiddenAction = document.createElement('input');
+            hiddenAction.type = 'hidden';
+            hiddenAction.name = 'action';
+            hiddenAction.value = 'clock_in';
+            form.appendChild(hiddenAction);
+            form.submit();
+            return;
+        }
+
+        // Location restriction is ON — collect GPS first
+        if (!navigator.geolocation) {
+            showAttError('Your browser does not support location services. Please use a modern browser.');
+            return;
+        }
+
+        const originalLabel = btn.textContent;
+        btn.disabled = true;
+        btn.textContent = '📍 Verifying location...';
+
+        navigator.geolocation.getCurrentPosition(
+            function(position) {
+                // Success — populate hidden fields and submit
+                document.getElementById('loc_lat').value = position.coords.latitude;
+                document.getElementById('loc_lng').value = position.coords.longitude;
+                document.getElementById('loc_accuracy').value = position.coords.accuracy || '';
+
+                const form = document.getElementById('attendanceForm');
+                const hiddenAction = document.createElement('input');
+                hiddenAction.type = 'hidden';
+                hiddenAction.name = 'action';
+                hiddenAction.value = 'clock_in';
+                form.appendChild(hiddenAction);
+
+                // Submit via AJAX to handle JSON error responses from backend
+                btn.textContent = '⏳ Checking in...';
+                const formData = new FormData(form);
+
+                fetch(form.action, {
+                    method: 'POST',
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                    body: formData,
+                })
+                .then(function(response) { return response.json(); })
+                .then(function(data) {
+                    if (data.success) {
+                        btn.textContent = '✓ Checked In!';
+                        btn.style.background = 'var(--green, #16a34a)';
+                        // Refresh the page after a short delay so the UI updates
+                        setTimeout(function() { window.location.reload(); }, 1200);
+                    } else {
+                        btn.disabled = false;
+                        btn.textContent = originalLabel;
+                        showAttError(data.message || 'Check-in failed. Please try again.');
+                    }
+                })
+                .catch(function() {
+                    btn.disabled = false;
+                    btn.textContent = originalLabel;
+                    showAttError('Network error. Please check your connection and try again.');
+                });
+            },
+            function(err) {
+                // Geolocation error
+                btn.disabled = false;
+                btn.textContent = originalLabel;
+                if (err.code === 1) {
+                    showAttError('Location permission denied. Please allow location access in your browser settings and try again.');
+                } else if (err.code === 2) {
+                    showAttError('Unable to determine your current location. Please enable location services and try again.');
+                } else if (err.code === 3) {
+                    showAttError('Location request timed out. Please check your GPS signal and try again.');
+                } else {
+                    showAttError('Unable to get your location. Please try again.');
+                }
+            },
+            { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
+        );
+    }
+
+    function showAttError(msg) {
+        // Remove any existing error toast
+        const existing = document.getElementById('attErrorToast');
+        if (existing) existing.remove();
+
+        const toast = document.createElement('div');
+        toast.id = 'attErrorToast';
+        toast.style.cssText = [
+            'position:fixed', 'bottom:28px', 'left:50%', 'transform:translateX(-50%)',
+            'background:#1e293b', 'color:#fff', 'padding:14px 22px',
+            'border-radius:10px', 'font-size:13.5px', 'font-weight:600',
+            'z-index:9999', 'box-shadow:0 8px 32px rgba(0,0,0,.22)',
+            'max-width:420px', 'text-align:center', 'line-height:1.5',
+            'border-left:4px solid #ef4444',
+        ].join(';');
+        toast.textContent = '⚠ ' + msg;
+        document.body.appendChild(toast);
+        setTimeout(function() {
+            toast.style.transition = 'opacity 0.4s';
+            toast.style.opacity = '0';
+            setTimeout(function() { toast.remove(); }, 450);
+        }, 5000);
+    }
+    </script>
 </body>
+
 
 </html>

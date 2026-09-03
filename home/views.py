@@ -333,6 +333,11 @@ def home_view(request):
 
     dashboard_announcements = visible_announcements_for(request.user)[:3]
 
+    # Attendance location restriction settings
+    from attendance.models import AttendanceSettings
+    _att_settings = AttendanceSettings.objects.filter(organization=organization).first()
+    location_restriction_enabled = bool(_att_settings and _att_settings.location_restriction_enabled)
+
     context = {
         'user_count': user_count,
         'today_date': today_date,
@@ -358,7 +363,9 @@ def home_view(request):
         'my_approved_leaves': my_approved_leaves,
         'last_5_attendance': last_5_attendance,
         'dashboard_announcements': dashboard_announcements,
+        'location_restriction_enabled': location_restriction_enabled,
     }
+
 
     return render(request, 'home.html', context)
 

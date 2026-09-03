@@ -1,10 +1,17 @@
 from django.contrib import admin
-from .models import Shift, ShiftAssignment, AttendanceStatus, Attendance, AttendanceSettings
+from .models import Shift, ShiftAssignment, AttendanceStatus, Attendance, AttendanceSettings, AttendanceLocationLog
 
 @admin.register(AttendanceSettings)
 class AttendanceSettingsAdmin(admin.ModelAdmin):
-    list_display = ('organization', 'network_restriction_enabled')
+    list_display = ('organization', 'network_restriction_enabled', 'location_restriction_enabled')
     readonly_fields = ('organization',)
+
+@admin.register(AttendanceLocationLog)
+class AttendanceLocationLogAdmin(admin.ModelAdmin):
+    list_display = ('attendance', 'latitude', 'longitude', 'location_accuracy_meters', 'distance_from_office_meters', 'location_verified', 'verified_at')
+    list_filter = ('location_verified', 'verified_at')
+    search_fields = ('attendance__employee__first_name', 'attendance__employee__last_name', 'attendance__employee__employee_id')
+    readonly_fields = ('attendance', 'latitude', 'longitude', 'location_accuracy_meters', 'distance_from_office_meters', 'location_verified')
 
 @admin.register(Shift)
 class ShiftAdmin(admin.ModelAdmin):
