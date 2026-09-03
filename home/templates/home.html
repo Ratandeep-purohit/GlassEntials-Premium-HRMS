@@ -342,39 +342,56 @@
                         <a href="{% url 'announcements:list' %}" class="action-link">View all &rarr;</a>
                     </div>
                     {% for announcement in dashboard_announcements %}
-                    <a href="{% url 'announcements:detail' announcement.id %}" class="announce-item"
-                        style="display: block; text-decoration: none; color: inherit;">
-                        <span class="item-tag" {% if announcement.category == 'POLICY' %}style="background: rgba(124,58,237,0.1); color: #7c3aed;" {% elif announcement.category == 'EVENT' %}style="background: rgba(245,158,11,0.1); color: #d97706;" {% elif announcement.category == 'HR_UPDATE' %}style="background: rgba(34,197,94,0.1); color: #15803d;" {% elif announcement.category == 'OPERATIONS' %}style="background: rgba(14,165,233,0.1); color: #0369a1;" {% endif %}>
-                            {{ announcement.get_category_display }}
-                        </span>
-                        <div style="display: flex; flex-direction: column; gap: 8px;">
-                            <h3 class="item-h" style="margin: 0;">{{ announcement.title }}</h3>
-                            <div class="item-meta" style="margin: 0;">Posted {{ announcement.publish_at|timesince }} ago &middot; {{ announcement.department }}</div>
+                    <a href="{% url 'announcements:detail' announcement.id %}" style="display: block; text-decoration: none; color: inherit;">
+                        <div style="background: #fff; border: 1px solid #e2e8f0; border-radius: 14px; overflow: hidden; margin-bottom: 14px; transition: box-shadow 0.2s, transform 0.2s;" onmouseover="this.style.boxShadow='0 8px 24px rgba(37,99,235,0.10)';this.style.transform='translateY(-2px)';" onmouseout="this.style.boxShadow='none';this.style.transform='none';">
                             
                             {% with img_count=announcement.images.count images=announcement.images_list %}
                             {% if img_count > 0 %}
-                            <div style="margin-top: 6px; width: 100%; height: 160px; border-radius: 10px; overflow: hidden; position: relative;">
-                                <img src="{{ images.0.image.url }}" alt="Announcement photo" style="width: 100%; height: 100%; object-fit: cover; display: block;">
+                            <div style="width: 100%; height: 180px; overflow: hidden; position: relative;">
+                                <img src="{{ images.0.image.url }}" alt="{{ announcement.title }}" style="width: 100%; height: 100%; object-fit: cover; display: block; transition: transform 0.3s;">
                                 {% if img_count > 1 %}
-                                <div style="position: absolute; bottom: 8px; right: 8px; background: rgba(15,23,42,0.7); color: #fff; font-size: 10px; font-weight: 800; padding: 4px 8px; border-radius: 6px; backdrop-filter: blur(4px);">
-                                    +{{ img_count|add:"-1" }} more
+                                <div style="position: absolute; bottom: 10px; right: 10px; background: rgba(15,23,42,0.65); color: #fff; font-size: 10px; font-weight: 800; padding: 4px 10px; border-radius: 20px; backdrop-filter: blur(6px); letter-spacing: 0.5px;">
+                                    <i class="fas fa-images" style="margin-right: 3px;"></i>+{{ img_count|add:"-1" }} more
                                 </div>
                                 {% endif %}
                             </div>
                             {% endif %}
                             {% endwith %}
+
+                            <div style="padding: 14px 16px 16px;">
+                                <div style="display: flex; align-items: center; gap: 9px; margin-bottom: 10px;">
+                                    <div style="width: 32px; height: 32px; border-radius: 9px; background: linear-gradient(135deg, #2563eb, #7c3aed); display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                                        <i class="fas fa-bullhorn" style="color: #fff; font-size: 13px;"></i>
+                                    </div>
+                                    <div>
+                                        <div style="font-size: 12px; font-weight: 800; color: #0f172a; line-height: 1.2;">{{ announcement.department }}</div>
+                                        <div style="font-size: 10px; color: #94a3b8; font-weight: 600;">{{ announcement.publish_at|date:"d M Y · g:i A" }}</div>
+                                    </div>
+                                </div>
+
+                                <div style="display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 8px;">
+                                    <span style="display: inline-flex; align-items: center; padding: 3px 10px; border-radius: 20px; font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; {% if announcement.category == 'POLICY' %}background: #ede9fe; color: #7c3aed;{% elif announcement.category == 'EVENT' %}background: #fff1db; color: #ea580c;{% elif announcement.category == 'HR_UPDATE' %}background: #dcfce7; color: #15803d;{% elif announcement.category == 'OPERATIONS' %}background: #e0f2fe; color: #0369a1;{% else %}background: #e8f0ff; color: #2563eb;{% endif %}">
+                                        {{ announcement.get_category_display }}
+                                    </span>
+                                    {% if announcement.is_pinned %}<span style="display: inline-flex; align-items: center; gap: 4px; padding: 3px 10px; border-radius: 20px; font-size: 10px; font-weight: 800; background: #fef3c7; color: #b45309;"><i class="fas fa-thumbtack" style="font-size: 8px;"></i> Pinned</span>{% endif %}
+                                </div>
+
+                                <div style="font-size: 14px; font-weight: 800; color: #0f172a; line-height: 1.3; margin-bottom: 6px; letter-spacing: -0.2px;">{{ announcement.title }}</div>
+                                {% if announcement.body %}
+                                <div style="font-size: 12px; color: #64748b; line-height: 1.6; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">{{ announcement.body|truncatechars:120 }}</div>
+                                {% endif %}
+                            </div>
                         </div>
                     </a>
                     {% empty %}
-                    <div
-                        style="display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 180px; color: var(--text-secondary); text-align: center;">
-                        <i class="fas fa-bullhorn"
-                            style="font-size: 28px; color: var(--accent); opacity: 0.75; margin-bottom: 10px;"></i>
+                    <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 180px; color: var(--text-secondary); text-align: center;">
+                        <i class="fas fa-bullhorn" style="font-size: 28px; color: var(--accent); opacity: 0.75; margin-bottom: 10px;"></i>
                         <span style="font-size: 13px; font-weight: 700;">No announcements yet</span>
                         <span style="font-size: 11px; margin-top: 4px;">Company updates will appear here</span>
                     </div>
                     {% endfor %}
                 </div>
+
 
                 <!-- Payslip Card -->
                 <div class="bento-card"
