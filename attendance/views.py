@@ -2507,7 +2507,22 @@ def attendance_settings_view(request):
             if errors:
                 return JsonResponse({'success': False, 'errors': errors}, status=400)
 
+            print("\n--- ATTENDANCE SETTINGS DEBUG ---")
+            print("USER ORG ID:", getattr(request.user, 'organization_id', 'Unknown'))
+            print("SETTINGS ID:", att_settings.id)
+            print("INCOMING LAT/LNG:", raw_lat, raw_lng)
+            print("INCOMING RADIUS:", raw_radius)
+            print("INCOMING ACCURACY:", raw_accuracy)
+            print("BEFORE SAVE RADIUS:", att_settings.allowed_radius_meters)
+            print("BEFORE SAVE ACCURACY:", att_settings.max_gps_accuracy_meters)
+
             att_settings.save()
+            att_settings.refresh_from_db()
+
+            print("AFTER SAVE RADIUS:", att_settings.allowed_radius_meters)
+            print("AFTER SAVE ACCURACY:", att_settings.max_gps_accuracy_meters)
+            print("---------------------------------\n")
+
             return JsonResponse({'success': True, 'message': 'Settings saved successfully.'})
         except Exception as e:
             import logging
