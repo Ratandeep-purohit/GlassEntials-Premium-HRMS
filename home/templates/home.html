@@ -41,8 +41,7 @@
                         <img src="{{ current_employee.profile_img.url }}"
                             alt="{{ current_employee.first_name }} {{ current_employee.last_name }}">
                         {% else %}
-                        <span>{{ current_employee.first_name|slice:":1"|upper }}{{
-                            current_employee.last_name|slice:":1"|upper }}</span>
+                        <span>{{ current_employee.first_name|slice:":1"|upper }}{{ current_employee.last_name|slice:":1"|upper }}</span>
                         {% endif %}
                     </div>
                     <div class="employee-attendance-identity">
@@ -354,8 +353,7 @@
                             {% if img_count %}<span style="font-size: 11px; font-weight: 700; color: #64748b; margin-left: 6px;"><i class="fas fa-image"></i> {{ img_count }}</span>{% endif %}
                             {% endwith %}
                         </h3>
-                        <div class="item-meta">Posted {{ announcement.publish_at|timesince }} ago &middot; {{
-                            announcement.department }}</div>
+                        <div class="item-meta">Posted {{ announcement.publish_at|timesince }} ago &middot; {{ announcement.department }}</div>
                     </a>
                     {% empty %}
                     <div
@@ -379,11 +377,9 @@
                         <h2 class="bento-title" style="color: #fff; margin: 0;">Your Payslip</h2>
                     </div>
                     {% if latest_payslip %}
-                    <p style="font-size: 12px; opacity: 0.88; margin: 0 0 8px;">{{
-                        latest_payslip.payroll_run.get_month_display }} {{ latest_payslip.payroll_run.year }} payslip is
+                    <p style="font-size: 12px; opacity: 0.88; margin: 0 0 8px;">{{ latest_payslip.payroll_run.get_month_display }} {{ latest_payslip.payroll_run.year }} payslip is
                         ready.</p>
-                    <div style="font-size: 11px; opacity: 0.78; margin-bottom: 14px;">Net salary: Rs. {{
-                        latest_payslip.net_salary }} - {{ latest_payslip.get_status_display }}</div>
+                    <div style="font-size: 11px; opacity: 0.78; margin-bottom: 14px;">Net salary: Rs. {{ latest_payslip.net_salary }} - {{ latest_payslip.get_status_display }}</div>
                     <a href="{% url 'payslip_detail' latest_payslip.id %}"
                         style="background: rgba(255,255,255,0.2); color: #fff; text-decoration: none; padding: 8px 14px; border-radius: 8px; font-weight: 700; font-size: 12px; display: inline-flex; align-items: center; gap: 6px; border: 1px solid rgba(255,255,255,0.3);">
                         <i class="fas fa-file-export" style="font-size: 11px;"></i> View / Export PDF
@@ -408,8 +404,7 @@
                         <h2 class="bento-title">Pending Approvals</h2>
                         {% if pending_approval_total %}
                         <span
-                            style="background: rgba(239,68,68,0.1); color: #ef4444; font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 99px;">{{
-                            pending_approval_total }}</span>
+                            style="background: rgba(239,68,68,0.1); color: #ef4444; font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 99px;">{{ pending_approval_total }}</span>
                         {% endif %}
                     </div>
                     {% for approval in pending_approval_items %}
@@ -479,14 +474,11 @@
                             onmouseover="this.style.transform='translateX(4px)'"
                             onmouseout="this.style.transform='translateX(0)'">
                             <div style="display: flex; flex-direction: column;">
-                                <span style="font-size: 13px; font-weight: 700;">{{ leave.start_date|date:"M d, Y"
-                                    }}</span>
-                                <span style="font-size: 11px; color: var(--text-secondary);">{{ leave.leave_type.name
-                                    }}</span>
+                                <span style="font-size: 13px; font-weight: 700;">{{ leave.start_date|date:"M d, Y" }}</span>
+                                <span style="font-size: 11px; color: var(--text-secondary);">{{ leave.leave_type.name }}</span>
                             </div>
                             <span
-                                style="font-size: 11px; font-weight: 800; background: rgba(37, 99, 235, 0.08); color: var(--accent); padding: 4px 8px; border-radius: 6px;">{{
-                                leave.total_days }}d</span>
+                                style="font-size: 11px; font-weight: 800; background: rgba(37, 99, 235, 0.08); color: var(--accent); padding: 4px 8px; border-radius: 6px;">{{ leave.total_days }}d</span>
                         </div>
                         {% endfor %}
                     </div>
@@ -504,13 +496,10 @@
                             <div
                                 style="padding: 8px 0; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px dashed var(--border-light);">
                                 <div style="display: flex; flex-direction: column;">
-                                    <span style="font-size: 12px; font-weight: 600; color: var(--text-main);">{{
-                                        holiday.name }}</span>
-                                    <span style="font-size: 10px; color: var(--text-secondary);">{{
-                                        holiday.date|date:"l" }}</span>
+                                    <span style="font-size: 12px; font-weight: 600; color: var(--text-main);">{{ holiday.name }}</span>
+                                    <span style="font-size: 10px; color: var(--text-secondary);">{{ holiday.date|date:"l" }}</span>
                                 </div>
-                                <span style="font-size: 12px; font-weight: 700; color: var(--text-main);">{{
-                                    holiday.date|date:"M d" }}</span>
+                                <span style="font-size: 12px; font-weight: 700; color: var(--text-main);">{{ holiday.date|date:"M d" }}</span>
                             </div>
                             {% empty %}
                             <div style="text-align: center; padding: 20px; opacity: 0.5;">
@@ -529,8 +518,7 @@
                         <h2 class="bento-title">On Leave Today</h2>
                         {% if on_leave_today_total %}
                         <span
-                            style="background: rgba(37,99,235,0.1); color: var(--accent); font-size: 11px; font-weight: 800; padding: 2px 8px; border-radius: 99px;">{{
-                            on_leave_today_total }}</span>
+                            style="background: rgba(37,99,235,0.1); color: var(--accent); font-size: 11px; font-weight: 800; padding: 2px 8px; border-radius: 99px;">{{ on_leave_today_total }}</span>
                         {% endif %}
                     </div>
                     <div class="compact-list" style="max-height: 240px; overflow-y: auto; padding-right: 4px;">
@@ -547,18 +535,15 @@
                             </div>
                             <div class="user-d" style="flex: 1; min-width: 0;">
                                 <span class="user-n"
-                                    style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block;">{{
-                                    leave.employee.first_name }} {{ leave.employee.last_name }}</span>
+                                    style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block;">{{ leave.employee.first_name }} {{ leave.employee.last_name }}</span>
                                 <span class="user-s"
                                     style="display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
-                                    {{ leave.leave_type.name }}{% if leave.employee.department %} - {{
-                                    leave.employee.department.name }}{% endif %}
+                                    {{ leave.leave_type.name }}{% if leave.employee.department %} - {{ leave.employee.department.name }}{% endif %}
                                 </span>
                             </div>
                             <div style="text-align: right; flex-shrink: 0;">
                                 <span class="status-pill"
-                                    style="background: rgba(37,99,235,0.08); color: var(--accent);">{{ leave.total_days
-                                    }}d</span>
+                                    style="background: rgba(37,99,235,0.08); color: var(--accent);">{{ leave.total_days }}d</span>
                                 <div
                                     style="font-size: 10px; font-weight: 700; color: var(--text-secondary); margin-top: 4px;">
                                     {% if leave.start_date == leave.end_date %}
@@ -602,8 +587,7 @@
                             </div>
                             <div class="user-d" style="flex: 1; min-width: 0;">
                                 <span class="user-n"
-                                    style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block;">{{
-                                    emp.first_name }} {{ emp.last_name }}</span>
+                                    style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block;">{{ emp.first_name }} {{ emp.last_name }}</span>
                                 <span class="user-s">{{ emp.designation.name|default:"--" }}</span>
                             </div>
                             <span class="status-pill">Active</span>
@@ -627,20 +611,16 @@
                         <div class="compact-item"
                             style="display: grid; grid-template-columns: minmax(72px, 1fr) auto; gap: 10px; align-items: center; background: #fff; border: 1px solid var(--border-light);">
                             <div style="min-width: 0;">
-                                <div style="font-size: 12px; font-weight: 800; color: var(--text-main);">{{
-                                    row.date|date:"M d" }}</div>
-                                <div style="font-size: 10px; font-weight: 700; color: var(--text-secondary);">{{
-                                    row.date|date:"l" }}</div>
+                                <div style="font-size: 12px; font-weight: 800; color: var(--text-main);">{{ row.date|date:"M d" }}</div>
+                                <div style="font-size: 10px; font-weight: 700; color: var(--text-secondary);">{{ row.date|date:"l" }}</div>
                             </div>
                             <span class="attendance-mini-pill {{ row.status_type }}">{{ row.status_label }}</span>
                             <div
                                 style="grid-column: 1 / -1; display: flex; justify-content: space-between; gap: 10px; padding-top: 6px; border-top: 1px dashed var(--border-light);">
                                 <span style="font-size: 10px; color: var(--text-secondary);">In: <strong
-                                        style="color: var(--text-main);">{% if row.clock_in %}{{ row.clock_in|time:"h:i
-                                        A" }}{% else %}--{% endif %}</strong></span>
+                                        style="color: var(--text-main);">{% if row.clock_in %}{{ row.clock_in|time:"h:i A" }}{% else %}--{% endif %}</strong></span>
                                 <span style="font-size: 10px; color: var(--text-secondary);">Out: <strong
-                                        style="color: var(--text-main);">{% if row.clock_out %}{{
-                                        row.clock_out|time:"h:i A" }}{% else %}--{% endif %}</strong></span>
+                                        style="color: var(--text-main);">{% if row.clock_out %}{{ row.clock_out|time:"h:i A" }}{% else %}--{% endif %}</strong></span>
                                 <span style="font-size: 10px; color: var(--text-secondary);">Total: <strong
                                         style="color: var(--text-main);">{{ row.work_time }}</strong></span>
                             </div>

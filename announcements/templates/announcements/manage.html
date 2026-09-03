@@ -401,7 +401,11 @@
             syncFileInput();
         }
 
-        input.addEventListener('change', e => { addFiles(Array.from(e.target.files)); input.value = ''; });
+        input.addEventListener('change', e => { 
+            if (e.target.files.length > 0) {
+                addFiles(Array.from(e.target.files)); 
+            }
+        });
 
         dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drag-over'); });
         dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
