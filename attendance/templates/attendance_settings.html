@@ -455,7 +455,20 @@
     const DEFAULT_LNG = {{ att_settings.office_longitude|default:"78.9629" }};
     const HAS_SAVED_COORDS = {{ att_settings.office_latitude|yesno:"true,false" }};
 
+    function isMapAvailable() {
+        return typeof window.L !== 'undefined';
+    }
+
     function initMap() {
+        const mapContainer = document.getElementById('locationMap');
+        if (!isMapAvailable()) {
+            mapContainer.innerHTML = '<div style="padding:40px; text-align:center; color:#64748b; font-size:14px;"><i class="fas fa-map-marked-alt" style="font-size:24px; margin-bottom:12px; display:block; opacity:0.5;"></i>Map preview is currently unavailable (network error loading Leaflet). Coordinates can still be captured and saved normally.</div>';
+            mapContainer.style.display = 'flex';
+            mapContainer.style.alignItems = 'center';
+            mapContainer.style.justifyContent = 'center';
+            return;
+        }
+
         const startLat = HAS_SAVED_COORDS ? DEFAULT_LAT : 20.5937;
         const startLng = HAS_SAVED_COORDS ? DEFAULT_LNG : 78.9629;
         const zoom = HAS_SAVED_COORDS ? 16 : 5;
@@ -473,6 +486,8 @@
     }
 
     function placeMarkerAndCircle(lat, lng, radius) {
+        if (!isMapAvailable() || !_map) return;
+
         if (_marker) { _map.removeLayer(_marker); _marker = null; }
         if (_circle) { _map.removeLayer(_circle); _circle = null; }
 
@@ -501,7 +516,7 @@
     // ── Use Current Location ─────────────────────────────────────────
     function useCurrentLocation() {
         if (!navigator.geolocation) {
-            alert('Your browser does not support geolocation.');
+            alert('Your browser does not support geolocation. Please enter coordinates manually.');
             return;
         }
         const btn = document.getElementById('useCurrentLocBtn');
@@ -514,29 +529,39 @@
                 btn.disabled = false;
                 btn.innerHTML = originalLabel;
 
-                const lat = pos.coords.latitude;
-                const lng = pos.coords.longitude;
-                const acc = Math.round(pos.coords.accuracy);
+                try {
+                    const lat = pos.coords.latitude;
+                    const lng = pos.coords.longitude;
+                    const acc = Math.round(pos.coords.accuracy);
 
-                document.getElementById('officeLatitude').value = lat.toFixed(7);
-                document.getElementById('officeLongitude').value = lng.toFixed(7);
+                    document.getElementById('officeLatitude').value = lat.toFixed(7);
+                    document.getElementById('officeLongitude').value = lng.toFixed(7);
 
-                const accDisplay = document.getElementById('accuracyDisplay');
-                const accBadge = document.getElementById('accuracyBadge');
-                const accText = document.getElementById('accuracyText');
-                accDisplay.style.display = 'block';
-                accText.textContent = '± ' + acc + ' meters';
-                accBadge.className = 'accuracy-badge' + (acc > 50 ? ' poor' : '');
+                    const accDisplay = document.getElementById('accuracyDisplay');
+                    const accBadge = document.getElementById('accuracyBadge');
+                    const accText = document.getElementById('accuracyText');
+                    accDisplay.style.display = 'block';
+                    accText.textContent = '± ' + acc + ' meters';
+                    accBadge.className = 'accuracy-badge' + (acc > 50 ? ' poor' : '');
 
-                onCoordsChange();
+                    // Safe call to update map if available
+                    onCoordsChange();
+                } catch (e) {
+                    console.error("Error processing location data:", e);
+                    // Do not alert here to avoid confusing the user, the coordinates are already populated.
+                }
             },
             function(err) {
                 btn.disabled = false;
                 btn.innerHTML = originalLabel;
-                if (err.code === 1) {
-                    alert('Location permission denied. Please allow location access and try again.');
+                if (err.code === 1) { // PERMISSION_DENIED
+                    alert('Geolocation Error: Location permission denied. Please allow location access in your browser/OS and try again.');
+                } else if (err.code === 2) { // POSITION_UNAVAILABLE
+                    alert('Geolocation Error: Position unavailable. Your device could not determine your location.');
+                } else if (err.code === 3) { // TIMEOUT
+                    alert('Geolocation Error: Request timed out. Please try again.');
                 } else {
-                    alert('Could not get your location. Please enter coordinates manually.');
+                    alert('Geolocation Error: Could not get your location. Please enter coordinates manually.');
                 }
             },
             { enableHighAccuracy: false, timeout: 10000, maximumAge: 0 }
