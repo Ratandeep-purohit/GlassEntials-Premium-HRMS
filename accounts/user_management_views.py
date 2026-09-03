@@ -340,7 +340,6 @@ def edit_user_role_view(request, user_id):
     messages.success(request, f"Role updated for '{target.username}'.")
     return redirect('user_management')
 
-
 @login_required
 @require_POST
 def convert_to_employee_view(request, user_id):

@@ -1,89 +1,371 @@
 {% load static %}
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ announcement.title }} | Announcements</title>
     <link rel="icon" type="image/png" href="{% static 'img/favicon_logo.png' %}">
     <link rel="apple-touch-icon" href="{% static 'img/favicon_logo.png' %}">
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Manrope:wght@700;800&display=swap">
+    <link rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Manrope:wght@700;800&display=swap">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <link rel="stylesheet" href="{% static 'css/landing.css' %}?v=3.0">
     <link rel="stylesheet" href="{% static 'css/home.css' %}?v=3.1">
     <style>
-        body { background: #f1f5f9; }
-        .ann-detail { max-width: 760px; margin: 104px auto 64px; padding: 0 20px; }
-        .ann-panel { background: #fff; border: 1px solid #e2e8f0; border-radius: 18px; overflow: hidden; box-shadow: 0 2px 10px rgba(15,23,42,.05); }
-        .ann-panel-body { padding: 32px; }
-        .ann-back { display: inline-flex; align-items: center; gap: 8px; color: #2563eb; text-decoration: none; font-size: 13px; font-weight: 800; margin-bottom: 20px; }
-        .ann-back:hover { text-decoration: underline; }
-        .ann-card-header { display: flex; align-items: flex-start; gap: 12px; margin-bottom: 18px; }
-        .ann-avatar { width: 44px; height: 44px; border-radius: 12px; background: linear-gradient(135deg, #2563eb, #7c3aed); display: flex; align-items: center; justify-content: center; color: #fff; font-size: 16px; flex-shrink: 0; }
-        .ann-author-name { font-size: 14px; font-weight: 800; color: #0f172a; margin: 0 0 2px; }
-        .ann-author-meta { font-size: 12px; color: #94a3b8; font-weight: 600; }
-        .ann-tags { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px; }
-        .ann-tag { display: inline-flex; align-items: center; gap: 4px; padding: 5px 12px; border-radius: 20px; font-size: 11px; font-weight: 800; text-transform: uppercase; }
-        .ann-tag.company { background: #e8f0ff; color: #315477; }
-        .ann-tag.policy { background: #ede9fe; color: #7c3aed; }
-        .ann-tag.event { background: #fff1db; color: #ea580c; }
-        .ann-tag.hr { background: #dcfce7; color: #15803d; }
-        .ann-tag.ops { background: #e0f2fe; color: #0369a1; }
-        .ann-tag.pinned { background: #fef3c7; color: #b45309; }
-        .ann-post-title { font-family: 'Manrope', sans-serif; font-size: 28px; font-weight: 800; margin: 0 0 16px; color: #020617; letter-spacing: -0.5px; line-height: 1.2; }
-        .ann-post-body { font-size: 15px; line-height: 1.8; color: #334155; white-space: pre-line; }
+        body {
+            background: #f1f5f9;
+        }
+
+        .ann-detail {
+            max-width: 760px;
+            margin: 104px auto 64px;
+            padding: 0 20px;
+        }
+
+        .ann-panel {
+            background: #fff;
+            border: 1px solid #e2e8f0;
+            border-radius: 18px;
+            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(15, 23, 42, .05);
+        }
+
+        .ann-panel-body {
+            padding: 32px;
+        }
+
+        .ann-back {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: #2563eb;
+            text-decoration: none;
+            font-size: 13px;
+            font-weight: 800;
+            margin-bottom: 20px;
+        }
+
+        .ann-back:hover {
+            text-decoration: underline;
+        }
+
+        .ann-card-header {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            margin-bottom: 18px;
+        }
+
+        .ann-avatar {
+            width: 44px;
+            height: 44px;
+            border-radius: 12px;
+            background: linear-gradient(135deg, #2563eb, #7c3aed);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+            font-size: 16px;
+            flex-shrink: 0;
+        }
+
+        .ann-author-name {
+            font-size: 14px;
+            font-weight: 800;
+            color: #0f172a;
+            margin: 0 0 2px;
+        }
+
+        .ann-author-meta {
+            font-size: 12px;
+            color: #94a3b8;
+            font-weight: 600;
+        }
+
+        .ann-tags {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+            margin-bottom: 12px;
+        }
+
+        .ann-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 800;
+            text-transform: uppercase;
+        }
+
+        .ann-tag.company {
+            background: #e8f0ff;
+            color: #315477;
+        }
+
+        .ann-tag.policy {
+            background: #ede9fe;
+            color: #7c3aed;
+        }
+
+        .ann-tag.event {
+            background: #fff1db;
+            color: #ea580c;
+        }
+
+        .ann-tag.hr {
+            background: #dcfce7;
+            color: #15803d;
+        }
+
+        .ann-tag.ops {
+            background: #e0f2fe;
+            color: #0369a1;
+        }
+
+        .ann-tag.pinned {
+            background: #fef3c7;
+            color: #b45309;
+        }
+
+        .ann-post-title {
+            font-family: 'Manrope', sans-serif;
+            font-size: 28px;
+            font-weight: 800;
+            margin: 0 0 16px;
+            color: #020617;
+            letter-spacing: -0.5px;
+            line-height: 1.2;
+        }
+
+        .ann-post-body {
+            font-size: 15px;
+            line-height: 1.8;
+            color: #334155;
+            white-space: pre-line;
+        }
 
         /* Image grid (same as list) */
-        .ann-img-grid { margin-top: 0; border-radius: 0; overflow: hidden; cursor: pointer; }
-        .ann-img-grid.count-1 .ann-img-item { height: 400px; }
-        .ann-img-grid.count-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 3px; }
-        .ann-img-grid.count-2 .ann-img-item { height: 280px; }
-        .ann-img-grid.count-3 { display: grid; grid-template-columns: 1fr 1fr; gap: 3px; }
-        .ann-img-grid.count-3 .ann-img-item:first-child { grid-column: 1 / -1; height: 260px; }
-        .ann-img-grid.count-3 .ann-img-item:not(:first-child) { height: 200px; }
-        .ann-img-grid.count-4, .ann-img-grid.count-many { display: grid; grid-template-columns: 1fr 1fr; gap: 3px; }
-        .ann-img-grid.count-4 .ann-img-item, .ann-img-grid.count-many .ann-img-item { height: 220px; }
-        .ann-img-item { position: relative; overflow: hidden; background: #f1f5f9; }
-        .ann-img-item img { width: 100%; height: 100%; object-fit: cover; transition: transform .3s; display: block; }
-        .ann-img-item:hover img { transform: scale(1.03); }
-        .ann-img-more-overlay { position: absolute; inset: 0; background: rgba(15,23,42,.55); display: flex; align-items: center; justify-content: center; color: #fff; font-size: 26px; font-weight: 800; font-family: 'Manrope', sans-serif; }
+        .ann-img-grid {
+            margin-top: 0;
+            border-radius: 0;
+            overflow: hidden;
+            cursor: pointer;
+        }
+
+        .ann-img-grid.count-1 .ann-img-item {
+            height: 400px;
+        }
+
+        .ann-img-grid.count-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 3px;
+        }
+
+        .ann-img-grid.count-2 .ann-img-item {
+            height: 280px;
+        }
+
+        .ann-img-grid.count-3 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 3px;
+        }
+
+        .ann-img-grid.count-3 .ann-img-item:first-child {
+            grid-column: 1 / -1;
+            height: 260px;
+        }
+
+        .ann-img-grid.count-3 .ann-img-item:not(:first-child) {
+            height: 200px;
+        }
+
+        .ann-img-grid.count-4,
+        .ann-img-grid.count-many {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 3px;
+        }
+
+        .ann-img-grid.count-4 .ann-img-item,
+        .ann-img-grid.count-many .ann-img-item {
+            height: 220px;
+        }
+
+        .ann-img-item {
+            position: relative;
+            overflow: hidden;
+            background: #f1f5f9;
+        }
+
+        .ann-img-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform .3s;
+            display: block;
+        }
+
+        .ann-img-item:hover img {
+            transform: scale(1.03);
+        }
+
+        .ann-img-more-overlay {
+            position: absolute;
+            inset: 0;
+            background: rgba(15, 23, 42, .55);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+            font-size: 26px;
+            font-weight: 800;
+            font-family: 'Manrope', sans-serif;
+        }
 
         /* Lightbox */
-        .lightbox { display: none; position: fixed; inset: 0; z-index: 9999; background: rgba(2,6,23,.92); backdrop-filter: blur(4px); align-items: center; justify-content: center; padding: 20px; }
-        .lightbox.open { display: flex; }
-        .lightbox-inner { position: relative; max-width: 900px; width: 100%; max-height: 90vh; display: flex; align-items: center; justify-content: center; }
-        .lightbox-img { max-width: 100%; max-height: 90vh; border-radius: 12px; object-fit: contain; box-shadow: 0 24px 60px rgba(0,0,0,.5); }
-        .lightbox-close { position: absolute; top: -44px; right: 0; width: 38px; height: 38px; border-radius: 50%; background: rgba(255,255,255,.15); border: none; color: #fff; font-size: 18px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background .15s; }
-        .lightbox-close:hover { background: rgba(255,255,255,.3); }
-        .lightbox-nav { position: absolute; top: 50%; transform: translateY(-50%); width: 44px; height: 44px; border-radius: 50%; background: rgba(255,255,255,.15); border: none; color: #fff; font-size: 18px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background .15s; }
-        .lightbox-nav:hover { background: rgba(255,255,255,.3); }
-        .lightbox-prev { left: -60px; }
-        .lightbox-next { right: -60px; }
-        .lightbox-counter { position: absolute; bottom: -36px; left: 50%; transform: translateX(-50%); color: rgba(255,255,255,.7); font-size: 13px; font-weight: 700; white-space: nowrap; }
+        .lightbox {
+            display: none;
+            position: fixed;
+            inset: 0;
+            z-index: 9999;
+            background: rgba(2, 6, 23, .92);
+            backdrop-filter: blur(4px);
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .lightbox.open {
+            display: flex;
+        }
+
+        .lightbox-inner {
+            position: relative;
+            max-width: 900px;
+            width: 100%;
+            max-height: 90vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .lightbox-img {
+            max-width: 100%;
+            max-height: 90vh;
+            border-radius: 12px;
+            object-fit: contain;
+            box-shadow: 0 24px 60px rgba(0, 0, 0, .5);
+        }
+
+        .lightbox-close {
+            position: absolute;
+            top: -44px;
+            right: 0;
+            width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, .15);
+            border: none;
+            color: #fff;
+            font-size: 18px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background .15s;
+        }
+
+        .lightbox-close:hover {
+            background: rgba(255, 255, 255, .3);
+        }
+
+        .lightbox-nav {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, .15);
+            border: none;
+            color: #fff;
+            font-size: 18px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background .15s;
+        }
+
+        .lightbox-nav:hover {
+            background: rgba(255, 255, 255, .3);
+        }
+
+        .lightbox-prev {
+            left: -60px;
+        }
+
+        .lightbox-next {
+            right: -60px;
+        }
+
+        .lightbox-counter {
+            position: absolute;
+            bottom: -36px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: rgba(255, 255, 255, .7);
+            font-size: 13px;
+            font-weight: 700;
+            white-space: nowrap;
+        }
 
         @media (max-width: 640px) {
-            .ann-panel-body { padding: 20px; }
-            .ann-post-title { font-size: 22px; }
-            .lightbox-prev { left: -10px; }
-            .lightbox-next { right: -10px; }
-            .ann-img-grid.count-1 .ann-img-item { height: 240px; }
+            .ann-panel-body {
+                padding: 20px;
+            }
+
+            .ann-post-title {
+                font-size: 22px;
+            }
+
+            .lightbox-prev {
+                left: -10px;
+            }
+
+            .lightbox-next {
+                right: -10px;
+            }
+
+            .ann-img-grid.count-1 .ann-img-item {
+                height: 240px;
+            }
         }
     </style>
 </head>
+
 <body>
     {% include 'includes/navbar.html' %}
 
     <main class="ann-detail">
-        <a href="{% url 'announcements:list' %}" class="ann-back"><i class="fas fa-arrow-left"></i> Back to announcements</a>
+        <a href="{% url 'home' %}" class="ann-back"><i class="fas fa-arrow-left"></i> Back to Home Page</a>
         <article class="ann-panel">
             {% with images=announcement.images_list img_count=announcement.images.count %}
             {% if img_count %}
             <div class="ann-img-grid {% if img_count == 1 %}count-1{% elif img_count == 2 %}count-2{% elif img_count == 3 %}count-3{% elif img_count == 4 %}count-4{% else %}count-many{% endif %}"
-                 data-images="[{% for img in images %}'{{ img.image.url }}'{% if not forloop.last %},{% endif %}{% endfor %}]"
-                 onclick="openLightbox(this, event)">
+                data-images="[{% for img in images %}'{{ img.image.url }}'{% if not forloop.last %},{% endif %}{% endfor %}]"
+                onclick="openLightbox(this, event)">
                 {% for img in images|slice:":4" %}
                 <div class="ann-img-item">
-                    <img src="{{ img.image.url }}" alt="{{ announcement.title }} image {{ forloop.counter }}" loading="lazy">
+                    <img src="{{ img.image.url }}" alt="{{ announcement.title }} image {{ forloop.counter }}"
+                        loading="lazy">
                     {% if forloop.last and img_count > 4 %}
                     <div class="ann-img-more-overlay">+{{ img_count|add:"-4" }}</div>
                     {% endif %}
@@ -102,10 +384,12 @@
                     </div>
                 </div>
                 <div class="ann-tags">
-                    <span class="ann-tag {% if announcement.category == 'POLICY' %}policy{% elif announcement.category == 'EVENT' %}event{% elif announcement.category == 'HR_UPDATE' %}hr{% elif announcement.category == 'OPERATIONS' %}ops{% else %}company{% endif %}">
+                    <span
+                        class="ann-tag {% if announcement.category == 'POLICY' %}policy{% elif announcement.category == 'EVENT' %}event{% elif announcement.category == 'HR_UPDATE' %}hr{% elif announcement.category == 'OPERATIONS' %}ops{% else %}company{% endif %}">
                         {{ announcement.get_category_display }}
                     </span>
-                    {% if announcement.is_pinned %}<span class="ann-tag pinned"><i class="fas fa-thumbtack"></i> Pinned</span>{% endif %}
+                    {% if announcement.is_pinned %}<span class="ann-tag pinned"><i class="fas fa-thumbtack"></i>
+                        Pinned</span>{% endif %}
                 </div>
                 <h1 class="ann-post-title">{{ announcement.title }}</h1>
                 <div class="ann-post-body">{{ announcement.body }}</div>
@@ -116,53 +400,56 @@
     <div class="lightbox" id="lightbox" role="dialog" aria-modal="true" aria-label="Image viewer">
         <div class="lightbox-inner">
             <button class="lightbox-close" id="lbClose" aria-label="Close"><i class="fas fa-xmark"></i></button>
-            <button class="lightbox-nav lightbox-prev" id="lbPrev" aria-label="Previous image"><i class="fas fa-chevron-left"></i></button>
+            <button class="lightbox-nav lightbox-prev" id="lbPrev" aria-label="Previous image"><i
+                    class="fas fa-chevron-left"></i></button>
             <img class="lightbox-img" id="lbImg" src="" alt="Announcement image fullscreen">
-            <button class="lightbox-nav lightbox-next" id="lbNext" aria-label="Next image"><i class="fas fa-chevron-right"></i></button>
+            <button class="lightbox-nav lightbox-next" id="lbNext" aria-label="Next image"><i
+                    class="fas fa-chevron-right"></i></button>
             <div class="lightbox-counter" id="lbCounter"></div>
         </div>
     </div>
 
     <script>
-    (function() {
-        let lbImages = [], lbIdx = 0;
-        const lb = document.getElementById('lightbox');
-        const lbImg = document.getElementById('lbImg');
-        const lbCounter = document.getElementById('lbCounter');
-        const lbPrev = document.getElementById('lbPrev');
-        const lbNext = document.getElementById('lbNext');
+        (function () {
+            let lbImages = [], lbIdx = 0;
+            const lb = document.getElementById('lightbox');
+            const lbImg = document.getElementById('lbImg');
+            const lbCounter = document.getElementById('lbCounter');
+            const lbPrev = document.getElementById('lbPrev');
+            const lbNext = document.getElementById('lbNext');
 
-        function openAt(images, idx) {
-            lbImages = images; lbIdx = Math.max(0, Math.min(idx, images.length - 1));
-            showCurrent(); lb.classList.add('open'); document.body.style.overflow = 'hidden';
-        }
-        function showCurrent() {
-            lbImg.src = lbImages[lbIdx];
-            lbCounter.textContent = lbImages.length > 1 ? `${lbIdx + 1} / ${lbImages.length}` : '';
-            lbPrev.style.display = lbImages.length > 1 ? '' : 'none';
-            lbNext.style.display = lbImages.length > 1 ? '' : 'none';
-        }
-        function closeLb() { lb.classList.remove('open'); document.body.style.overflow = ''; lbImg.src = ''; }
-        document.getElementById('lbClose').addEventListener('click', closeLb);
-        lb.addEventListener('click', e => { if (e.target === lb) closeLb(); });
-        lbPrev.addEventListener('click', e => { e.stopPropagation(); lbIdx = (lbIdx - 1 + lbImages.length) % lbImages.length; showCurrent(); });
-        lbNext.addEventListener('click', e => { e.stopPropagation(); lbIdx = (lbIdx + 1) % lbImages.length; showCurrent(); });
-        document.addEventListener('keydown', e => {
-            if (!lb.classList.contains('open')) return;
-            if (e.key === 'Escape') closeLb();
-            if (e.key === 'ArrowLeft') { lbIdx = (lbIdx - 1 + lbImages.length) % lbImages.length; showCurrent(); }
-            if (e.key === 'ArrowRight') { lbIdx = (lbIdx + 1) % lbImages.length; showCurrent(); }
-        });
-        window.openLightbox = function(gridEl, event) {
-            try {
-                const images = JSON.parse(gridEl.getAttribute('data-images').replace(/'/g, '"'));
-                const items = gridEl.querySelectorAll('.ann-img-item');
-                let clickedIdx = 0;
-                items.forEach((item, i) => { if (item.contains(event.target)) clickedIdx = i; });
-                openAt(images, clickedIdx);
-            } catch(e) { console.error('Lightbox parse error:', e); }
-        };
-    })();
+            function openAt(images, idx) {
+                lbImages = images; lbIdx = Math.max(0, Math.min(idx, images.length - 1));
+                showCurrent(); lb.classList.add('open'); document.body.style.overflow = 'hidden';
+            }
+            function showCurrent() {
+                lbImg.src = lbImages[lbIdx];
+                lbCounter.textContent = lbImages.length > 1 ? `${lbIdx + 1} / ${lbImages.length}` : '';
+                lbPrev.style.display = lbImages.length > 1 ? '' : 'none';
+                lbNext.style.display = lbImages.length > 1 ? '' : 'none';
+            }
+            function closeLb() { lb.classList.remove('open'); document.body.style.overflow = ''; lbImg.src = ''; }
+            document.getElementById('lbClose').addEventListener('click', closeLb);
+            lb.addEventListener('click', e => { if (e.target === lb) closeLb(); });
+            lbPrev.addEventListener('click', e => { e.stopPropagation(); lbIdx = (lbIdx - 1 + lbImages.length) % lbImages.length; showCurrent(); });
+            lbNext.addEventListener('click', e => { e.stopPropagation(); lbIdx = (lbIdx + 1) % lbImages.length; showCurrent(); });
+            document.addEventListener('keydown', e => {
+                if (!lb.classList.contains('open')) return;
+                if (e.key === 'Escape') closeLb();
+                if (e.key === 'ArrowLeft') { lbIdx = (lbIdx - 1 + lbImages.length) % lbImages.length; showCurrent(); }
+                if (e.key === 'ArrowRight') { lbIdx = (lbIdx + 1) % lbImages.length; showCurrent(); }
+            });
+            window.openLightbox = function (gridEl, event) {
+                try {
+                    const images = JSON.parse(gridEl.getAttribute('data-images').replace(/'/g, '"'));
+                    const items = gridEl.querySelectorAll('.ann-img-item');
+                    let clickedIdx = 0;
+                    items.forEach((item, i) => { if (item.contains(event.target)) clickedIdx = i; });
+                    openAt(images, clickedIdx);
+                } catch (e) { console.error('Lightbox parse error:', e); }
+            };
+        })();
     </script>
 </body>
+
 </html>
