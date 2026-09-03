@@ -578,10 +578,9 @@
 
     // ── Save settings ────────────────────────────────────────────────
     function saveSettings() {
-        // Disable both buttons while saving
         ['saveBtn1', 'saveBtn2'].forEach(function(id) {
             const b = document.getElementById(id);
-            if (b) { b._orig = b.innerHTML; b.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving…'; b.disabled = true; }
+            if (b) { b._orig = b.innerHTML; b.disabled = true; b.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...'; }
         });
         ['saveStatus1', 'saveStatus2'].forEach(function(id) {
             const s = document.getElementById(id);
@@ -598,30 +597,43 @@
         const radiusVal = document.getElementById('allowedRadius').value.trim();
         const accuracyVal = document.getElementById('maxGpsAccuracy').value.trim();
 
+        const payload = {
+            network_restriction_enabled: networkEnabled,
+            allowed_ip_addresses: ips,
+            location_restriction_enabled: locationEnabled,
+            office_latitude: latVal === '' ? null : latVal,
+            office_longitude: lngVal === '' ? null : lngVal,
+            allowed_radius_meters: radiusVal === '' ? 100 : parseInt(radiusVal),
+            max_gps_accuracy_meters: accuracyVal === '' ? 50 : parseInt(accuracyVal),
+        };
+
+        console.log("[Attendance Settings] Saving payload:", payload);
+
+        let httpStatus = 0;
+
         fetch(window.location.href, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
                 'X-CSRFToken': '{{ csrf_token }}'
             },
-            body: JSON.stringify({
-                network_restriction_enabled: networkEnabled,
-                allowed_ip_addresses: ips,
-                location_restriction_enabled: locationEnabled,
-                office_latitude: latVal === '' ? null : latVal,
-                office_longitude: lngVal === '' ? null : lngVal,
-                allowed_radius_meters: radiusVal === '' ? 100 : parseInt(radiusVal),
-                max_gps_accuracy_meters: accuracyVal === '' ? 50 : parseInt(accuracyVal),
-            })
+            body: JSON.stringify(payload)
         })
-        .then(r => r.json())
+        .then(r => {
+            httpStatus = r.status;
+            console.log("[Attendance Settings] HTTP Status:", httpStatus);
+            return r.json().catch(() => {
+                throw new Error("Invalid JSON response from server.");
+            });
+        })
         .then(data => {
+            console.log("[Attendance Settings] Parsed Response:", data);
             ['saveBtn1', 'saveBtn2'].forEach(function(id) {
                 const b = document.getElementById(id);
                 if (b) { b.disabled = false; }
             });
 
-            if (data.success) {
+            if (httpStatus >= 200 && httpStatus < 300 && data.success) {
                 ['saveBtn1', 'saveBtn2'].forEach(function(id) {
                     const b = document.getElementById(id);
                     if (b) { b.innerHTML = '<i class="fas fa-check-circle"></i> Saved'; b.style.background = 'var(--green)'; }
@@ -645,14 +657,15 @@
                     const b = document.getElementById(id);
                     if (b) { b.innerHTML = b._orig || '<i class="fas fa-check"></i> Save Settings'; }
                 });
-                const msgs = data.errors ? data.errors.join(' ') : 'Save failed.';
+                const msgs = data.errors ? data.errors.join(' ') : (data.message || 'Save failed.');
                 ['saveStatus1', 'saveStatus2'].forEach(function(id) {
                     const s = document.getElementById(id);
                     if (s) { s.textContent = '⚠ ' + msgs; s.style.color = 'var(--red)'; }
                 });
             }
         })
-        .catch(function() {
+        .catch(function(err) {
+            console.error("[Attendance Settings] Fetch Error:", err);
             ['saveBtn1', 'saveBtn2'].forEach(function(id) {
                 const b = document.getElementById(id);
                 if (b) { b.disabled = false; b.innerHTML = b._orig || '<i class="fas fa-check"></i> Save Settings'; }
