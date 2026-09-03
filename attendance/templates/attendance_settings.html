@@ -456,52 +456,60 @@
     const HAS_SAVED_COORDS = {{ att_settings.office_latitude|yesno:"true,false" }};
 
     function isMapAvailable() {
-        return typeof window.L !== 'undefined';
+        return typeof L !== 'undefined';
     }
 
     function initMap() {
         const mapContainer = document.getElementById('locationMap');
-        if (!isMapAvailable()) {
-            mapContainer.innerHTML = '<div style="padding:40px; text-align:center; color:#64748b; font-size:14px;"><i class="fas fa-map-marked-alt" style="font-size:24px; margin-bottom:12px; display:block; opacity:0.5;"></i>Map preview is currently unavailable (network error loading Leaflet). Coordinates can still be captured and saved normally.</div>';
-            mapContainer.style.display = 'flex';
-            mapContainer.style.alignItems = 'center';
-            mapContainer.style.justifyContent = 'center';
-            return;
-        }
+        try {
+            if (!isMapAvailable()) {
+                mapContainer.innerHTML = '<div style="padding:40px; text-align:center; color:#64748b; font-size:14px;"><i class="fas fa-map-marked-alt" style="font-size:24px; margin-bottom:12px; display:block; opacity:0.5;"></i>Map preview is currently unavailable (network error loading Leaflet). Coordinates can still be captured and saved normally.</div>';
+                mapContainer.style.display = 'flex';
+                mapContainer.style.alignItems = 'center';
+                mapContainer.style.justifyContent = 'center';
+                return;
+            }
 
-        const startLat = HAS_SAVED_COORDS ? DEFAULT_LAT : 20.5937;
-        const startLng = HAS_SAVED_COORDS ? DEFAULT_LNG : 78.9629;
-        const zoom = HAS_SAVED_COORDS ? 16 : 5;
+            const startLat = HAS_SAVED_COORDS ? DEFAULT_LAT : 20.5937;
+            const startLng = HAS_SAVED_COORDS ? DEFAULT_LNG : 78.9629;
+            const zoom = HAS_SAVED_COORDS ? 16 : 5;
 
-        _map = L.map('locationMap').setView([startLat, startLng], zoom);
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '© OpenStreetMap contributors',
-            maxZoom: 19,
-        }).addTo(_map);
+            _map = L.map('locationMap').setView([startLat, startLng], zoom);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap contributors',
+                maxZoom: 19,
+            }).addTo(_map);
 
-        if (HAS_SAVED_COORDS) {
-            const radius = parseInt(document.getElementById('allowedRadius').value) || 100;
-            placeMarkerAndCircle(startLat, startLng, radius);
+            if (HAS_SAVED_COORDS) {
+                const radius = parseInt(document.getElementById('allowedRadius').value) || 100;
+                placeMarkerAndCircle(startLat, startLng, radius);
+            }
+        } catch (e) {
+            console.error("Leaflet initMap error:", e);
         }
     }
 
     function placeMarkerAndCircle(lat, lng, radius) {
-        if (!isMapAvailable() || !_map) return;
+        try {
+            if (!isMapAvailable() || !_map) return;
 
-        if (_marker) { _map.removeLayer(_marker); _marker = null; }
-        if (_circle) { _map.removeLayer(_circle); _circle = null; }
+            if (_marker) { _map.removeLayer(_marker); _marker = null; }
+            if (_circle) { _map.removeLayer(_circle); _circle = null; }
 
-        _marker = L.marker([lat, lng]).addTo(_map)
-            .bindPopup('<b>Office Location</b>').openPopup();
-        _circle = L.circle([lat, lng], {
-            color: '#2563eb',
-            fillColor: 'rgba(37,99,235,0.12)',
-            fillOpacity: 0.4,
-            weight: 2,
-            radius: radius,
-        }).addTo(_map);
+            _marker = L.marker([lat, lng]).addTo(_map)
+                .bindPopup('<b>Office Location</b>').openPopup();
+            _circle = L.circle([lat, lng], {
+                color: '#2563eb',
+                fillColor: 'rgba(37,99,235,0.12)',
+                fillOpacity: 0.4,
+                weight: 2,
+                radius: radius,
+            }).addTo(_map);
 
-        _map.setView([lat, lng], Math.max(_map.getZoom(), 16));
+            _map.setView([lat, lng], Math.max(_map.getZoom(), 16));
+        } catch (e) {
+            console.error("Leaflet placeMarkerAndCircle error:", e);
+        }
     }
 
     function onCoordsChange() {
