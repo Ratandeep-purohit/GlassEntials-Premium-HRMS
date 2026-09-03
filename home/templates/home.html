@@ -553,6 +553,14 @@
 
         navigator.geolocation.getCurrentPosition(
             function(position) {
+                // Temporary development-safe logging
+                console.log("[Attendance] Geolocation obtained:", {
+                    latitude: position.coords.latitude,
+                    longitude: position.coords.longitude,
+                    accuracy: position.coords.accuracy,
+                    timestamp: new Date(position.timestamp).toISOString()
+                });
+
                 // Success — populate hidden fields and submit
                 document.getElementById('loc_lat').value = position.coords.latitude;
                 document.getElementById('loc_lng').value = position.coords.longitude;
@@ -614,14 +622,14 @@
                 if (err.code === 1) {
                     showAttError('Location permission denied. Please allow location access in your browser settings and try again.');
                 } else if (err.code === 2) {
-                    showAttError('Unable to determine your current location. Please enable location services and try again.');
+                    showAttError('Location could not currently be determined. Please enable location services and try again.');
                 } else if (err.code === 3) {
                     showAttError('Location request timed out. Please check your GPS signal and try again.');
                 } else {
                     showAttError('Unable to get your location. Please try again.');
                 }
             },
-            { enableHighAccuracy: false, timeout: 10000, maximumAge: 0 }
+            { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
         );
     }
 
