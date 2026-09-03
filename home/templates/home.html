@@ -568,18 +568,27 @@
                 // Submit via AJAX to handle JSON error responses from backend
                 btn.textContent = '⏳ Checking in...';
                 const formData = new FormData(form);
+                const postUrl = form.getAttribute('action');
 
-                fetch(form.action, {
+                fetch(postUrl, {
                     method: 'POST',
                     headers: { 'X-Requested-With': 'XMLHttpRequest' },
                     body: formData,
                 })
-                .then(function(response) { return response.json(); })
+                .then(function(response) { 
+                    if (!response.ok) {
+                        return response.json().then(errData => {
+                            throw { status: response.status, data: errData };
+                        }).catch(() => {
+                            throw { status: response.status, data: { message: `Server error ${response.status}` } };
+                        });
+                    }
+                    return response.json(); 
+                })
                 .then(function(data) {
                     if (data.success) {
                         btn.textContent = '✓ Checked In!';
                         btn.style.background = 'var(--green, #16a34a)';
-                        // Refresh the page after a short delay so the UI updates
                         setTimeout(function() { window.location.reload(); }, 1200);
                     } else {
                         btn.disabled = false;
@@ -587,11 +596,16 @@
                         showAttError(data.message || 'Check-in failed. Please try again.');
                     }
                 })
-                .catch(function() {
+                .catch(function(err) {
                     btn.disabled = false;
                     btn.textContent = originalLabel;
-                    showAttError('Network error. Please check your connection and try again.');
+                    if (err.status) {
+                        showAttError(err.data && err.data.message ? err.data.message : `Server error (${err.status}). Please try again.`);
+                    } else {
+                        showAttError('Network error. Please check your connection and try again.');
+                    }
                 });
+
             },
             function(err) {
                 // Geolocation error
