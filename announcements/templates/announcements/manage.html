@@ -5,7 +5,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Manage Announcements | Mulzon HRMS</title>
-    <!-- Favicon -->
     <link rel="icon" type="image/png" href="{% static 'img/favicon_logo.png' %}">
     <link rel="apple-touch-icon" href="{% static 'img/favicon_logo.png' %}">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Manrope:wght@700;800&display=swap">
@@ -37,10 +36,71 @@
         .ann-check { display: inline-flex; align-items: center; gap: 8px; min-height: 42px; padding: 0 14px; border: 1px solid #e2e8f0; background: #f8fafc; border-radius: 12px; font-size: 13px; font-weight: 800; color: #475569; }
         .ann-check input { width: 16px; height: 16px; margin: 0; }
         .ann-form-actions { display: flex; gap: 12px; align-items: center; }
-        .ann-save { flex: 1; min-height: 48px; border: none; border-radius: 12px; padding: 0 18px; background: #2563eb; color: #fff; font-weight: 800; cursor: pointer; box-shadow: 0 6px 16px rgba(37,99,235,.22); }
+        .ann-save { flex: 1; min-height: 48px; border: none; border-radius: 12px; padding: 0 18px; background: #2563eb; color: #fff; font-weight: 800; cursor: pointer; box-shadow: 0 6px 16px rgba(37,99,235,.22); font-size: 14px; transition: background .2s; }
         .ann-save:hover { background: #1d4ed8; }
+        .ann-save:disabled { background: #94a3b8; cursor: not-allowed; box-shadow: none; }
         .ann-view-btn { text-decoration: none; }
-        .ann-view-btn:hover { text-decoration: none; }
+
+        /* ── Photo Upload Area ─────────────────────────────────────────── */
+        .photo-section { margin-bottom: 14px; }
+        .photo-drop-zone {
+            border: 2px dashed #cbd5e1; border-radius: 14px; padding: 24px 20px;
+            text-align: center; cursor: pointer; transition: border-color .2s, background .2s;
+            background: #f8fafc; position: relative;
+        }
+        .photo-drop-zone:hover, .photo-drop-zone.drag-over { border-color: #2563eb; background: #eff6ff; }
+        .photo-drop-zone input[type="file"] { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
+        .photo-drop-icon { font-size: 28px; color: #94a3b8; margin-bottom: 8px; }
+        .photo-drop-text { font-size: 13px; font-weight: 700; color: #64748b; }
+        .photo-drop-sub { font-size: 11.5px; color: #94a3b8; margin-top: 4px; }
+        .photo-preview-grid {
+            display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+            gap: 10px; margin-top: 14px;
+        }
+        .photo-thumb {
+            position: relative; border-radius: 10px; overflow: hidden;
+            aspect-ratio: 1; background: #f1f5f9; border: 1px solid #e2e8f0;
+        }
+        .photo-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+        .photo-thumb-remove {
+            position: absolute; top: 5px; right: 5px;
+            width: 22px; height: 22px; border-radius: 50%;
+            background: rgba(15,23,42,.65); color: #fff;
+            border: none; cursor: pointer; display: flex; align-items: center; justify-content: center;
+            font-size: 11px; line-height: 1; transition: background .15s;
+        }
+        .photo-thumb-remove:hover { background: #dc2626; }
+        .photo-error { font-size: 12px; font-weight: 700; color: #dc2626; margin-top: 8px; }
+        .photo-count { font-size: 12px; font-weight: 700; color: #64748b; margin-top: 8px; }
+
+        /* ── Existing images (edit mode) ─────────────────────────────── */
+        .existing-images-grid {
+            display: grid; grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+            gap: 10px; margin-bottom: 10px;
+        }
+        .existing-thumb {
+            position: relative; border-radius: 10px; overflow: hidden;
+            aspect-ratio: 1; background: #f1f5f9; border: 1px solid #e2e8f0;
+        }
+        .existing-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+        .existing-thumb-remove {
+            position: absolute; top: 5px; right: 5px;
+            width: 22px; height: 22px; border-radius: 50%;
+            background: rgba(220,38,38,.8); color: #fff;
+            border: none; cursor: pointer; display: flex; align-items: center; justify-content: center;
+            font-size: 11px; transition: background .15s;
+        }
+        .existing-thumb-remove:hover { background: #b91c1c; }
+        .existing-thumb.marked-delete img { opacity: 0.35; }
+        .existing-thumb.marked-delete::after {
+            content: 'Will be removed'; position: absolute; inset: 0;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 10px; font-weight: 800; color: #dc2626;
+            background: rgba(254,242,242,.7); padding: 4px;
+            text-align: center;
+        }
+
+        /* ── Announcement List ───────────────────────────────────────── */
         .ann-list { display: grid; gap: 12px; }
         .ann-item { border: 1px solid #eef2f7; border-radius: 14px; padding: 18px; background: #fff; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 14px; align-items: center; transition: border-color .2s, box-shadow .2s, transform .2s; }
         .ann-item:hover { border-color: #bfdbfe; box-shadow: 0 8px 20px rgba(15,23,42,.06); transform: translateY(-1px); }
@@ -53,9 +113,11 @@
         .ann-danger:hover { color: #ef4444; background: #fef2f2; border-color: #fecaca; }
         .ann-empty { padding: 64px 20px; text-align: center; color: #64748b; border: 1px dashed #dbe4ef; border-radius: 14px; background: #f8fafc; }
         .ann-count { color: #64748b; font-size: 12px; font-weight: 800; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 999px; padding: 7px 11px; }
-        @media (max-width: 1180px) {
-            .ann-grid { grid-template-columns: 1fr; }
-        }
+        .ann-item-thumb { width: 48px; height: 48px; border-radius: 8px; object-fit: cover; border: 1px solid #e2e8f0; margin-right: 12px; flex-shrink: 0; vertical-align: middle; }
+        .ann-item-info { display: flex; align-items: center; }
+        .ann-item-img-count { font-size: 11px; font-weight: 700; color: #64748b; margin-left: 6px; }
+
+        @media (max-width: 1180px) { .ann-grid { grid-template-columns: 1fr; } }
         @media (max-width: 760px) {
             .ann-row { grid-template-columns: 1fr; }
             .ann-row-3 { grid-template-columns: 1fr; }
@@ -78,21 +140,38 @@
             <a href="{% url 'announcements:list' %}" class="btn-secondary ann-view-btn"><i class="fas fa-eye"></i> Employee View</a>
         </div>
 
+        {% if messages %}
+        <div style="margin-bottom: 16px;">
+            {% for message in messages %}
+            <div style="padding: 12px 16px; border-radius: 10px; margin-bottom: 8px; font-size: 13px; font-weight: 700;
+                {% if message.tags == 'error' %}background:#fef2f2;color:#b91c1c;border:1px solid #fecaca;
+                {% else %}background:#f0fdf4;color:#166534;border:1px solid #bbf7d0;{% endif %}">
+                <i class="fas {% if message.tags == 'error' %}fa-circle-xmark{% else %}fa-circle-check{% endif %}"></i>
+                {{ message }}
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
         <div class="ann-grid">
+            <!-- ── CREATE / EDIT FORM ───────────────────────────────── -->
             <section class="ann-card">
                 <div class="ann-card-head">
                     <h2><i class="fas fa-bullhorn"></i> {% if edit_announcement %}Edit Announcement{% else %}Create Announcement{% endif %}</h2>
                 </div>
-                <form method="POST">
+                <form method="POST" enctype="multipart/form-data" id="annForm">
                     {% csrf_token %}
                     <div class="ann-row">
                         <div class="ann-form-group">
                             <label class="ann-label">Title</label>
-                            <input class="ann-input" type="text" name="title" maxlength="180" required value="{{ edit_announcement.title|default:'' }}" placeholder="e.g. Updated Work-from-Home Policy">
+                            <input class="ann-input" type="text" name="title" maxlength="180" required
+                                value="{{ edit_announcement.title|default:'' }}"
+                                placeholder="e.g. Happy Janmashtami 🦚">
                         </div>
                         <div class="ann-form-group">
                             <label class="ann-label">Department / Author</label>
-                            <input class="ann-input" type="text" name="department" value="{{ edit_announcement.department|default:'HR Department' }}">
+                            <input class="ann-input" type="text" name="department"
+                                value="{{ edit_announcement.department|default:'HR Department' }}">
                         </div>
                     </div>
                     <div class="ann-row-3">
@@ -114,21 +193,58 @@
                         </div>
                         <div class="ann-form-group">
                             <label class="ann-label">Publish At</label>
-                            <input class="ann-input" type="datetime-local" name="publish_at" value="{% if edit_announcement %}{{ edit_announcement.publish_at|date:'Y-m-d\\TH:i' }}{% else %}{{ now|date:'Y-m-d\\TH:i' }}{% endif %}">
+                            <input class="ann-input" type="datetime-local" name="publish_at"
+                                value="{% if edit_announcement %}{{ edit_announcement.publish_at|date:'Y-m-d\TH:i' }}{% else %}{{ now|date:'Y-m-d\TH:i' }}{% endif %}">
                         </div>
                     </div>
                     <div class="ann-form-group">
-                        <label class="ann-label">Short Summary</label>
-                        <textarea class="ann-textarea ann-summary-field" name="summary" placeholder="Optional preview text">{{ edit_announcement.summary|default:'' }}</textarea>
+                        <label class="ann-label">Short Summary <span style="font-weight:500;color:#94a3b8;">(optional)</span></label>
+                        <textarea class="ann-textarea ann-summary-field" name="summary"
+                            placeholder="Optional short preview text">{{ edit_announcement.summary|default:'' }}</textarea>
                     </div>
                     <div class="ann-form-group">
                         <label class="ann-label">Announcement Body</label>
                         <textarea class="ann-textarea ann-body-field" name="body" required>{{ edit_announcement.body|default:'' }}</textarea>
                     </div>
+
+                    <!-- ── PHOTO UPLOAD ─────────────────────────────── -->
+                    <div class="photo-section">
+                        <label class="ann-label"><i class="fas fa-image" style="color:#2563eb;margin-right:6px;"></i>Photos <span style="font-weight:500;color:#94a3b8;">(optional, up to {{ max_images }})</span></label>
+
+                        {% if edit_announcement %}
+                        <!-- Existing images in edit mode -->
+                        {% with existing_imgs=edit_announcement.images_list %}
+                        {% if existing_imgs %}
+                        <div class="existing-images-grid" id="existingImgGrid">
+                            {% for img in existing_imgs %}
+                            <div class="existing-thumb" id="eimg-{{ img.id }}">
+                                <img src="{{ img.image.url }}" alt="Announcement image {{ forloop.counter }}">
+                                <button type="button" class="existing-thumb-remove" onclick="markDeleteExisting({{ img.id }})" title="Remove image">
+                                    <i class="fas fa-xmark"></i>
+                                </button>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                        {% endwith %}
+                        {% endif %}
+
+                        <div class="photo-drop-zone" id="dropZone">
+                            <input type="file" name="images" id="imageInput" multiple accept="image/jpeg,image/png,image/webp,image/gif">
+                            <div class="photo-drop-icon"><i class="fas fa-cloud-arrow-up"></i></div>
+                            <div class="photo-drop-text">Click or drag & drop photos here</div>
+                            <div class="photo-drop-sub">JPEG, PNG, WEBP, GIF · Max {{ max_size_mb }} MB each · Up to {{ max_images }} images</div>
+                        </div>
+                        <div id="photoError" class="photo-error" style="display:none;"></div>
+                        <div id="photoCount" class="photo-count" style="display:none;"></div>
+                        <div class="photo-preview-grid" id="previewGrid"></div>
+                    </div>
+
                     <div class="ann-row" style="align-items: end;">
                         <div class="ann-form-group">
-                            <label class="ann-label">Expires At</label>
-                            <input class="ann-input" type="datetime-local" name="expires_at" value="{% if edit_announcement.expires_at %}{{ edit_announcement.expires_at|date:'Y-m-d\\TH:i' }}{% endif %}">
+                            <label class="ann-label">Expires At <span style="font-weight:500;color:#94a3b8;">(optional)</span></label>
+                            <input class="ann-input" type="datetime-local" name="expires_at"
+                                value="{% if edit_announcement.expires_at %}{{ edit_announcement.expires_at|date:'Y-m-d\TH:i' }}{% endif %}">
                         </div>
                         <div class="ann-form-group">
                             <label class="ann-label">Visibility</label>
@@ -138,8 +254,12 @@
                             </div>
                         </div>
                     </div>
+
                     <div class="ann-form-actions">
-                        <button class="ann-save" type="submit"><i class="fas fa-paper-plane"></i> Save Announcement</button>
+                        <button class="ann-save" type="submit" id="annSubmitBtn">
+                            <i class="fas fa-paper-plane"></i>
+                            {% if edit_announcement %}Update Announcement{% else %}Publish Announcement{% endif %}
+                        </button>
                         {% if edit_announcement %}
                         <a href="{% url 'announcements:manage' %}" class="btn-secondary">Cancel Edit</a>
                         {% endif %}
@@ -147,6 +267,7 @@
                 </form>
             </section>
 
+            <!-- ── PUBLISHED LIST ───────────────────────────────────── -->
             <section class="ann-card">
                 <div class="ann-card-head">
                     <h2><i class="fas fa-list-ul"></i> Published Updates</h2>
@@ -155,19 +276,31 @@
                 <div class="ann-list">
                     {% for announcement in announcements %}
                     <div class="ann-item">
-                        <div>
-                            <div style="margin-bottom: 8px;">
-                                <span class="ann-tag">{{ announcement.get_category_display }}</span>
-                                {% if announcement.is_pinned %}<span class="ann-tag" style="background:#fef3c7;color:#b45309;">Pinned</span>{% endif %}
-                                {% if not announcement.is_active %}<span class="ann-tag" style="background:#fee2e2;color:#b91c1c;">Inactive</span>{% endif %}
+                        <div class="ann-item-info">
+                            {% with first_img=announcement.images.all.0 %}
+                            {% if first_img %}
+                            <img class="ann-item-thumb" src="{{ first_img.image.url }}" alt="Announcement thumbnail">
+                            {% endif %}
+                            {% endwith %}
+                            <div>
+                                <div style="margin-bottom: 6px;">
+                                    <span class="ann-tag">{{ announcement.get_category_display }}</span>
+                                    {% if announcement.is_pinned %}<span class="ann-tag" style="background:#fef3c7;color:#b45309;">Pinned</span>{% endif %}
+                                    {% if not announcement.is_active %}<span class="ann-tag" style="background:#fee2e2;color:#b91c1c;">Inactive</span>{% endif %}
+                                </div>
+                                <p class="ann-item-title">
+                                    {{ announcement.title }}
+                                    {% with img_count=announcement.images.count %}
+                                    {% if img_count %}<span class="ann-item-img-count"><i class="fas fa-image"></i> {{ img_count }}</span>{% endif %}
+                                    {% endwith %}
+                                </p>
+                                <div class="ann-meta">{{ announcement.publish_at|date:"M d, Y h:i A" }} · {{ announcement.department }} · {{ announcement.get_audience_display }}</div>
                             </div>
-                            <p class="ann-item-title">{{ announcement.title }}</p>
-                            <div class="ann-meta">{{ announcement.publish_at|date:"M d, Y h:i A" }} &bull; {{ announcement.department }} &bull; {{ announcement.get_audience_display }}</div>
                         </div>
                         <div class="ann-item-actions">
                             <a class="ann-icon-btn" href="{% url 'announcements:edit' announcement.id %}" title="Edit"><i class="fas fa-pen"></i></a>
                             <a class="ann-icon-btn" href="{% url 'announcements:toggle' announcement.id %}" title="Toggle status"><i class="fas fa-toggle-on"></i></a>
-                            <a class="ann-icon-btn ann-danger" href="{% url 'announcements:delete' announcement.id %}" title="Delete"><i class="fas fa-trash"></i></a>
+                            <a class="ann-icon-btn ann-danger" href="{% url 'announcements:delete' announcement.id %}" title="Delete" onclick="return confirm('Delete this announcement?')"><i class="fas fa-trash"></i></a>
                         </div>
                     </div>
                     {% empty %}
@@ -180,5 +313,136 @@
             </section>
         </div>
     </main>
+
+    <script>
+    (function() {
+        const MAX_IMAGES = {{ max_images }};
+        const MAX_SIZE_MB = {{ max_size_mb }};
+        const input = document.getElementById('imageInput');
+        const previewGrid = document.getElementById('previewGrid');
+        const errorEl = document.getElementById('photoError');
+        const countEl = document.getElementById('photoCount');
+        const dropZone = document.getElementById('dropZone');
+        let selectedFiles = [];
+        let deleteIds = [];
+
+        function getCsrf() {
+            return document.cookie.split(';').map(c=>c.trim()).find(c=>c.startsWith('csrftoken='))?.split('=')[1] || '';
+        }
+
+        function existingCount() {
+            return document.querySelectorAll('.existing-thumb:not(.marked-delete)').length;
+        }
+
+        function showError(msg) {
+            errorEl.textContent = msg;
+            errorEl.style.display = msg ? 'block' : 'none';
+        }
+
+        function updateCount() {
+            const total = existingCount() + selectedFiles.length;
+            if (total > 0) {
+                countEl.textContent = `${total} image(s) selected`;
+                countEl.style.display = 'block';
+            } else {
+                countEl.style.display = 'none';
+            }
+        }
+
+        function renderPreviews() {
+            previewGrid.innerHTML = '';
+            selectedFiles.forEach((f, idx) => {
+                const thumb = document.createElement('div');
+                thumb.className = 'photo-thumb';
+                const img = document.createElement('img');
+                img.alt = 'Selected image preview';
+                const url = URL.createObjectURL(f);
+                img.src = url;
+                img.onload = () => URL.revokeObjectURL(url);
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = 'photo-thumb-remove';
+                btn.title = 'Remove';
+                btn.innerHTML = '<i class="fas fa-xmark"></i>';
+                btn.onclick = () => { selectedFiles.splice(idx, 1); renderPreviews(); updateCount(); syncFileInput(); };
+                thumb.appendChild(img);
+                thumb.appendChild(btn);
+                previewGrid.appendChild(thumb);
+            });
+            updateCount();
+        }
+
+        function syncFileInput() {
+            // Rebuild a DataTransfer to sync selectedFiles -> input
+            const dt = new DataTransfer();
+            selectedFiles.forEach(f => dt.items.add(f));
+            input.files = dt.files;
+        }
+
+        function addFiles(files) {
+            showError('');
+            const allowed = ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/jpg'];
+            for (const f of files) {
+                if (existingCount() + selectedFiles.length >= MAX_IMAGES) {
+                    showError(`You can only add up to ${MAX_IMAGES} images per announcement.`);
+                    break;
+                }
+                if (!allowed.includes(f.type)) {
+                    showError(`'${f.name}' is not a supported image format (JPEG, PNG, WEBP, GIF only).`);
+                    continue;
+                }
+                if (f.size > MAX_SIZE_MB * 1024 * 1024) {
+                    showError(`'${f.name}' is too large. Maximum allowed size is ${MAX_SIZE_MB} MB.`);
+                    continue;
+                }
+                selectedFiles.push(f);
+            }
+            renderPreviews();
+            syncFileInput();
+        }
+
+        input.addEventListener('change', e => { addFiles(Array.from(e.target.files)); input.value = ''; });
+
+        dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drag-over'); });
+        dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
+        dropZone.addEventListener('drop', e => {
+            e.preventDefault();
+            dropZone.classList.remove('drag-over');
+            addFiles(Array.from(e.dataTransfer.files));
+        });
+
+        // Mark existing image for deletion (edit mode)
+        window.markDeleteExisting = function(imgId) {
+            const el = document.getElementById(`eimg-${imgId}`);
+            if (!el) return;
+            if (el.classList.contains('marked-delete')) {
+                el.classList.remove('marked-delete');
+                deleteIds = deleteIds.filter(x => x !== imgId);
+                el.querySelector('.existing-thumb-remove').title = 'Remove image';
+            } else {
+                el.classList.add('marked-delete');
+                deleteIds.push(imgId);
+                el.querySelector('.existing-thumb-remove').title = 'Undo remove';
+            }
+            updateCount();
+        };
+
+        // On form submit: inject delete_image_ids hidden inputs
+        document.getElementById('annForm').addEventListener('submit', function(e) {
+            const btn = document.getElementById('annSubmitBtn');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Publishing…';
+            // Remove any existing hidden inputs
+            document.querySelectorAll('input[name="delete_image_ids"]').forEach(el => el.remove());
+            deleteIds.forEach(id => {
+                const inp = document.createElement('input');
+                inp.type = 'hidden';
+                inp.name = 'delete_image_ids';
+                inp.value = id;
+                this.appendChild(inp);
+            });
+        });
+    })();
+    </script>
 </body>
 </html>

@@ -34,17 +34,20 @@
         <!-- Profile Card -->
         <section class="dashboard-overview">
             <div class="dashboard-profile-row">
-            <div class="employee-attendance-card dashboard-my-day">
-                {% if current_employee %}
+                <div class="employee-attendance-card dashboard-my-day">
+                    {% if current_employee %}
                     <div class="employee-attendance-avatar">
                         {% if current_employee.profile_img %}
-                        <img src="{{ current_employee.profile_img.url }}" alt="{{ current_employee.first_name }} {{ current_employee.last_name }}">
+                        <img src="{{ current_employee.profile_img.url }}"
+                            alt="{{ current_employee.first_name }} {{ current_employee.last_name }}">
                         {% else %}
-                        <span>{{ current_employee.first_name|slice:":1"|upper }}{{ current_employee.last_name|slice:":1"|upper }}</span>
+                        <span>{{ current_employee.first_name|slice:":1"|upper }}{{
+                            current_employee.last_name|slice:":1"|upper }}</span>
                         {% endif %}
                     </div>
                     <div class="employee-attendance-identity">
-                        <div><span>{{ current_employee.employee_id }}</span> - <strong>{{ current_employee.first_name }} {{ current_employee.last_name }}</strong></div>
+                        <div><span>{{ current_employee.employee_id }}</span> - <strong>{{ current_employee.first_name }}
+                                {{ current_employee.last_name }}</strong></div>
                         <p>{{ current_employee.designation.name|default:"Employee" }}</p>
                     </div>
                     <div class="employee-attendance-today">
@@ -58,30 +61,28 @@
                         {% endif %}
                     </div>
                     <div class="employee-attendance-divider"></div>
-                    <div class="employee-time-grid" id="dashboardAttendanceTimer"
-                        {% if today_attendance and today_attendance.clock_in %}data-date="{{ today_attendance.date|date:'Y-m-d' }}" data-clock-in="{{ today_attendance.clock_in|time:'H:i:s' }}"{% endif %}
-                        {% if today_attendance and today_attendance.clock_out %}data-clock-out="{{ today_attendance.clock_out|time:'H:i:s' }}"{% endif %}>
+                    <div class="employee-time-grid" id="dashboardAttendanceTimer" {% if today_attendance and
+                        today_attendance.clock_in %}data-date="{{ today_attendance.date|date:'Y-m-d' }}"
+                        data-clock-in="{{ today_attendance.clock_in|time:'H:i:s' }}" {% endif %} {% if today_attendance
+                        and today_attendance.clock_out %}data-clock-out="{{ today_attendance.clock_out|time:'H:i:s' }}"
+                        {% endif %}>
                         <span>00</span>
                         <span>00</span>
                         <span>00</span>
                     </div>
-                    <form method="POST" action="{% url 'clock_in_out' %}" class="employee-attendance-action" id="attendanceForm">
+                    <form method="POST" action="{% url 'clock_in_out' %}" class="employee-attendance-action">
                         {% csrf_token %}
-                        <input type="hidden" name="ajax" value="1">
-                        <input type="hidden" name="loc_lat" id="loc_lat" value="">
-                        <input type="hidden" name="loc_lng" id="loc_lng" value="">
-                        <input type="hidden" name="loc_accuracy" id="loc_accuracy" value="">
                         {% if not today_attendance or not today_attendance.clock_in %}
-                        <button type="button" id="checkInBtn" onclick="handleCheckIn(this)">Check-in</button>
+                        <button type="submit" name="action" value="clock_in">Check-in</button>
                         {% elif not today_attendance.clock_out %}
                         <button type="submit" name="action" value="clock_out">Check-out</button>
                         {% else %}
                         <button type="button" disabled>Completed</button>
                         {% endif %}
                     </form>
-
-                {% else %}
-                    <div class="employee-attendance-avatar"><span>{{ request.user.username|slice:":1"|upper }}</span></div>
+                    {% else %}
+                    <div class="employee-attendance-avatar"><span>{{ request.user.username|slice:":1"|upper }}</span>
+                    </div>
                     <div class="employee-attendance-identity">
                         <div><strong>No Employee Profile</strong></div>
                         <p>Link email to employee</p>
@@ -90,120 +91,200 @@
                     <form class="employee-attendance-action">
                         <button type="button" disabled>Unavailable</button>
                     </form>
-                {% endif %}
-            </div>
+                    {% endif %}
+                </div>
             </div>
 
-        <!-- KPI Stat Grid -->
-        <style>
-            .stat-grid { gap: 16px; margin-bottom: 20px; }
-            .stat-card {
-                padding: 14px 18px !important;
-                display: flex !important;
-                flex-direction: row !important;
-                align-items: center !important;
-                justify-content: space-between !important;
-                gap: 12px !important;
-                min-height: auto !important;
-            }
-            .stat-info { display: flex; flex-direction: column; gap: 2px; }
-            .stat-header { margin-bottom: 0 !important; }
-            .stat-icon { width: 38px !important; height: 38px !important; font-size: 15px !important; flex-shrink: 0; }
-            .val-primary { font-size: 22px !important; line-height: 1 !important; }
-            .label-primary { font-size: 11px !important; margin-top: 0 !important; }
-        </style>
-        <section class="stat-grid">
-            {% if request.user.is_staff %}
-            <div class="stat-card">
-                <div class="stat-info">
-                    <div class="val-primary">{{ user_count }}</div>
-                    <div class="label-primary">Total Workforce</div>
+            <!-- KPI Stat Grid -->
+            <style>
+                .stat-grid {
+                    gap: 16px;
+                    margin-bottom: 20px;
+                }
+
+                .stat-card {
+                    padding: 14px 18px !important;
+                    display: flex !important;
+                    flex-direction: row !important;
+                    align-items: center !important;
+                    justify-content: space-between !important;
+                    gap: 12px !important;
+                    min-height: auto !important;
+                }
+
+                .stat-info {
+                    display: flex;
+                    flex-direction: column;
+                    gap: 2px;
+                }
+
+                .stat-header {
+                    margin-bottom: 0 !important;
+                }
+
+                .stat-icon {
+                    width: 38px !important;
+                    height: 38px !important;
+                    font-size: 15px !important;
+                    flex-shrink: 0;
+                }
+
+                .val-primary {
+                    font-size: 22px !important;
+                    line-height: 1 !important;
+                }
+
+                .label-primary {
+                    font-size: 11px !important;
+                    margin-top: 0 !important;
+                }
+            </style>
+            <section class="stat-grid">
+                {% if request.user.is_staff %}
+                <div class="stat-card">
+                    <div class="stat-info">
+                        <div class="val-primary">{{ user_count }}</div>
+                        <div class="label-primary">Total Workforce</div>
+                    </div>
+                    <div class="stat-icon"
+                        style="background: rgba(37,99,235,0.08); color: #2563eb; border-radius: 10px; display:flex; align-items:center; justify-content:center;">
+                        <i class="fas fa-users"></i>
+                    </div>
                 </div>
-                <div class="stat-icon" style="background: rgba(37,99,235,0.08); color: #2563eb; border-radius: 10px; display:flex; align-items:center; justify-content:center;">
-                    <i class="fas fa-users"></i>
+                <div class="stat-card">
+                    <div class="stat-info">
+                        <div class="val-primary">{{ present_today }}</div>
+                        <div class="label-primary">Present Today</div>
+                    </div>
+                    <div class="stat-icon"
+                        style="background: rgba(34,197,94,0.08); color: #16a34a; border-radius: 10px; display:flex; align-items:center; justify-content:center;">
+                        <i class="fas fa-user-check"></i>
+                    </div>
                 </div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-info">
-                    <div class="val-primary">{{ present_today }}</div>
-                    <div class="label-primary">Present Today</div>
+                <div class="stat-card">
+                    <div class="stat-info">
+                        <div class="val-primary">{{ pending_leaves }}</div>
+                        <div class="label-primary">Pending Leaves</div>
+                    </div>
+                    <div class="stat-icon"
+                        style="background: rgba(245,158,11,0.08); color: #d97706; border-radius: 10px; display:flex; align-items:center; justify-content:center;">
+                        <i class="fas fa-plane-departure"></i>
+                    </div>
                 </div>
-                <div class="stat-icon" style="background: rgba(34,197,94,0.08); color: #16a34a; border-radius: 10px; display:flex; align-items:center; justify-content:center;">
-                    <i class="fas fa-user-check"></i>
+                <div class="stat-card">
+                    <div class="stat-info">
+                        <div class="val-primary">$0</div>
+                        <div class="label-primary">Next Payout</div>
+                    </div>
+                    <div class="stat-icon"
+                        style="background: rgba(124,58,237,0.08); color: #7c3aed; border-radius: 10px; display:flex; align-items:center; justify-content:center;">
+                        <i class="fas fa-receipt"></i>
+                    </div>
                 </div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-info">
-                    <div class="val-primary">{{ pending_leaves }}</div>
-                    <div class="label-primary">Pending Leaves</div>
+                {% else %}
+                <div class="stat-card">
+                    <div class="stat-info">
+                        <div class="val-primary">{{ my_present_days }}</div>
+                        <div class="label-primary">Days Present (This Month)</div>
+                    </div>
+                    <div class="stat-icon"
+                        style="background: rgba(34,197,94,0.08); color: #16a34a; border-radius: 10px; display:flex; align-items:center; justify-content:center;">
+                        <i class="fas fa-user-check"></i>
+                    </div>
                 </div>
-                <div class="stat-icon" style="background: rgba(245,158,11,0.08); color: #d97706; border-radius: 10px; display:flex; align-items:center; justify-content:center;">
-                    <i class="fas fa-plane-departure"></i>
+                <div class="stat-card">
+                    <div class="stat-info">
+                        <div class="val-primary">{{ my_approved_leaves }}</div>
+                        <div class="label-primary">Approved Leaves</div>
+                    </div>
+                    <div class="stat-icon"
+                        style="background: rgba(37,99,235,0.08); color: #2563eb; border-radius: 10px; display:flex; align-items:center; justify-content:center;">
+                        <i class="fas fa-calendar-check"></i>
+                    </div>
                 </div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-info">
-                    <div class="val-primary">$0</div>
-                    <div class="label-primary">Next Payout</div>
+                <div class="stat-card">
+                    <div class="stat-info">
+                        <div class="val-primary">{{ my_pending_leaves }}</div>
+                        <div class="label-primary">Pending Leave Requests</div>
+                    </div>
+                    <div class="stat-icon"
+                        style="background: rgba(245,158,11,0.08); color: #d97706; border-radius: 10px; display:flex; align-items:center; justify-content:center;">
+                        <i class="fas fa-clock"></i>
+                    </div>
                 </div>
-                <div class="stat-icon" style="background: rgba(124,58,237,0.08); color: #7c3aed; border-radius: 10px; display:flex; align-items:center; justify-content:center;">
-                    <i class="fas fa-receipt"></i>
+                <div class="stat-card">
+                    <div class="stat-info">
+                        <div class="val-primary">$0</div>
+                        <div class="label-primary">Next Payout</div>
+                    </div>
+                    <div class="stat-icon"
+                        style="background: rgba(124,58,237,0.08); color: #7c3aed; border-radius: 10px; display:flex; align-items:center; justify-content:center;">
+                        <i class="fas fa-receipt"></i>
+                    </div>
                 </div>
-            </div>
-            {% else %}
-            <div class="stat-card">
-                <div class="stat-info">
-                    <div class="val-primary">{{ my_present_days }}</div>
-                    <div class="label-primary">Days Present (This Month)</div>
-                </div>
-                <div class="stat-icon" style="background: rgba(34,197,94,0.08); color: #16a34a; border-radius: 10px; display:flex; align-items:center; justify-content:center;">
-                    <i class="fas fa-user-check"></i>
-                </div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-info">
-                    <div class="val-primary">{{ my_approved_leaves }}</div>
-                    <div class="label-primary">Approved Leaves</div>
-                </div>
-                <div class="stat-icon" style="background: rgba(37,99,235,0.08); color: #2563eb; border-radius: 10px; display:flex; align-items:center; justify-content:center;">
-                    <i class="fas fa-calendar-check"></i>
-                </div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-info">
-                    <div class="val-primary">{{ my_pending_leaves }}</div>
-                    <div class="label-primary">Pending Leave Requests</div>
-                </div>
-                <div class="stat-icon" style="background: rgba(245,158,11,0.08); color: #d97706; border-radius: 10px; display:flex; align-items:center; justify-content:center;">
-                    <i class="fas fa-clock"></i>
-                </div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-info">
-                    <div class="val-primary">$0</div>
-                    <div class="label-primary">Next Payout</div>
-                </div>
-                <div class="stat-icon" style="background: rgba(124,58,237,0.08); color: #7c3aed; border-radius: 10px; display:flex; align-items:center; justify-content:center;">
-                    <i class="fas fa-receipt"></i>
-                </div>
-            </div>
-            {% endif %}
-        </section>
+                {% endif %}
+            </section>
         </section>
         <!-- Dynamic Content Bento -->
         <style>
-            .bento-grid { grid-template-columns: 1.2fr 1fr 0.8fr; gap: 18px; align-items: start; }
-            .bento-card { padding: 20px !important; }
-            .bento-header { margin-bottom: 16px !important; }
-            .bento-title { font-size: 15px !important; }
-            .announce-item { padding: 12px 14px !important; margin-bottom: 10px !important; border-radius: 10px !important; }
-            .item-h { font-size: 13px !important; margin-bottom: 4px !important; }
-            .item-meta { font-size: 11px !important; }
-            .compact-item { padding: 8px 10px !important; border-radius: 10px !important; }
-            .user-mini { width: 32px !important; height: 32px !important; font-size: 12px !important; border-radius: 8px !important; }
-            .user-n { font-size: 12px !important; }
-            .user-s { font-size: 10px !important; }
-            .status-pill { font-size: 9px !important; padding: 3px 8px !important; }
+            .bento-grid {
+                grid-template-columns: 1.2fr 1fr 0.8fr;
+                gap: 18px;
+                align-items: start;
+            }
+
+            .bento-card {
+                padding: 20px !important;
+            }
+
+            .bento-header {
+                margin-bottom: 16px !important;
+            }
+
+            .bento-title {
+                font-size: 15px !important;
+            }
+
+            .announce-item {
+                padding: 12px 14px !important;
+                margin-bottom: 10px !important;
+                border-radius: 10px !important;
+            }
+
+            .item-h {
+                font-size: 13px !important;
+                margin-bottom: 4px !important;
+            }
+
+            .item-meta {
+                font-size: 11px !important;
+            }
+
+            .compact-item {
+                padding: 8px 10px !important;
+                border-radius: 10px !important;
+            }
+
+            .user-mini {
+                width: 32px !important;
+                height: 32px !important;
+                font-size: 12px !important;
+                border-radius: 8px !important;
+            }
+
+            .user-n {
+                font-size: 12px !important;
+            }
+
+            .user-s {
+                font-size: 10px !important;
+            }
+
+            .status-pill {
+                font-size: 9px !important;
+                padding: 3px 8px !important;
+            }
+
             .attendance-mini-pill {
                 display: inline-flex;
                 align-items: center;
@@ -214,14 +295,48 @@
                 font-weight: 800;
                 white-space: nowrap;
             }
-            .attendance-mini-pill.completed { background: rgba(34,197,94,0.1); color: #16a34a; }
-            .attendance-mini-pill.working { background: rgba(37,99,235,0.1); color: var(--accent); }
-            .attendance-mini-pill.missing { background: rgba(245,158,11,0.12); color: #d97706; }
-            .attendance-mini-pill.absent { background: rgba(239,68,68,0.1); color: #ef4444; }
-            .attendance-mini-pill.weekend { background: rgba(100,116,139,0.12); color: #64748b; }
-            .attendance-mini-pill.pending { background: rgba(245,158,11,0.12); color: #d97706; }
-            @media (max-width: 1100px) { .bento-grid { grid-template-columns: 1fr 1fr; } }
-            @media (max-width: 768px) { .bento-grid { grid-template-columns: 1fr; } }
+
+            .attendance-mini-pill.completed {
+                background: rgba(34, 197, 94, 0.1);
+                color: #16a34a;
+            }
+
+            .attendance-mini-pill.working {
+                background: rgba(37, 99, 235, 0.1);
+                color: var(--accent);
+            }
+
+            .attendance-mini-pill.missing {
+                background: rgba(245, 158, 11, 0.12);
+                color: #d97706;
+            }
+
+            .attendance-mini-pill.absent {
+                background: rgba(239, 68, 68, 0.1);
+                color: #ef4444;
+            }
+
+            .attendance-mini-pill.weekend {
+                background: rgba(100, 116, 139, 0.12);
+                color: #64748b;
+            }
+
+            .attendance-mini-pill.pending {
+                background: rgba(245, 158, 11, 0.12);
+                color: #d97706;
+            }
+
+            @media (max-width: 1100px) {
+                .bento-grid {
+                    grid-template-columns: 1fr 1fr;
+                }
+            }
+
+            @media (max-width: 768px) {
+                .bento-grid {
+                    grid-template-columns: 1fr;
+                }
+            }
         </style>
         <div class="bento-grid">
             <!-- Announcements (Col 1) -->
@@ -232,21 +347,31 @@
                         <a href="{% url 'announcements:list' %}" class="action-link">View all &rarr;</a>
                     </div>
                     {% for announcement in dashboard_announcements %}
-                    <a href="{% url 'announcements:detail' announcement.id %}" class="announce-item" style="display: block; text-decoration: none; color: inherit;">
-                        <span class="item-tag"
-                            {% if announcement.category == 'POLICY' %}style="background: rgba(124,58,237,0.1); color: #7c3aed;"
-                            {% elif announcement.category == 'EVENT' %}style="background: rgba(245,158,11,0.1); color: #d97706;"
-                            {% elif announcement.category == 'HR_UPDATE' %}style="background: rgba(34,197,94,0.1); color: #15803d;"
-                            {% elif announcement.category == 'OPERATIONS' %}style="background: rgba(14,165,233,0.1); color: #0369a1;"
-                            {% endif %}>
+                    <a href="{% url 'announcements:detail' announcement.id %}" class="announce-item"
+                        style="display: block; text-decoration: none; color: inherit;">
+                        <span class="item-tag" {% if announcement.category=='POLICY'
+                            %}style="background: rgba(124,58,237,0.1); color: #7c3aed;" {% elif
+                            announcement.category=='EVENT' %}style="background: rgba(245,158,11,0.1); color: #d97706;"
+                            {% elif announcement.category=='HR_UPDATE'
+                            %}style="background: rgba(34,197,94,0.1); color: #15803d;" {% elif
+                            announcement.category=='OPERATIONS'
+                            %}style="background: rgba(14,165,233,0.1); color: #0369a1;" {% endif %}>
                             {{ announcement.get_category_display }}
                         </span>
-                        <h3 class="item-h">{{ announcement.title }}</h3>
-                        <div class="item-meta">Posted {{ announcement.publish_at|timesince }} ago &middot; {{ announcement.department }}</div>
+                        <h3 class="item-h">
+                            {{ announcement.title }}
+                            {% with img_count=announcement.images.count %}
+                            {% if img_count %}<span style="font-size: 11px; font-weight: 700; color: #64748b; margin-left: 6px;"><i class="fas fa-image"></i> {{ img_count }}</span>{% endif %}
+                            {% endwith %}
+                        </h3>
+                        <div class="item-meta">Posted {{ announcement.publish_at|timesince }} ago &middot; {{
+                            announcement.department }}</div>
                     </a>
                     {% empty %}
-                    <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 180px; color: var(--text-secondary); text-align: center;">
-                        <i class="fas fa-bullhorn" style="font-size: 28px; color: var(--accent); opacity: 0.75; margin-bottom: 10px;"></i>
+                    <div
+                        style="display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 180px; color: var(--text-secondary); text-align: center;">
+                        <i class="fas fa-bullhorn"
+                            style="font-size: 28px; color: var(--accent); opacity: 0.75; margin-bottom: 10px;"></i>
                         <span style="font-size: 13px; font-weight: 700;">No announcements yet</span>
                         <span style="font-size: 11px; margin-top: 4px;">Company updates will appear here</span>
                     </div>
@@ -254,22 +379,30 @@
                 </div>
 
                 <!-- Payslip Card -->
-                <div class="bento-card" style="background: linear-gradient(135deg, #2563eb, #7c3aed); color: #fff; border: none;">
+                <div class="bento-card"
+                    style="background: linear-gradient(135deg, #2563eb, #7c3aed); color: #fff; border: none;">
                     <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
-                        <div style="width: 32px; height: 32px; border-radius: 8px; background: rgba(255,255,255,0.15); display: flex; align-items: center; justify-content: center;">
+                        <div
+                            style="width: 32px; height: 32px; border-radius: 8px; background: rgba(255,255,255,0.15); display: flex; align-items: center; justify-content: center;">
                             <i class="fas fa-file-invoice-dollar" style="font-size: 14px;"></i>
                         </div>
                         <h2 class="bento-title" style="color: #fff; margin: 0;">Your Payslip</h2>
                     </div>
                     {% if latest_payslip %}
-                    <p style="font-size: 12px; opacity: 0.88; margin: 0 0 8px;">{{ latest_payslip.payroll_run.get_month_display }} {{ latest_payslip.payroll_run.year }} payslip is ready.</p>
-                    <div style="font-size: 11px; opacity: 0.78; margin-bottom: 14px;">Net salary: Rs. {{ latest_payslip.net_salary }} - {{ latest_payslip.get_status_display }}</div>
-                    <a href="{% url 'payslip_detail' latest_payslip.id %}" style="background: rgba(255,255,255,0.2); color: #fff; text-decoration: none; padding: 8px 14px; border-radius: 8px; font-weight: 700; font-size: 12px; display: inline-flex; align-items: center; gap: 6px; border: 1px solid rgba(255,255,255,0.3);">
+                    <p style="font-size: 12px; opacity: 0.88; margin: 0 0 8px;">{{
+                        latest_payslip.payroll_run.get_month_display }} {{ latest_payslip.payroll_run.year }} payslip is
+                        ready.</p>
+                    <div style="font-size: 11px; opacity: 0.78; margin-bottom: 14px;">Net salary: Rs. {{
+                        latest_payslip.net_salary }} - {{ latest_payslip.get_status_display }}</div>
+                    <a href="{% url 'payslip_detail' latest_payslip.id %}"
+                        style="background: rgba(255,255,255,0.2); color: #fff; text-decoration: none; padding: 8px 14px; border-radius: 8px; font-weight: 700; font-size: 12px; display: inline-flex; align-items: center; gap: 6px; border: 1px solid rgba(255,255,255,0.3);">
                         <i class="fas fa-file-export" style="font-size: 11px;"></i> View / Export PDF
                     </a>
                     {% else %}
-                    <p style="font-size: 12px; opacity: 0.88; margin: 0 0 14px;">No payslip has been generated for you yet.</p>
-                    <a href="{% url 'my_payslips' %}" style="background: rgba(255,255,255,0.2); color: #fff; text-decoration: none; padding: 8px 14px; border-radius: 8px; font-weight: 700; font-size: 12px; display: inline-flex; align-items: center; gap: 6px; border: 1px solid rgba(255,255,255,0.3);">
+                    <p style="font-size: 12px; opacity: 0.88; margin: 0 0 14px;">No payslip has been generated for you
+                        yet.</p>
+                    <a href="{% url 'my_payslips' %}"
+                        style="background: rgba(255,255,255,0.2); color: #fff; text-decoration: none; padding: 8px 14px; border-radius: 8px; font-weight: 700; font-size: 12px; display: inline-flex; align-items: center; gap: 6px; border: 1px solid rgba(255,255,255,0.3);">
                         <i class="fas fa-folder-open" style="font-size: 11px;"></i> Open Payslips
                     </a>
                     {% endif %}
@@ -284,20 +417,25 @@
                     <div class="bento-header">
                         <h2 class="bento-title">Pending Approvals</h2>
                         {% if pending_approval_total %}
-                        <span style="background: rgba(239,68,68,0.1); color: #ef4444; font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 99px;">{{ pending_approval_total }}</span>
+                        <span
+                            style="background: rgba(239,68,68,0.1); color: #ef4444; font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 99px;">{{
+                            pending_approval_total }}</span>
                         {% endif %}
                     </div>
                     {% for approval in pending_approval_items %}
-                    <div class="announce-item" style="display: flex; justify-content: space-between; align-items: center;">
+                    <div class="announce-item"
+                        style="display: flex; justify-content: space-between; align-items: center;">
                         <div style="min-width: 0;">
-                            <span class="item-tag"
-                                {% if approval.tone == 'red' %}style="background: rgba(239,68,68,0.1); color: #ef4444;"
-                                {% elif approval.tone == 'green' %}style="background: rgba(16,185,129,0.1); color: #059669;"
-                                {% elif approval.tone == 'purple' %}style="background: rgba(124,58,237,0.1); color: #7c3aed;"
-                                {% elif approval.tone == 'amber' %}style="background: rgba(245,158,11,0.1); color: #d97706;"
-                                {% elif approval.tone == 'cyan' %}style="background: rgba(14,165,233,0.1); color: #0284c7;"
-                                {% elif approval.tone == 'slate' %}style="background: rgba(100,116,139,0.12); color: #475569;"
-                                {% else %}style="background: rgba(37,99,235,0.1); color: var(--accent);"{% endif %}>
+                            <span class="item-tag" {% if approval.tone=='red'
+                                %}style="background: rgba(239,68,68,0.1); color: #ef4444;" {% elif
+                                approval.tone=='green' %}style="background: rgba(16,185,129,0.1); color: #059669;" {%
+                                elif approval.tone=='purple' %}style="background: rgba(124,58,237,0.1); color: #7c3aed;"
+                                {% elif approval.tone=='amber'
+                                %}style="background: rgba(245,158,11,0.1); color: #d97706;" {% elif
+                                approval.tone=='cyan' %}style="background: rgba(14,165,233,0.1); color: #0284c7;" {%
+                                elif approval.tone=='slate'
+                                %}style="background: rgba(100,116,139,0.12); color: #475569;" {% else
+                                %}style="background: rgba(37,99,235,0.1); color: var(--accent);" {% endif %}>
                                 {{ approval.badge }}
                             </span>
                             <h3 class="item-h">{{ approval.title }}</h3>
@@ -305,19 +443,23 @@
                         </div>
                         <div style="display: flex; gap: 6px; flex-shrink: 0; align-items: center;">
                             {% if approval.approve_url and approval.reject_url %}
-                            <a href="{{ approval.approve_url }}" title="Approve" style="background: #10b981; color: white; width: 28px; height: 28px; border-radius: 8px; text-decoration: none; font-size: 12px; font-weight: 800; display: inline-flex; align-items: center; justify-content: center;">
+                            <a href="{{ approval.approve_url }}" title="Approve"
+                                style="background: #10b981; color: white; width: 28px; height: 28px; border-radius: 8px; text-decoration: none; font-size: 12px; font-weight: 800; display: inline-flex; align-items: center; justify-content: center;">
                                 <i class="fas fa-check"></i>
                             </a>
-                            <a href="{{ approval.reject_url }}" title="Reject" style="background: #ef4444; color: white; width: 28px; height: 28px; border-radius: 8px; text-decoration: none; font-size: 12px; font-weight: 800; display: inline-flex; align-items: center; justify-content: center;">
+                            <a href="{{ approval.reject_url }}" title="Reject"
+                                style="background: #ef4444; color: white; width: 28px; height: 28px; border-radius: 8px; text-decoration: none; font-size: 12px; font-weight: 800; display: inline-flex; align-items: center; justify-content: center;">
                                 <i class="fas fa-xmark"></i>
                             </a>
                             {% else %}
-                            <a href="{{ approval.link }}" style="background: rgba(37,99,235,0.1); color: var(--accent); padding: 7px 11px; border-radius: 9px; text-decoration: none; font-size: 11px; font-weight: 800; white-space: nowrap;">Review</a>
+                            <a href="{{ approval.link }}"
+                                style="background: rgba(37,99,235,0.1); color: var(--accent); padding: 7px 11px; border-radius: 9px; text-decoration: none; font-size: 11px; font-weight: 800; white-space: nowrap;">Review</a>
                             {% endif %}
                         </div>
                     </div>
                     {% empty %}
-                    <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 24px 0; gap: 8px; color: var(--text-secondary);">
+                    <div
+                        style="display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 24px 0; gap: 8px; color: var(--text-secondary);">
                         <i class="fas fa-check-circle" style="font-size: 28px; color: #10b981; opacity: 0.7;"></i>
                         <span style="font-size: 13px; font-weight: 600;">All clear!</span>
                         <span style="font-size: 11px;">No pending requests</span>
@@ -327,50 +469,72 @@
                 {% endif %}
 
                 <!-- Upcoming Time Off -->
-                <div class="bento-card" style="border: 1px solid rgba(37, 99, 235, 0.1); background: rgba(255, 255, 255, 0.6);">
-                    <div class="bento-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <div class="bento-card"
+                    style="border: 1px solid rgba(37, 99, 235, 0.1); background: rgba(255, 255, 255, 0.6);">
+                    <div class="bento-header"
+                        style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
                         <div style="display: flex; align-items: center; gap: 10px;">
-                            <div style="width: 32px; height: 32px; border-radius: 8px; background: rgba(37, 99, 235, 0.1); color: var(--accent); display: flex; align-items: center; justify-content: center;">
+                            <div
+                                style="width: 32px; height: 32px; border-radius: 8px; background: rgba(37, 99, 235, 0.1); color: var(--accent); display: flex; align-items: center; justify-content: center;">
                                 <i class="fas fa-calendar-alt" style="font-size: 14px;"></i>
                             </div>
-                            <h2 class="bento-title" style="margin: 0; font-weight: 800; font-size: 15px;">Upcoming Time Off</h2>
+                            <h2 class="bento-title" style="margin: 0; font-weight: 800; font-size: 15px;">Upcoming Time
+                                Off</h2>
                         </div>
-                        <a href="{% url 'leaves:dashboard' %}" style="font-size: 11px; font-weight: 700; color: var(--accent); text-decoration: none;">View All</a>
+                        <a href="{% url 'leaves:dashboard' %}"
+                            style="font-size: 11px; font-weight: 700; color: var(--accent); text-decoration: none;">View
+                            All</a>
                     </div>
-                    
+
                     {% if upcoming_leaves %}
                     <div style="margin-bottom: 24px;">
-                        <div style="font-size: 10px; font-weight: 800; color: var(--text-secondary); margin-bottom: 12px; letter-spacing: 1px; text-transform: uppercase; display: flex; align-items: center; gap: 6px;">
-                            <span style="width: 4px; height: 4px; border-radius: 50%; background: #10b981;"></span> Approved Leaves
+                        <div
+                            style="font-size: 10px; font-weight: 800; color: var(--text-secondary); margin-bottom: 12px; letter-spacing: 1px; text-transform: uppercase; display: flex; align-items: center; gap: 6px;">
+                            <span style="width: 4px; height: 4px; border-radius: 50%; background: #10b981;"></span>
+                            Approved Leaves
                         </div>
                         {% for leave in upcoming_leaves %}
-                        <div style="padding: 10px 12px; background: #fff; border-radius: 12px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; border: 1px solid var(--border-light); transition: transform 0.2s; cursor: default;" onmouseover="this.style.transform='translateX(4px)'" onmouseout="this.style.transform='translateX(0)'">
+                        <div style="padding: 10px 12px; background: #fff; border-radius: 12px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; border: 1px solid var(--border-light); transition: transform 0.2s; cursor: default;"
+                            onmouseover="this.style.transform='translateX(4px)'"
+                            onmouseout="this.style.transform='translateX(0)'">
                             <div style="display: flex; flex-direction: column;">
-                                <span style="font-size: 13px; font-weight: 700;">{{ leave.start_date|date:"M d, Y" }}</span>
-                                <span style="font-size: 11px; color: var(--text-secondary);">{{ leave.leave_type.name }}</span>
+                                <span style="font-size: 13px; font-weight: 700;">{{ leave.start_date|date:"M d, Y"
+                                    }}</span>
+                                <span style="font-size: 11px; color: var(--text-secondary);">{{ leave.leave_type.name
+                                    }}</span>
                             </div>
-                            <span style="font-size: 11px; font-weight: 800; background: rgba(37, 99, 235, 0.08); color: var(--accent); padding: 4px 8px; border-radius: 6px;">{{ leave.total_days }}d</span>
+                            <span
+                                style="font-size: 11px; font-weight: 800; background: rgba(37, 99, 235, 0.08); color: var(--accent); padding: 4px 8px; border-radius: 6px;">{{
+                                leave.total_days }}d</span>
                         </div>
                         {% endfor %}
                     </div>
                     {% endif %}
 
                     <div>
-                        <div style="font-size: 10px; font-weight: 800; color: var(--text-secondary); margin-bottom: 12px; letter-spacing: 1px; text-transform: uppercase; display: flex; align-items: center; gap: 6px;">
-                            <span style="width: 4px; height: 4px; border-radius: 50%; background: var(--accent);"></span> Company Holidays
+                        <div
+                            style="font-size: 10px; font-weight: 800; color: var(--text-secondary); margin-bottom: 12px; letter-spacing: 1px; text-transform: uppercase; display: flex; align-items: center; gap: 6px;">
+                            <span
+                                style="width: 4px; height: 4px; border-radius: 50%; background: var(--accent);"></span>
+                            Company Holidays
                         </div>
                         <div class="compact-list" style="max-height: 180px; overflow-y: auto; padding-right: 4px;">
                             {% for holiday in upcoming_holidays %}
-                            <div style="padding: 8px 0; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px dashed var(--border-light);">
+                            <div
+                                style="padding: 8px 0; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px dashed var(--border-light);">
                                 <div style="display: flex; flex-direction: column;">
-                                    <span style="font-size: 12px; font-weight: 600; color: var(--text-main);">{{ holiday.name }}</span>
-                                    <span style="font-size: 10px; color: var(--text-secondary);">{{ holiday.date|date:"l" }}</span>
+                                    <span style="font-size: 12px; font-weight: 600; color: var(--text-main);">{{
+                                        holiday.name }}</span>
+                                    <span style="font-size: 10px; color: var(--text-secondary);">{{
+                                        holiday.date|date:"l" }}</span>
                                 </div>
-                                <span style="font-size: 12px; font-weight: 700; color: var(--text-main);">{{ holiday.date|date:"M d" }}</span>
+                                <span style="font-size: 12px; font-weight: 700; color: var(--text-main);">{{
+                                    holiday.date|date:"M d" }}</span>
                             </div>
                             {% empty %}
                             <div style="text-align: center; padding: 20px; opacity: 0.5;">
-                                <i class="fas fa-calendar-check" style="font-size: 20px; margin-bottom: 8px; display: block;"></i>
+                                <i class="fas fa-calendar-check"
+                                    style="font-size: 20px; margin-bottom: 8px; display: block;"></i>
                                 <span style="font-size: 11px;">No upcoming holidays</span>
                             </div>
                             {% endfor %}
@@ -383,28 +547,39 @@
                     <div class="bento-header">
                         <h2 class="bento-title">On Leave Today</h2>
                         {% if on_leave_today_total %}
-                        <span style="background: rgba(37,99,235,0.1); color: var(--accent); font-size: 11px; font-weight: 800; padding: 2px 8px; border-radius: 99px;">{{ on_leave_today_total }}</span>
+                        <span
+                            style="background: rgba(37,99,235,0.1); color: var(--accent); font-size: 11px; font-weight: 800; padding: 2px 8px; border-radius: 99px;">{{
+                            on_leave_today_total }}</span>
                         {% endif %}
                     </div>
                     <div class="compact-list" style="max-height: 240px; overflow-y: auto; padding-right: 4px;">
                         {% for leave in on_leave_today %}
-                        <div class="compact-item" style="display: flex; align-items: center; gap: 10px; background: #fff; border: 1px solid var(--border-light);">
+                        <div class="compact-item"
+                            style="display: flex; align-items: center; gap: 10px; background: #fff; border: 1px solid var(--border-light);">
                             <div class="user-mini" style="background: rgba(37,99,235,0.1); color: var(--accent);">
                                 {% if leave.employee.profile_img %}
-                                <img src="{{ leave.employee.profile_img.url }}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">
+                                <img src="{{ leave.employee.profile_img.url }}"
+                                    style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">
                                 {% else %}
                                 {{ leave.employee.first_name|slice:":1"|upper }}
                                 {% endif %}
                             </div>
                             <div class="user-d" style="flex: 1; min-width: 0;">
-                                <span class="user-n" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block;">{{ leave.employee.first_name }} {{ leave.employee.last_name }}</span>
-                                <span class="user-s" style="display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
-                                    {{ leave.leave_type.name }}{% if leave.employee.department %} - {{ leave.employee.department.name }}{% endif %}
+                                <span class="user-n"
+                                    style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block;">{{
+                                    leave.employee.first_name }} {{ leave.employee.last_name }}</span>
+                                <span class="user-s"
+                                    style="display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                                    {{ leave.leave_type.name }}{% if leave.employee.department %} - {{
+                                    leave.employee.department.name }}{% endif %}
                                 </span>
                             </div>
                             <div style="text-align: right; flex-shrink: 0;">
-                                <span class="status-pill" style="background: rgba(37,99,235,0.08); color: var(--accent);">{{ leave.total_days }}d</span>
-                                <div style="font-size: 10px; font-weight: 700; color: var(--text-secondary); margin-top: 4px;">
+                                <span class="status-pill"
+                                    style="background: rgba(37,99,235,0.08); color: var(--accent);">{{ leave.total_days
+                                    }}d</span>
+                                <div
+                                    style="font-size: 10px; font-weight: 700; color: var(--text-secondary); margin-top: 4px;">
                                     {% if leave.start_date == leave.end_date %}
                                     {{ leave.start_date|date:"M d" }}
                                     {% else %}
@@ -414,7 +589,8 @@
                             </div>
                         </div>
                         {% empty %}
-                        <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 24px 0; gap: 8px; color: var(--text-secondary); text-align: center;">
+                        <div
+                            style="display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 24px 0; gap: 8px; color: var(--text-secondary); text-align: center;">
                             <i class="fas fa-user-check" style="font-size: 28px; color: #10b981; opacity: 0.75;"></i>
                             <span style="font-size: 13px; font-weight: 700;">No one is on leave today</span>
                             <span style="font-size: 11px;">Approved leaves for today will appear here</span>
@@ -433,22 +609,27 @@
                     </div>
                     <div class="compact-list">
                         {% for emp in recent_employees %}
-                        <a href="{% url 'view_employee' emp.pk %}" class="compact-item" style="text-decoration: none; color: inherit; display: flex; align-items: center; gap: 10px;">
+                        <a href="{% url 'view_employee' emp.pk %}" class="compact-item"
+                            style="text-decoration: none; color: inherit; display: flex; align-items: center; gap: 10px;">
                             <div class="user-mini">
                                 {% if emp.profile_img %}
-                                <img src="{{ emp.profile_img.url }}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">
+                                <img src="{{ emp.profile_img.url }}"
+                                    style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">
                                 {% else %}
                                 {{ emp.first_name|slice:":1"|upper }}
                                 {% endif %}
                             </div>
                             <div class="user-d" style="flex: 1; min-width: 0;">
-                                <span class="user-n" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block;">{{ emp.first_name }} {{ emp.last_name }}</span>
+                                <span class="user-n"
+                                    style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block;">{{
+                                    emp.first_name }} {{ emp.last_name }}</span>
                                 <span class="user-s">{{ emp.designation.name|default:"--" }}</span>
                             </div>
                             <span class="status-pill">Active</span>
                         </a>
                         {% empty %}
-                        <div style="text-align: center; padding: 16px; color: var(--text-secondary); font-size: 12px;">No employees found</div>
+                        <div style="text-align: center; padding: 16px; color: var(--text-secondary); font-size: 12px;">
+                            No employees found</div>
                         {% endfor %}
                     </div>
                 </div>
@@ -462,21 +643,32 @@
                     </div>
                     <div class="compact-list" style="display: flex; flex-direction: column; gap: 8px;">
                         {% for row in last_5_attendance %}
-                        <div class="compact-item" style="display: grid; grid-template-columns: minmax(72px, 1fr) auto; gap: 10px; align-items: center; background: #fff; border: 1px solid var(--border-light);">
+                        <div class="compact-item"
+                            style="display: grid; grid-template-columns: minmax(72px, 1fr) auto; gap: 10px; align-items: center; background: #fff; border: 1px solid var(--border-light);">
                             <div style="min-width: 0;">
-                                <div style="font-size: 12px; font-weight: 800; color: var(--text-main);">{{ row.date|date:"M d" }}</div>
-                                <div style="font-size: 10px; font-weight: 700; color: var(--text-secondary);">{{ row.date|date:"l" }}</div>
+                                <div style="font-size: 12px; font-weight: 800; color: var(--text-main);">{{
+                                    row.date|date:"M d" }}</div>
+                                <div style="font-size: 10px; font-weight: 700; color: var(--text-secondary);">{{
+                                    row.date|date:"l" }}</div>
                             </div>
                             <span class="attendance-mini-pill {{ row.status_type }}">{{ row.status_label }}</span>
-                            <div style="grid-column: 1 / -1; display: flex; justify-content: space-between; gap: 10px; padding-top: 6px; border-top: 1px dashed var(--border-light);">
-                                <span style="font-size: 10px; color: var(--text-secondary);">In: <strong style="color: var(--text-main);">{% if row.clock_in %}{{ row.clock_in|time:"h:i A" }}{% else %}--{% endif %}</strong></span>
-                                <span style="font-size: 10px; color: var(--text-secondary);">Out: <strong style="color: var(--text-main);">{% if row.clock_out %}{{ row.clock_out|time:"h:i A" }}{% else %}--{% endif %}</strong></span>
-                                <span style="font-size: 10px; color: var(--text-secondary);">Total: <strong style="color: var(--text-main);">{{ row.work_time }}</strong></span>
+                            <div
+                                style="grid-column: 1 / -1; display: flex; justify-content: space-between; gap: 10px; padding-top: 6px; border-top: 1px dashed var(--border-light);">
+                                <span style="font-size: 10px; color: var(--text-secondary);">In: <strong
+                                        style="color: var(--text-main);">{% if row.clock_in %}{{ row.clock_in|time:"h:i
+                                        A" }}{% else %}--{% endif %}</strong></span>
+                                <span style="font-size: 10px; color: var(--text-secondary);">Out: <strong
+                                        style="color: var(--text-main);">{% if row.clock_out %}{{
+                                        row.clock_out|time:"h:i A" }}{% else %}--{% endif %}</strong></span>
+                                <span style="font-size: 10px; color: var(--text-secondary);">Total: <strong
+                                        style="color: var(--text-main);">{{ row.work_time }}</strong></span>
                             </div>
                         </div>
                         {% empty %}
-                        <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 22px 0; gap: 8px; color: var(--text-secondary); text-align: center;">
-                            <i class="fas fa-fingerprint" style="font-size: 24px; color: var(--accent); opacity: 0.75;"></i>
+                        <div
+                            style="display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 22px 0; gap: 8px; color: var(--text-secondary); text-align: center;">
+                            <i class="fas fa-fingerprint"
+                                style="font-size: 24px; color: var(--accent); opacity: 0.75;"></i>
                             <span style="font-size: 12px; font-weight: 700;">No attendance profile found</span>
                         </div>
                         {% endfor %}
@@ -523,141 +715,6 @@
     </script>
     <script src="{% static 'js/ui-effects.js' %}?v=1.0" defer></script>
     <script src="{% static 'js/landing.js' %}?v=1.0"></script>
-
-    <script>
-    // Location-Based Check-In
-    const LOCATION_RESTRICTION_ENABLED = {{ location_restriction_enabled|yesno:"true,false" }};
-
-    function handleCheckIn(btn) {
-        if (!LOCATION_RESTRICTION_ENABLED) {
-            // No location restriction — submit normally
-            const form = document.getElementById('attendanceForm');
-            const hiddenAction = document.createElement('input');
-            hiddenAction.type = 'hidden';
-            hiddenAction.name = 'action';
-            hiddenAction.value = 'clock_in';
-            form.appendChild(hiddenAction);
-            form.submit();
-            return;
-        }
-
-        // Location restriction is ON — collect GPS first
-        if (!navigator.geolocation) {
-            showAttError('Your browser does not support location services. Please use a modern browser.');
-            return;
-        }
-
-        const originalLabel = btn.textContent;
-        btn.disabled = true;
-        btn.textContent = '📍 Verifying location...';
-
-        navigator.geolocation.getCurrentPosition(
-            function(position) {
-                // Temporary development-safe logging
-                console.log("[Attendance] Geolocation obtained:", {
-                    latitude: position.coords.latitude,
-                    longitude: position.coords.longitude,
-                    accuracy: position.coords.accuracy,
-                    timestamp: new Date(position.timestamp).toISOString()
-                });
-
-                // Success — populate hidden fields and submit
-                document.getElementById('loc_lat').value = position.coords.latitude;
-                document.getElementById('loc_lng').value = position.coords.longitude;
-                document.getElementById('loc_accuracy').value = position.coords.accuracy || '';
-
-                const form = document.getElementById('attendanceForm');
-                const hiddenAction = document.createElement('input');
-                hiddenAction.type = 'hidden';
-                hiddenAction.name = 'action';
-                hiddenAction.value = 'clock_in';
-                form.appendChild(hiddenAction);
-
-                // Submit via AJAX to handle JSON error responses from backend
-                btn.textContent = '⏳ Checking in...';
-                const formData = new FormData(form);
-                const postUrl = form.getAttribute('action');
-
-                fetch(postUrl, {
-                    method: 'POST',
-                    headers: { 'X-Requested-With': 'XMLHttpRequest' },
-                    body: formData,
-                })
-                .then(function(response) { 
-                    if (!response.ok) {
-                        return response.json().then(errData => {
-                            throw { status: response.status, data: errData };
-                        }).catch(() => {
-                            throw { status: response.status, data: { message: `Server error ${response.status}` } };
-                        });
-                    }
-                    return response.json(); 
-                })
-                .then(function(data) {
-                    if (data.success) {
-                        btn.textContent = '✓ Checked In!';
-                        btn.style.background = 'var(--green, #16a34a)';
-                        setTimeout(function() { window.location.reload(); }, 1200);
-                    } else {
-                        btn.disabled = false;
-                        btn.textContent = originalLabel;
-                        showAttError(data.message || 'Check-in failed. Please try again.');
-                    }
-                })
-                .catch(function(err) {
-                    btn.disabled = false;
-                    btn.textContent = originalLabel;
-                    if (err.status) {
-                        showAttError(err.data && err.data.message ? err.data.message : `Server error (${err.status}). Please try again.`);
-                    } else {
-                        showAttError('Network error. Please check your connection and try again.');
-                    }
-                });
-
-            },
-            function(err) {
-                // Geolocation error
-                btn.disabled = false;
-                btn.textContent = originalLabel;
-                if (err.code === 1) {
-                    showAttError('Location permission denied. Please allow location access in your browser settings and try again.');
-                } else if (err.code === 2) {
-                    showAttError('Location could not currently be determined. Please enable location services and try again.');
-                } else if (err.code === 3) {
-                    showAttError('Location request timed out. Please check your GPS signal and try again.');
-                } else {
-                    showAttError('Unable to get your location. Please try again.');
-                }
-            },
-            { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
-        );
-    }
-
-    function showAttError(msg) {
-        // Remove any existing error toast
-        const existing = document.getElementById('attErrorToast');
-        if (existing) existing.remove();
-
-        const toast = document.createElement('div');
-        toast.id = 'attErrorToast';
-        toast.style.cssText = [
-            'position:fixed', 'bottom:28px', 'left:50%', 'transform:translateX(-50%)',
-            'background:#1e293b', 'color:#fff', 'padding:14px 22px',
-            'border-radius:10px', 'font-size:13.5px', 'font-weight:600',
-            'z-index:9999', 'box-shadow:0 8px 32px rgba(0,0,0,.22)',
-            'max-width:420px', 'text-align:center', 'line-height:1.5',
-            'border-left:4px solid #ef4444',
-        ].join(';');
-        toast.textContent = '⚠ ' + msg;
-        document.body.appendChild(toast);
-        setTimeout(function() {
-            toast.style.transition = 'opacity 0.4s';
-            toast.style.opacity = '0';
-            setTimeout(function() { toast.remove(); }, 450);
-        }, 5000);
-    }
-    </script>
 </body>
-
 
 </html>
