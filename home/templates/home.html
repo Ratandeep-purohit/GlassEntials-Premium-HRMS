@@ -61,11 +61,7 @@
                         {% endif %}
                     </div>
                     <div class="employee-attendance-divider"></div>
-                    <div class="employee-time-grid" id="dashboardAttendanceTimer" {% if today_attendance and
-                        today_attendance.clock_in %}data-date="{{ today_attendance.date|date:'Y-m-d' }}"
-                        data-clock-in="{{ today_attendance.clock_in|time:'H:i:s' }}" {% endif %} {% if today_attendance
-                        and today_attendance.clock_out %}data-clock-out="{{ today_attendance.clock_out|time:'H:i:s' }}"
-                        {% endif %}>
+                    <div class="employee-time-grid" id="dashboardAttendanceTimer" {% if today_attendance and today_attendance.clock_in %}data-date="{{ today_attendance.date|date:'Y-m-d' }}" data-clock-in="{{ today_attendance.clock_in|time:'H:i:s' }}" {% endif %} {% if today_attendance and today_attendance.clock_out %}data-clock-out="{{ today_attendance.clock_out|time:'H:i:s' }}" {% endif %}>
                         <span>00</span>
                         <span>00</span>
                         <span>00</span>
@@ -349,13 +345,7 @@
                     {% for announcement in dashboard_announcements %}
                     <a href="{% url 'announcements:detail' announcement.id %}" class="announce-item"
                         style="display: block; text-decoration: none; color: inherit;">
-                        <span class="item-tag" {% if announcement.category=='POLICY'
-                            %}style="background: rgba(124,58,237,0.1); color: #7c3aed;" {% elif
-                            announcement.category=='EVENT' %}style="background: rgba(245,158,11,0.1); color: #d97706;"
-                            {% elif announcement.category=='HR_UPDATE'
-                            %}style="background: rgba(34,197,94,0.1); color: #15803d;" {% elif
-                            announcement.category=='OPERATIONS'
-                            %}style="background: rgba(14,165,233,0.1); color: #0369a1;" {% endif %}>
+                        <span class="item-tag" {% if announcement.category == 'POLICY' %}style="background: rgba(124,58,237,0.1); color: #7c3aed;" {% elif announcement.category == 'EVENT' %}style="background: rgba(245,158,11,0.1); color: #d97706;" {% elif announcement.category == 'HR_UPDATE' %}style="background: rgba(34,197,94,0.1); color: #15803d;" {% elif announcement.category == 'OPERATIONS' %}style="background: rgba(14,165,233,0.1); color: #0369a1;" {% endif %}>
                             {{ announcement.get_category_display }}
                         </span>
                         <h3 class="item-h">
@@ -426,16 +416,7 @@
                     <div class="announce-item"
                         style="display: flex; justify-content: space-between; align-items: center;">
                         <div style="min-width: 0;">
-                            <span class="item-tag" {% if approval.tone=='red'
-                                %}style="background: rgba(239,68,68,0.1); color: #ef4444;" {% elif
-                                approval.tone=='green' %}style="background: rgba(16,185,129,0.1); color: #059669;" {%
-                                elif approval.tone=='purple' %}style="background: rgba(124,58,237,0.1); color: #7c3aed;"
-                                {% elif approval.tone=='amber'
-                                %}style="background: rgba(245,158,11,0.1); color: #d97706;" {% elif
-                                approval.tone=='cyan' %}style="background: rgba(14,165,233,0.1); color: #0284c7;" {%
-                                elif approval.tone=='slate'
-                                %}style="background: rgba(100,116,139,0.12); color: #475569;" {% else
-                                %}style="background: rgba(37,99,235,0.1); color: var(--accent);" {% endif %}>
+                            <span class="item-tag" {% if approval.tone == 'red' %}style="background: rgba(239,68,68,0.1); color: #ef4444;" {% elif approval.tone == 'green' %}style="background: rgba(16,185,129,0.1); color: #059669;" {% elif approval.tone == 'purple' %}style="background: rgba(124,58,237,0.1); color: #7c3aed;" {% elif approval.tone == 'amber' %}style="background: rgba(245,158,11,0.1); color: #d97706;" {% elif approval.tone == 'cyan' %}style="background: rgba(14,165,233,0.1); color: #0284c7;" {% elif approval.tone == 'slate' %}style="background: rgba(100,116,139,0.12); color: #475569;" {% else %}style="background: rgba(37,99,235,0.1); color: var(--accent);" {% endif %}>
                                 {{ approval.badge }}
                             </span>
                             <h3 class="item-h">{{ approval.title }}</h3>
