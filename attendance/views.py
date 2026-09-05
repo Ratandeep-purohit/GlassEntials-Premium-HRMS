@@ -711,89 +711,100 @@ def clock_in_out_view(request):
 
             att_settings_loc = AttendanceSettings.objects.filter(organization=request.user.organization).first()
             if att_settings_loc and att_settings_loc.location_restriction_enabled:
-                # Require coordinates sent via POST
-                raw_lat = request.POST.get('loc_lat', '').strip()
-                raw_lng = request.POST.get('loc_lng', '').strip()
-                raw_acc = request.POST.get('loc_accuracy', '').strip()
 
-                if not raw_lat or not raw_lng:
-                    return JsonResponse({
-                        'success': False,
-                        'error': 'location_required',
-                        'message': 'Location permission is required to check in. Please allow location access and try again.'
-                    }, status=403)
+                # --- Determine whether THIS employee is subject to location restriction ---
+                apply_to = att_settings_loc.location_apply_to or AttendanceSettings.APPLY_TO_ALL
+                if apply_to == AttendanceSettings.APPLY_TO_SELECTED:
+                    # Only restrict employees explicitly listed in the M2M
+                    employee_is_restricted = att_settings_loc.location_restricted_employees.filter(
+                        pk=employee.pk
+                    ).exists()
+                else:
+                    # 'all' – existing behaviour: every employee is restricted
+                    employee_is_restricted = True
 
-                try:
-                    emp_lat = float(raw_lat)
-                    emp_lng = float(raw_lng)
-                    emp_acc = float(raw_acc) if raw_acc else None
-                except (ValueError, TypeError):
-                    return JsonResponse({
-                        'success': False,
-                        'error': 'invalid_coordinates',
-                        'message': 'Invalid location data received. Please try again.'
-                    }, status=400)
+                if employee_is_restricted:
+                    # Require coordinates sent via POST
+                    raw_lat = request.POST.get('loc_lat', '').strip()
+                    raw_lng = request.POST.get('loc_lng', '').strip()
+                    raw_acc = request.POST.get('loc_accuracy', '').strip()
 
-                if not (-90 <= emp_lat <= 90) or not (-180 <= emp_lng <= 180):
-                    return JsonResponse({
-                        'success': False,
-                        'error': 'invalid_coordinates',
-                        'message': 'Invalid coordinates received.'
-                    }, status=400)
+                    if not raw_lat or not raw_lng:
+                        return JsonResponse({
+                            'success': False,
+                            'error': 'location_required',
+                            'message': 'Location permission is required to check in. Please allow location access and try again.'
+                        }, status=403)
 
-                # Check GPS accuracy requirement
-                if emp_acc is not None and emp_acc > att_settings_loc.max_gps_accuracy_meters:
-                    return JsonResponse({
-                        'success': False,
-                        'error': 'poor_accuracy',
-                        'message': f'Your location accuracy is currently ±{int(emp_acc)} meters. '
-                                   f'Attendance requires an accuracy of at least ±{att_settings_loc.max_gps_accuracy_meters} meters or better. '
-                                   f'Please move to an area with better signal and try again.'
-                    }, status=403)
+                    try:
+                        emp_lat = float(raw_lat)
+                        emp_lng = float(raw_lng)
+                        emp_acc = float(raw_acc) if raw_acc else None
+                    except (ValueError, TypeError):
+                        return JsonResponse({
+                            'success': False,
+                            'error': 'invalid_coordinates',
+                            'message': 'Invalid location data received. Please try again.'
+                        }, status=400)
 
-                # Verify office coordinates are configured
-                if att_settings_loc.office_latitude is None or att_settings_loc.office_longitude is None:
-                    _log.error("Location restriction enabled but office coordinates not configured for org %s", request.user.organization)
-                    return JsonResponse({
-                        'success': False,
-                        'error': 'not_configured',
-                        'message': 'Office location is not configured. Please contact your administrator.'
-                    }, status=503)
+                    if not (-90 <= emp_lat <= 90) or not (-180 <= emp_lng <= 180):
+                        return JsonResponse({
+                            'success': False,
+                            'error': 'invalid_coordinates',
+                            'message': 'Invalid coordinates received.'
+                        }, status=400)
 
-                # Haversine distance calculation (server-side only)
-                def _haversine(lat1, lon1, lat2, lon2):
-                    R = 6371000  # Earth radius in metres
-                    phi1, phi2 = math.radians(lat1), math.radians(lat2)
-                    dphi = math.radians(lat2 - lat1)
-                    dlambda = math.radians(lon2 - lon1)
-                    a = math.sin(dphi/2)**2 + math.cos(phi1)*math.cos(phi2)*math.sin(dlambda/2)**2
-                    return R * 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
+                    # Check GPS accuracy requirement
+                    if emp_acc is not None and emp_acc > att_settings_loc.max_gps_accuracy_meters:
+                        return JsonResponse({
+                            'success': False,
+                            'error': 'poor_accuracy',
+                            'message': f'Your location accuracy is currently \u00b1{int(emp_acc)} meters. '
+                                       f'Attendance requires an accuracy of at least \u00b1{att_settings_loc.max_gps_accuracy_meters} meters or better. '
+                                       f'Please move to an area with better signal and try again.'
+                        }, status=403)
 
-                distance_m = _haversine(
-                    emp_lat, emp_lng,
-                    float(att_settings_loc.office_latitude),
-                    float(att_settings_loc.office_longitude)
-                )
+                    # Verify office coordinates are configured
+                    if att_settings_loc.office_latitude is None or att_settings_loc.office_longitude is None:
+                        _log.error("Location restriction enabled but office coordinates not configured for org %s", request.user.organization)
+                        return JsonResponse({
+                            'success': False,
+                            'error': 'not_configured',
+                            'message': 'Office location is not configured. Please contact your administrator.'
+                        }, status=503)
 
-                if distance_m > att_settings_loc.allowed_radius_meters:
-                    return JsonResponse({
-                        'success': False,
-                        'error': 'outside_radius',
-                        'message': f'You are {int(distance_m)} meters from the office. '
-                                   f'Attendance check-in is only allowed within {att_settings_loc.allowed_radius_meters} meters of the office.',
-                        'distance_meters': int(distance_m),
-                        'allowed_meters': att_settings_loc.allowed_radius_meters,
-                    }, status=403)
+                    # Haversine distance calculation (server-side only)
+                    def _haversine(lat1, lon1, lat2, lon2):
+                        R = 6371000  # Earth radius in metres
+                        phi1, phi2 = math.radians(lat1), math.radians(lat2)
+                        dphi = math.radians(lat2 - lat1)
+                        dlambda = math.radians(lon2 - lon1)
+                        a = math.sin(dphi/2)**2 + math.cos(phi1)*math.cos(phi2)*math.sin(dlambda/2)**2
+                        return R * 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
 
-                # Location is valid — store audit log after attendance is saved below
-                # Attach to request for use after attendance record is created
-                request._loc_data = {
-                    'lat': emp_lat, 'lng': emp_lng,
-                    'accuracy': emp_acc or 0,
-                    'distance': distance_m,
-                    'verified': True,
-                }
+                    distance_m = _haversine(
+                        emp_lat, emp_lng,
+                        float(att_settings_loc.office_latitude),
+                        float(att_settings_loc.office_longitude)
+                    )
 
+                    if distance_m > att_settings_loc.allowed_radius_meters:
+                        return JsonResponse({
+                            'success': False,
+                            'error': 'outside_radius',
+                            'message': f'You are {int(distance_m)} meters from the office. '
+                                       f'Attendance check-in is only allowed within {att_settings_loc.allowed_radius_meters} meters of the office.',
+                            'distance_meters': int(distance_m),
+                            'allowed_meters': att_settings_loc.allowed_radius_meters,
+                        }, status=403)
+
+                    # Location is valid — store audit log after attendance is saved below
+                    request._loc_data = {
+                        'lat': emp_lat, 'lng': emp_lng,
+                        'accuracy': emp_acc or 0,
+                        'distance': distance_m,
+                        'verified': True,
+                    }
 
         # Get current shift assignment
         from attendance.models import ShiftAssignment
@@ -2421,10 +2432,148 @@ def attendance_settings_view(request):
             'network_restriction_enabled': False,
             'allowed_ip_addresses': [],
             'location_restriction_enabled': False,
+            'location_apply_to': AttendanceSettings.APPLY_TO_ALL,
             'allowed_radius_meters': 100,
             'max_gps_accuracy_meters': 50,
         }
     )
+
+    if request.method == 'POST':
+        try:
+            body = json.loads(request.body)
+            errors = []
+
+            # --- Network restriction ---
+            att_settings.network_restriction_enabled = bool(body.get('network_restriction_enabled', False))
+            raw_ips = body.get('allowed_ip_addresses', [])
+            import ipaddress
+            cleaned_ips = []
+            for ip in raw_ips:
+                ip = ip.strip()
+                if not ip:
+                    continue
+                try:
+                    ipaddress.ip_address(ip)
+                    cleaned_ips.append(ip)
+                except ValueError:
+                    errors.append(f"'{ip}' is not a valid IP address.")
+            att_settings.allowed_ip_addresses = cleaned_ips
+
+            # --- Location restriction ---
+            att_settings.location_restriction_enabled = bool(body.get('location_restriction_enabled', False))
+
+            # Apply-to scope
+            raw_apply_to = body.get('location_apply_to', AttendanceSettings.APPLY_TO_ALL)
+            if raw_apply_to not in (AttendanceSettings.APPLY_TO_ALL, AttendanceSettings.APPLY_TO_SELECTED):
+                raw_apply_to = AttendanceSettings.APPLY_TO_ALL
+            att_settings.location_apply_to = raw_apply_to
+
+            raw_lat = body.get('office_latitude', '')
+            raw_lng = body.get('office_longitude', '')
+            raw_radius = body.get('allowed_radius_meters', 100)
+            raw_accuracy = body.get('max_gps_accuracy_meters', 50)
+
+            # Validate coordinates only if location restriction is being enabled
+            if att_settings.location_restriction_enabled:
+                if raw_lat == '' or raw_lat is None:
+                    errors.append("Office latitude is required when location restriction is enabled.")
+                if raw_lng == '' or raw_lng is None:
+                    errors.append("Office longitude is required when location restriction is enabled.")
+
+            if raw_lat not in ('', None):
+                try:
+                    lat = float(raw_lat)
+                    if not (-90 <= lat <= 90):
+                        errors.append("Latitude must be between -90 and 90.")
+                    else:
+                        att_settings.office_latitude = lat
+                except (ValueError, TypeError):
+                    errors.append("Latitude must be a valid decimal number.")
+            else:
+                att_settings.office_latitude = None
+
+            if raw_lng not in ('', None):
+                try:
+                    lng = float(raw_lng)
+                    if not (-180 <= lng <= 180):
+                        errors.append("Longitude must be between -180 and 180.")
+                    else:
+                        att_settings.office_longitude = lng
+                except (ValueError, TypeError):
+                    errors.append("Longitude must be a valid decimal number.")
+            else:
+                att_settings.office_longitude = None
+
+            try:
+                radius = int(raw_radius)
+                if not (1 <= radius <= 50000):
+                    errors.append("Allowed radius must be between 1 and 50,000 meters.")
+                else:
+                    att_settings.allowed_radius_meters = radius
+            except (ValueError, TypeError):
+                errors.append("Allowed radius must be a whole number.")
+
+            try:
+                accuracy = int(raw_accuracy)
+                if not (5 <= accuracy <= 500):
+                    errors.append("Maximum GPS accuracy must be between 5 and 500 meters.")
+                else:
+                    att_settings.max_gps_accuracy_meters = accuracy
+            except (ValueError, TypeError):
+                errors.append("Maximum GPS accuracy must be a whole number.")
+
+            if errors:
+                return JsonResponse({'success': False, 'errors': errors}, status=400)
+
+            att_settings.save()
+
+            # --- Sync selected employees (M2M) ---
+            # SECURITY: only accept employee IDs that belong to the admin's own org
+            if raw_apply_to == AttendanceSettings.APPLY_TO_SELECTED:
+                raw_emp_ids = body.get('location_restricted_employee_ids', [])
+                if isinstance(raw_emp_ids, list):
+                    # Validate all supplied IDs belong to this org
+                    valid_employees = Employee.objects.filter(
+                        id__in=raw_emp_ids,
+                        organization=request.user.organization,
+                        is_deleted=False,
+                        is_active=True,
+                    )
+                    att_settings.location_restricted_employees.set(valid_employees)
+                else:
+                    att_settings.location_restricted_employees.clear()
+            else:
+                # 'all' – clear selection (not needed, but keeps data clean)
+                att_settings.location_restricted_employees.clear()
+
+            return JsonResponse({'success': True, 'message': 'Settings saved successfully.'})
+        except Exception as e:
+            import logging
+            logging.getLogger(__name__).error("attendance_settings_view POST error: %s", e)
+            return JsonResponse({'success': False, 'errors': [str(e)]}, status=500)
+
+    # GET – load all active employees for the employee selector
+    org_employees = Employee.objects.filter(
+        organization=request.user.organization,
+        is_deleted=False,
+        is_active=True,
+    ).select_related('designation', 'department').order_by('first_name', 'last_name')
+
+    selected_employee_ids = list(
+        att_settings.location_restricted_employees.values_list('id', flat=True)
+    )
+
+    return render(request, 'attendance_settings.html', {
+        'att_settings': att_settings,
+        'org_employees': org_employees,
+        'selected_employee_ids': selected_employee_ids,
+    })
+
+
+
+
+
+
 
     if request.method == 'POST':
         try:

@@ -241,6 +241,26 @@ class AttendanceSettings(BaseModel):
     allowed_radius_meters = models.PositiveIntegerField(default=100)
     max_gps_accuracy_meters = models.PositiveIntegerField(default=50)
 
+    APPLY_TO_ALL = 'all'
+    APPLY_TO_SELECTED = 'selected'
+    APPLY_TO_CHOICES = [
+        (APPLY_TO_ALL, 'All Employees'),
+        (APPLY_TO_SELECTED, 'Selected Employees'),
+    ]
+    # 'all' = existing behaviour (backward-compatible default)
+    location_apply_to = models.CharField(
+        max_length=10,
+        choices=APPLY_TO_CHOICES,
+        default=APPLY_TO_ALL,
+    )
+    # Only relevant when location_apply_to == 'selected'
+    location_restricted_employees = models.ManyToManyField(
+        'employees.Employee',
+        blank=True,
+        related_name='location_restricted_settings',
+        help_text='Employees subject to GPS location validation when Apply To = Selected Employees.',
+    )
+
     class Meta:
         verbose_name_plural = "Attendance Settings"
 

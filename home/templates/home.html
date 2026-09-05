@@ -65,15 +65,16 @@
                         <span>00</span>
                         <span>00</span>
                     </div>
-                    <form method="POST" action="{% url 'clock_in_out' %}" class="employee-attendance-action">
+                    <form id="attendanceForm" method="POST" action="{% url 'clock_in_out' %}" class="employee-attendance-action" style="position: relative;">
                         {% csrf_token %}
                         {% if not today_attendance or not today_attendance.clock_in %}
-                        <button type="submit" name="action" value="clock_in">Check-in</button>
+                        <button type="submit" id="attendanceSubmitBtn" name="action" value="clock_in">Check-in</button>
                         {% elif not today_attendance.clock_out %}
-                        <button type="submit" name="action" value="clock_out">Check-out</button>
+                        <button type="submit" id="attendanceSubmitBtn" name="action" value="clock_out">Check-out</button>
                         {% else %}
                         <button type="button" disabled>Completed</button>
                         {% endif %}
+                        <div id="attendanceErrorMsg" style="display: none; position: absolute; bottom: -30px; left: 0; right: 0; color: #dc2626; font-size: 11px; font-weight: 700; text-align: center; line-height: 1.2;"></div>
                     </form>
                     {% else %}
                     <div class="employee-attendance-avatar"><span>{{ request.user.username|slice:":1"|upper }}</span>
@@ -685,20 +686,93 @@
                 return String(value).padStart(2, '0');
             }
 
-            function render() {
-                const end = fixedEnd || new Date();
-                let seconds = Math.max(0, Math.floor((end - start) / 1000));
-                const hours = Math.floor(seconds / 3600);
-                seconds -= hours * 3600;
-                const minutes = Math.floor(seconds / 60);
-                seconds -= minutes * 60;
-                boxes[0].textContent = pad(hours);
-                boxes[1].textContent = pad(minutes);
-                boxes[2].textContent = pad(seconds);
-            }
-
             render();
             if (!fixedEnd) window.setInterval(render, 1000);
+        })();
+
+        (function() {
+            const form = document.getElementById('attendanceForm');
+            if (!form) return;
+            const btn = document.getElementById('attendanceSubmitBtn');
+            const errorMsg = document.getElementById('attendanceErrorMsg');
+
+            form.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                // Reset UI
+                if (btn) btn.disabled = true;
+                if (errorMsg) {
+                    errorMsg.style.display = 'none';
+                    errorMsg.textContent = '';
+                }
+
+                // If check-out, we don't strictly require location on frontend but we still try
+                // However, we want to try getting location for both so the backend can log it if needed
+                if ("geolocation" in navigator) {
+                    navigator.geolocation.getCurrentPosition(
+                        function(position) {
+                            sendAttendance(position.coords.latitude, position.coords.longitude, position.coords.accuracy);
+                        },
+                        function(error) {
+                            console.warn("Geolocation failed or denied. Proceeding without coordinates.");
+                            // We proceed anyway without coordinates. 
+                            // If the backend has location_restriction_enabled=True, it will throw the error.
+                            sendAttendance('', '', '');
+                        },
+                        {
+                            enableHighAccuracy: true,
+                            timeout: 10000,
+                            maximumAge: 0
+                        }
+                    );
+                } else {
+                    sendAttendance('', '', '');
+                }
+            });
+
+            function sendAttendance(lat, lng, acc) {
+                const formData = new FormData(form);
+                // Ensure the clicked button's value is included since intercepting prevents it
+                if (btn) {
+                    formData.append('action', btn.value);
+                }
+                if (lat && lng) {
+                    formData.append('loc_lat', lat);
+                    formData.append('loc_lng', lng);
+                    if (acc) formData.append('loc_accuracy', acc);
+                }
+
+                fetch(form.action, {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                })
+                .then(response => {
+                    if (response.redirected) {
+                        window.location.href = response.url;
+                        return;
+                    }
+                    if (!response.ok) {
+                        return response.json().then(data => {
+                            throw new Error(data.message || 'Error processing request.');
+                        }).catch(err => {
+                            throw err; // rethrow parsed json error message
+                        });
+                    }
+                    // if raw ok response without redirect
+                    window.location.reload();
+                })
+                .catch(err => {
+                    console.error("Attendance submission error:", err);
+                    if (btn) btn.disabled = false;
+                    if (errorMsg) {
+                        errorMsg.textContent = err.message || "An unexpected error occurred.";
+                        errorMsg.style.display = 'block';
+                    }
+                });
+            }
         })();
     </script>
     <script src="{% static 'js/ui-effects.js' %}?v=1.0" defer></script>

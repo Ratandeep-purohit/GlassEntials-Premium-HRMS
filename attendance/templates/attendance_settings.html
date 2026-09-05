@@ -180,6 +180,86 @@
         #locationSectionWrap { transition: opacity 0.3s ease; }
         .disabled-section { opacity: 0.45; pointer-events: none; }
 
+        /* APPLY-TO RADIO */
+        .apply-to-group { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 24px; }
+        .apply-to-option {
+            display: flex; align-items: center; gap: 8px;
+            padding: 10px 18px; border-radius: var(--radius-sm);
+            border: 1.5px solid var(--s200); background: var(--surface);
+            cursor: pointer; font-size: 13.5px; font-weight: 600; color: var(--s700);
+            transition: all var(--t); user-select: none;
+        }
+        .apply-to-option input[type="radio"] { display: none; }
+        .apply-to-option .radio-dot {
+            width: 16px; height: 16px; border-radius: 50%;
+            border: 2px solid var(--s300); background: var(--surface);
+            display: flex; align-items: center; justify-content: center;
+            flex-shrink: 0; transition: all var(--t);
+        }
+        .apply-to-option input[type="radio"]:checked ~ .radio-dot { border-color: var(--blue); background: var(--blue); }
+        .apply-to-option input[type="radio"]:checked ~ .radio-dot::after {
+            content: ''; display: block; width: 6px; height: 6px;
+            border-radius: 50%; background: #fff;
+        }
+        .apply-to-option:has(input:checked) { border-color: var(--blue-border); background: var(--blue-light); color: var(--blue-mid); }
+
+        /* EMPLOYEE SELECTOR */
+        #empSelectorWrap { margin-top: 20px; }
+        .emp-selector-header {
+            display: flex; align-items: center; justify-content: space-between;
+            margin-bottom: 10px; flex-wrap: wrap; gap: 8px;
+        }
+        .emp-selector-label { font-size: 14px; font-weight: 700; color: var(--s700); }
+        .emp-count-badge {
+            display: inline-flex; align-items: center; gap: 5px;
+            padding: 3px 10px; border-radius: 20px; font-size: 12px; font-weight: 700;
+            background: var(--blue-light); color: var(--blue-mid);
+        }
+        .emp-selector-actions { display: flex; gap: 8px; }
+        .btn-emp-action {
+            height: 30px; padding: 0 12px; border-radius: var(--radius-xs);
+            font-size: 12px; font-weight: 700; cursor: pointer; border: 1.5px solid var(--s200);
+            background: var(--surface); color: var(--s600); transition: all var(--t);
+        }
+        .btn-emp-action:hover { border-color: var(--blue); color: var(--blue); background: var(--blue-light); }
+        .emp-search-wrap { position: relative; margin-bottom: 10px; }
+        .emp-search-wrap i { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--s400); font-size: 13px; }
+        .emp-search {
+            width: 100%; height: 40px; padding: 0 12px 0 36px;
+            border: 1.5px solid var(--s200); border-radius: var(--radius-sm);
+            font-size: 13.5px; font-family: inherit; outline: none; transition: all var(--t);
+        }
+        .emp-search:focus { border-color: var(--blue); box-shadow: 0 0 0 3px rgba(37,99,235,.12); }
+        .emp-list {
+            max-height: 300px; overflow-y: auto; border: 1.5px solid var(--s200);
+            border-radius: var(--radius-sm); background: var(--surface);
+        }
+        .emp-row {
+            display: flex; align-items: center; gap: 12px;
+            padding: 10px 14px; border-bottom: 1px solid var(--s100);
+            cursor: pointer; transition: background var(--t); user-select: none;
+        }
+        .emp-row:last-child { border-bottom: none; }
+        .emp-row:hover { background: var(--s50); }
+        .emp-row input[type="checkbox"] { display: none; }
+        .emp-checkbox {
+            width: 18px; height: 18px; border-radius: 4px;
+            border: 2px solid var(--s300); background: var(--surface);
+            display: flex; align-items: center; justify-content: center;
+            flex-shrink: 0; transition: all var(--t);
+        }
+        .emp-row.selected .emp-checkbox { background: var(--blue); border-color: var(--blue); }
+        .emp-row.selected .emp-checkbox::after {
+            content: ''; display: block;
+            width: 5px; height: 9px; border: 2px solid #fff;
+            border-top: none; border-left: none; transform: rotate(45deg) translateY(-1px);
+        }
+        .emp-info { flex: 1; min-width: 0; }
+        .emp-name { font-size: 13.5px; font-weight: 700; color: var(--s900); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .emp-meta { font-size: 12px; color: var(--s500); margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .emp-row[data-hidden="true"] { display: none; }
+        .emp-empty { padding: 20px; text-align: center; color: var(--s400); font-size: 13px; }
+
         /* FOOTER ACTIONS */
         .form-actions { display: flex; justify-content: flex-end; align-items: center; margin-top: 32px; padding-top: 24px; border-top: 1px solid var(--s100); gap: 14px; }
         .btn {
@@ -322,6 +402,59 @@
 
                 <div id="locationSectionWrap" {% if not att_settings.location_restriction_enabled %}class="disabled-section"{% endif %}>
 
+                    <!-- Apply restriction to -->
+                    <div style="margin-bottom:24px;">
+                        <h3 class="ip-list-title" style="margin-bottom:4px;">Apply restriction to</h3>
+                        <p class="ip-list-desc">Choose whether GPS location check-in validation applies to all employees or only to a selected group.</p>
+                        <div class="apply-to-group">
+                            <label class="apply-to-option" id="applyAllLabel">
+                                <input type="radio" name="location_apply_to" id="applyToAll" value="all" onchange="onApplyToChange()" {% if att_settings.location_apply_to != 'selected' %}checked{% endif %}>
+                                <span class="radio-dot"></span>
+                                All Employees
+                            </label>
+                            <label class="apply-to-option" id="applySelectedLabel">
+                                <input type="radio" name="location_apply_to" id="applyToSelected" value="selected" onchange="onApplyToChange()" {% if att_settings.location_apply_to == 'selected' %}checked{% endif %}>
+                                <span class="radio-dot"></span>
+                                Selected Employees
+                            </label>
+                        </div>
+
+                        <!-- Employee selector (only visible when 'selected' is chosen) -->
+                        <div id="empSelectorWrap" style="{% if att_settings.location_apply_to != 'selected' %}display:none;{% endif %}">
+                            <div class="emp-selector-header">
+                                <span class="emp-selector-label">Select employees subject to GPS validation</span>
+                                <span class="emp-count-badge" id="empCountBadge"><i class="fas fa-user-check"></i> <span id="empCountNum">0</span> selected</span>
+                            </div>
+                            <div class="emp-selector-actions" style="margin-bottom:10px;">
+                                <button type="button" class="btn-emp-action" onclick="selectAllEmployees()"><i class="fas fa-check-double"></i> Select All</button>
+                                <button type="button" class="btn-emp-action" onclick="clearAllEmployees()"><i class="fas fa-times"></i> Clear All</button>
+                            </div>
+                            <div class="emp-search-wrap">
+                                <i class="fas fa-search"></i>
+                                <input type="text" class="emp-search" id="empSearchInput" placeholder="Search by name, ID, department or designation..." oninput="filterEmployees()">
+                            </div>
+                            <div class="emp-list" id="empList">
+                                {% for emp in org_employees %}
+                                <div class="emp-row {% if emp.id in selected_employee_ids %}selected{% endif %}" data-emp-id="{{ emp.id }}" data-search-text="{{ emp.first_name|lower }} {{ emp.last_name|lower }} {{ emp.employee_id|lower }} {{ emp.department.name|lower|default:'' }} {{ emp.designation.name|lower|default:'' }}" onclick="toggleEmployee(this)">
+                                    <span class="emp-checkbox"></span>
+                                    <div class="emp-info">
+                                        <div class="emp-name">{{ emp.first_name }} {{ emp.last_name }}</div>
+                                        <div class="emp-meta">
+                                            {{ emp.employee_id }}
+                                            {% if emp.designation %} · {{ emp.designation.name }}{% endif %}
+                                            {% if emp.department %} · {{ emp.department.name }}{% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                                {% empty %}
+                                <div class="emp-empty">No active employees found.</div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="divider"></div>
+
                     <!-- Office Location Coordinates -->
                     <div style="margin-bottom: 24px;">
                         <h3 class="ip-list-title" style="margin-bottom:4px;">Office Location</h3>
@@ -421,6 +554,49 @@
         document.getElementById('locationToggleLabelText').textContent = toggle.checked ? 'Enabled' : 'Disabled';
         document.getElementById('locationSectionWrap').classList.toggle('disabled-section', !toggle.checked);
     }
+
+    // ── Employee selector ─────────────────────────────────────────────
+    function onApplyToChange() {
+        const isSelected = document.getElementById('applyToSelected').checked;
+        document.getElementById('empSelectorWrap').style.display = isSelected ? '' : 'none';
+        if (isSelected) updateEmpCount();
+    }
+
+    function toggleEmployee(row) {
+        row.classList.toggle('selected');
+        updateEmpCount();
+    }
+
+    function updateEmpCount() {
+        const count = document.querySelectorAll('#empList .emp-row.selected').length;
+        document.getElementById('empCountNum').textContent = count;
+    }
+
+    function selectAllEmployees() {
+        document.querySelectorAll('#empList .emp-row:not([data-hidden="true"])').forEach(function(r) {
+            r.classList.add('selected');
+        });
+        updateEmpCount();
+    }
+
+    function clearAllEmployees() {
+        document.querySelectorAll('#empList .emp-row').forEach(function(r) {
+            r.classList.remove('selected');
+        });
+        updateEmpCount();
+    }
+
+    function filterEmployees() {
+        const q = document.getElementById('empSearchInput').value.toLowerCase().trim();
+        document.querySelectorAll('#empList .emp-row').forEach(function(r) {
+            const matches = !q || r.dataset.searchText.includes(q);
+            r.dataset.hidden = matches ? 'false' : 'true';
+            r.style.display = matches ? '' : 'none';
+        });
+    }
+
+    // Init count on page load
+    document.addEventListener('DOMContentLoaded', function() { updateEmpCount(); });
 
     // ── IP rows ──────────────────────────────────────────────────────
     function addIpRow() {
@@ -592,15 +768,26 @@
         const ips = Array.from(ipInputs).map(i => i.value.trim()).filter(v => v !== '');
 
         const locationEnabled = document.getElementById('locationToggle').checked;
+        const applyTo = document.querySelector('input[name="location_apply_to"]:checked');
+        const locationApplyTo = applyTo ? applyTo.value : 'all';
         const latVal = document.getElementById('officeLatitude').value.trim();
         const lngVal = document.getElementById('officeLongitude').value.trim();
         const radiusVal = document.getElementById('allowedRadius').value.trim();
         const accuracyVal = document.getElementById('maxGpsAccuracy').value.trim();
 
+        // Collect selected employee IDs
+        const selectedEmpIds = [];
+        document.querySelectorAll('#empList .emp-row.selected').forEach(function(r) {
+            const id = parseInt(r.dataset.empId);
+            if (!isNaN(id)) selectedEmpIds.push(id);
+        });
+
         const payload = {
             network_restriction_enabled: networkEnabled,
             allowed_ip_addresses: ips,
             location_restriction_enabled: locationEnabled,
+            location_apply_to: locationApplyTo,
+            location_restricted_employee_ids: selectedEmpIds,
             office_latitude: latVal === '' ? null : latVal,
             office_longitude: lngVal === '' ? null : lngVal,
             allowed_radius_meters: radiusVal === '' ? 100 : parseInt(radiusVal),
