@@ -682,7 +682,13 @@ def clock_in_out_view(request):
 
         # --- IP Restriction Check ---
         from .models import AttendanceSettings
-        att_settings = AttendanceSettings.objects.filter(organization=request.user.organization).first()
+        import logging as _logging
+        _view_log = _logging.getLogger(__name__)
+        try:
+            att_settings = AttendanceSettings.objects.filter(organization=request.user.organization).first()
+        except Exception as _e:
+            _view_log.error("AttendanceSettings query failed (migration pending?): %s", _e)
+            att_settings = None
         if att_settings and att_settings.network_restriction_enabled:
             allowed_ips = att_settings.allowed_ip_addresses or []
             if allowed_ips:
@@ -709,11 +715,22 @@ def clock_in_out_view(request):
             import math, json as _json, logging
             _log = logging.getLogger(__name__)
 
-            att_settings_loc = AttendanceSettings.objects.filter(organization=request.user.organization).first()
+            # Re-use att_settings if already loaded; fall back to fresh query with resilience
+            if att_settings is not None:
+                att_settings_loc = att_settings
+            else:
+                try:
+                    att_settings_loc = AttendanceSettings.objects.filter(organization=request.user.organization).first()
+                except Exception as _e:
+                    _log.error("AttendanceSettings (location) query failed (migration pending?): %s", _e)
+                    att_settings_loc = None
             if att_settings_loc and att_settings_loc.location_restriction_enabled:
 
                 # --- Determine whether THIS employee is subject to location restriction ---
-                apply_to = att_settings_loc.location_apply_to or AttendanceSettings.APPLY_TO_ALL
+                try:
+                    apply_to = att_settings_loc.location_apply_to or AttendanceSettings.APPLY_TO_ALL
+                except Exception:
+                    apply_to = AttendanceSettings.APPLY_TO_ALL
                 if apply_to == AttendanceSettings.APPLY_TO_SELECTED:
                     # Only restrict employees explicitly listed in the M2M
                     employee_is_restricted = att_settings_loc.location_restricted_employees.filter(
