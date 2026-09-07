@@ -742,7 +742,7 @@
                     if (acc) formData.append('loc_accuracy', acc);
                 }
 
-                fetch(form.action, {
+                fetch(form.getAttribute('action'), {
                     method: 'POST',
                     body: formData,
                     headers: {
