@@ -895,11 +895,11 @@ def clock_in_out_view(request):
                         }
                     )
 
+                messages.success(request, f"Successfully clocked in at {current_time.strftime('%I:%M %p')}.")
+
                 # Return JSON if the request expected it (location flow), else use messages
                 if request.headers.get('X-Requested-With') == 'XMLHttpRequest' or request.POST.get('ajax') == '1':
                     return JsonResponse({'success': True, 'message': f"Successfully clocked in at {current_time.strftime('%I:%M %p')}."})
-
-                messages.success(request, f"Successfully clocked in at {current_time.strftime('%I:%M %p')}.")
 
         elif action == 'clock_out':
             if not attendance.clock_in:
@@ -938,6 +938,9 @@ def clock_in_out_view(request):
                 attendance.save()
                 messages.success(request, f"Successfully clocked out at {current_time.strftime('%I:%M %p')}.")
                 
+                if request.headers.get('X-Requested-With') == 'XMLHttpRequest' or request.POST.get('ajax') == '1':
+                    return JsonResponse({'success': True, 'message': f"Successfully clocked out at {current_time.strftime('%I:%M %p')}."})
+
     return redirect('home')
 
 @login_required

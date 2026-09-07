@@ -686,6 +686,22 @@
                 return String(value).padStart(2, '0');
             }
 
+            function render() {
+                const now = fixedEnd ? fixedEnd : new Date();
+                let diff = Math.floor((now - start) / 1000);
+                if (diff < 0) diff = 0;
+
+                const h = Math.floor(diff / 3600);
+                const m = Math.floor((diff % 3600) / 60);
+                const s = diff % 60;
+
+                if (boxes.length >= 3) {
+                    boxes[0].textContent = pad(h);
+                    boxes[1].textContent = pad(m);
+                    boxes[2].textContent = pad(s);
+                }
+            }
+
             render();
             if (!fixedEnd) window.setInterval(render, 1000);
         })();
