@@ -399,7 +399,7 @@ class PayrollProcessor:
 
     def _get_day_summary(self, employee):
         """Return payroll-ready attendance/leave days for an employee."""
-        return self.day_summary_by_employee.get(employee.id, self.attendance_service.default_summary())
+        return self.day_summary_by_employee.get(employee.id, self.attendance_service.default_summary(employee))
 
     def _post_leave_payroll_impacts(self, employee):
         """Link consumed leave impacts to the payroll run for traceability."""

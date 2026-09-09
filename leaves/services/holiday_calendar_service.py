@@ -24,9 +24,11 @@ class HolidayCalendarService:
         include_optional=False,
         paid_only=False,
     ):
+        if not organization:
+            return set()
+
         holidays = Holiday.objects.filter(
-            organization=organization,
-            calendar__isnull=False,
+            Q(organization=organization) | Q(calendar__organization=organization),
             date__range=(start_date, end_date),
         )
         if not include_optional:
@@ -34,19 +36,42 @@ class HolidayCalendarService:
         if paid_only:
             holidays = holidays.filter(is_paid=True)
 
+        # Base filter for org-wide / all-branch holidays:
+        # 1. Holidays without a calendar attached (direct org holidays)
+        # 2. Calendars flagged as default
+        # 3. Calendars with empty, null, or 'all'/'all branches'/'*' branch
+        org_wide_calendar_q = (
+            Q(calendar__isnull=True)
+            | Q(calendar__is_default=True)
+            | Q(calendar__branch="")
+            | Q(calendar__branch__isnull=True)
+            | Q(calendar__branch__iexact="all")
+            | Q(calendar__branch__iexact="all branches")
+            | Q(calendar__branch__iexact="*")
+        )
+
+        # If the organization has calendars for the period years but none is marked is_default=True,
+        # all organizational calendars for those years must be treated as applicable (not dropped).
+        years = {start_date.year, end_date.year}
+        has_default_cal = HolidayCalendar.objects.filter(
+            organization=organization,
+            year__in=years,
+            is_default=True,
+        ).exists()
+        if not has_default_cal:
+            org_wide_calendar_q = org_wide_calendar_q | Q(calendar__year__in=years, calendar__organization=organization)
+
         work_location = (getattr(employee, "work_location", "") or "").strip()
         if work_location:
-            holidays = holidays.filter(
-                Q(calendar__is_default=True)
-                | Q(calendar__branch="")
+            branch_match_q = (
+                org_wide_calendar_q
                 | Q(calendar__branch__iexact=work_location)
+                | Q(calendar__location_fk__name__iexact=work_location)
+                | Q(location_fk__name__iexact=work_location)
             )
+            holidays = holidays.filter(branch_match_q)
         else:
-            holidays = holidays.filter(
-                Q(calendar__is_default=True)
-                | Q(calendar__branch="")
-                | Q(calendar__branch__isnull=True)
-            )
+            holidays = holidays.filter(org_wide_calendar_q)
 
         return set(holidays.values_list("date", flat=True))
 
@@ -64,6 +89,8 @@ class HolidayCalendarService:
         location = cls._get_location(organization, location_id)
         if is_default:
             cls._clear_default(organization, year)
+        elif not HolidayCalendar.objects.filter(organization=organization, year=year, is_default=True).exists():
+            is_default = True
 
         return HolidayCalendar.objects.create(
             organization=organization,

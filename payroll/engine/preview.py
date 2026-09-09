@@ -183,7 +183,7 @@ class PayrollPreviewBuilder:
         structure = self.active_structures.get(employee.id)
         day_summary = self.day_summary_by_employee.get(
             employee.id,
-            self.attendance_service.default_summary(),
+            self.attendance_service.default_summary(employee),
         )
 
         row = PayrollPreviewRow(

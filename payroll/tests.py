@@ -7,7 +7,7 @@ from datetime import date, time, timedelta
 from django.utils import timezone
 from employees.models import Employee
 from attendance.models import Attendance, AttendanceStatus
-from leaves.models import LeaveCategory, LeaveRequest, LeaveType
+from leaves.models import LeaveCategory, LeaveRequest, LeaveType, Holiday, HolidayCalendar
 from payroll.models import (
     Arrear, SalaryComponent, FinancialYear, TaxRegime, TaxSlab,
     TaxDeclarationCategory, EmployeeTaxProfile, EmployeeTaxDeclaration,
@@ -16,6 +16,8 @@ from payroll.models import (
     EmployeePayslip
 )
 from payroll.engine.processor import PayrollProcessor
+from payroll.engine.preview import PayrollPreviewBuilder
+from payroll.engine.attendance_days import PayrollAttendanceService
 from payroll.engine.tax_calculator import TaxCalculatorEngine
 
 User = get_user_model()
@@ -544,3 +546,178 @@ class TaxDeclarationTests(TestCase):
         response = self.admin_client.get(url)
         self.profile.refresh_from_db()
         self.assertFalse(self.profile.is_regime_locked)
+
+
+class PayrollWorkingDaysHolidayRegressionTests(TestCase):
+    """
+    Acceptance / Regression Test:
+    Month with 31 calendar days, 5 Sundays (weekly offs), and 1 weekday paid mandatory holiday.
+    Expects working_days == 25 (31 - 5 - 1 = 25).
+    Verifies that:
+    1. PayrollAttendanceService computes working_day_count == 25.00
+    2. Unique non-working dates count == 6 (5 Sundays + 1 Holiday)
+    3. If an additional holiday falls on a Sunday, it is not double-counted (still 6 non-working dates, 25 working days)
+    4. Flows into PayrollPreview (day_summary.working_days == 25.00)
+    5. Flows into PayrollRun (payslip.total_working_days == 25)
+    6. Flows into Salary calculation:
+       - 25 / 25 paid days yields full basic salary
+       - 24 / 25 paid days with 1 LOP yields 24/25 basic salary
+    7. Flows into Payslip views / summary details
+    """
+    def setUp(self):
+        self.org = Organization.objects.create(name="Holiday Test Org")
+        self.employee = Employee.objects.create(
+            organization=self.org,
+            employee_id="EMP-HOL-001",
+            first_name="Vikram",
+            last_name="Malhotra",
+            email="vikram@example.com",
+            phone_number="9876543210",
+            is_active=True,
+        )
+        self.present_status = AttendanceStatus.objects.create(
+            organization=self.org,
+            name="Present",
+            code="P",
+            is_paid=True,
+            payable_day_value=Decimal("1.00"),
+            is_attendance_counted=True,
+        )
+        self.basic_component = SalaryComponent.objects.create(
+            organization=self.org,
+            code="BASIC",
+            name="Basic Salary",
+            component_type=SalaryComponent.ComponentType.EARNING,
+            calculation_type=SalaryComponent.CalculationType.FIXED,
+            is_calculated_on_attendance=True,
+        )
+        self.structure = SalaryStructure.objects.create(
+            organization=self.org,
+            employee=self.employee,
+            ctc=Decimal("300000.00"),
+            gross_salary=Decimal("25000.00"),
+            basic_salary=Decimal("25000.00"),
+            effective_date=date(2027, 1, 1),
+        )
+        SalaryStructureItem.objects.create(
+            organization=self.org,
+            salary_structure=self.structure,
+            component=self.basic_component,
+            fixed_amount=Decimal("25000.00"),
+        )
+        # May 2027: 31 calendar days, 5 Sundays (May 2, 9, 16, 23, 30)
+        # Calendar created with branch='All' and is_default=False (mirroring user environment)
+        self.calendar = HolidayCalendar.objects.create(
+            organization=self.org,
+            name="National Holidays 2027",
+            year=2027,
+            branch="All",
+            is_default=False,
+        )
+        # 1 weekday paid mandatory holiday on Friday May 28, 2027
+        self.holiday = Holiday.objects.create(
+            organization=self.org,
+            calendar=self.calendar,
+            name="Buddha Purnima",
+            date=date(2027, 5, 28),  # Friday
+            is_paid=True,
+            is_optional=False,
+        )
+
+    def test_working_days_is_25_with_5_sundays_and_1_weekday_holiday(self):
+        svc = PayrollAttendanceService(self.org, 5, 2027)
+        self.assertEqual(len(svc.weekly_off_dates), 5)
+        self.assertEqual(len(svc.holiday_dates), 1)
+        self.assertEqual(len(svc.combined_non_working_dates), 6)
+        self.assertEqual(svc.working_day_count, Decimal("25.00"))
+        self.assertEqual(len(svc.working_dates), 25)
+
+    def test_holiday_on_sunday_does_not_double_count(self):
+        # Add another holiday that falls on Sunday May 30, 2027
+        Holiday.objects.create(
+            organization=self.org,
+            calendar=self.calendar,
+            name="Sunday Holiday",
+            date=date(2027, 5, 30),  # Sunday
+            is_paid=True,
+            is_optional=False,
+        )
+        svc = PayrollAttendanceService(self.org, 5, 2027)
+        self.assertEqual(len(svc.weekly_off_dates), 5)
+        self.assertEqual(len(svc.holiday_dates), 2)
+        # Combined non-working dates must still be 6 (5 Sundays + 1 Friday holiday; Sunday holiday is deduplicated)
+        self.assertEqual(len(svc.combined_non_working_dates), 6)
+        self.assertEqual(svc.working_day_count, Decimal("25.00"))
+
+    def test_value_flows_into_preview_run_payslip_and_salary(self):
+        # Create attendance for all 25 working days
+        svc = PayrollAttendanceService(self.org, 5, 2027)
+        for d in svc.working_dates:
+            Attendance.objects.create(
+                organization=self.org,
+                employee=self.employee,
+                date=d,
+                status=self.present_status,
+            )
+
+        payroll_run = PayrollRun.objects.create(
+            organization=self.org,
+            month=5,
+            year=2027,
+            status=PayrollRun.Status.DRAFT,
+        )
+
+        # 1. Verify Payroll Preview
+        preview = PayrollPreviewBuilder(payroll_run).build()
+        self.assertEqual(len(preview.rows), 1)
+        row = preview.rows[0]
+        self.assertEqual(row.day_summary.working_days, Decimal("25.00"))
+        self.assertEqual(row.day_summary.paid_days, Decimal("25.00"))
+        self.assertEqual(row.day_summary.lop_days, Decimal("0.00"))
+        self.assertEqual(row.earnings, Decimal("25000.00"))
+
+        # 2. Verify Payroll Run
+        processed_count = PayrollProcessor(payroll_run.id).process()
+        self.assertEqual(processed_count, 1)
+
+        # 3. Verify Payslip fields
+        payslip = EmployeePayslip.objects.get(payroll_run=payroll_run, employee=self.employee)
+        self.assertEqual(payslip.total_working_days, 25)
+        self.assertEqual(payslip.paid_days, Decimal("25.00"))
+        self.assertEqual(payslip.lop_days, Decimal("0.00"))
+        self.assertEqual(payslip.gross_earnings, Decimal("25000.00"))
+        self.assertEqual(payslip.net_salary, Decimal("25000.00"))
+        basic_item = payslip.items.get(component=self.basic_component)
+        self.assertEqual(basic_item.amount, Decimal("25000.00"))
+
+    def test_lop_salary_calculation_with_25_working_days(self):
+        # Employee attended 24 of 25 working days (1 day absent)
+        svc = PayrollAttendanceService(self.org, 5, 2027)
+        for d in svc.working_dates[:24]:
+            Attendance.objects.create(
+                organization=self.org,
+                employee=self.employee,
+                date=d,
+                status=self.present_status,
+            )
+
+        payroll_run = PayrollRun.objects.create(
+            organization=self.org,
+            month=5,
+            year=2027,
+            status=PayrollRun.Status.DRAFT,
+        )
+
+        PayrollProcessor(payroll_run.id).process()
+        payslip = EmployeePayslip.objects.get(payroll_run=payroll_run, employee=self.employee)
+        self.assertEqual(payslip.total_working_days, 25)
+        self.assertEqual(payslip.paid_days, Decimal("24.00"))
+        self.assertEqual(payslip.lop_days, Decimal("1.00"))
+
+        # Salary pro-rated: 25000 * 24 / 25 = 24000.00
+        expected_salary = (Decimal("25000.00") * Decimal("24.00") / Decimal("25.00")).quantize(Decimal("0.01"))
+        self.assertEqual(expected_salary, Decimal("24000.00"))
+        basic_item = payslip.items.get(component=self.basic_component)
+        self.assertEqual(basic_item.amount, Decimal("24000.00"))
+        self.assertEqual(payslip.gross_earnings, Decimal("24000.00"))
+

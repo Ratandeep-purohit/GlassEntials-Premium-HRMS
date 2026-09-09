@@ -3,6 +3,7 @@ from collections import defaultdict
 from dataclasses import dataclass
 from datetime import date, timedelta
 from decimal import Decimal
+import logging
 
 from django.db.models import Q
 
@@ -14,6 +15,7 @@ from leaves.services.calendar_engine import (
     _get_weekly_off_days,
 )
 
+logger = logging.getLogger(__name__)
 
 ZERO = Decimal("0.00")
 ONE = Decimal("1.00")
@@ -50,7 +52,7 @@ class PayrollAttendanceService:
     Calculates payroll-ready paid/LOP days.
 
     Current enterprise baseline:
-    - Monday-Friday are payable work days.
+    - Monday-Saturday are payable work days (Sunday is weekly off).
     - Paid, non-optional holidays reduce payable work days.
     - AttendanceStatus.payable_day_value supports present/half-day/paid statuses.
     - Approved leaves create payroll impact rows and participate in paid/LOP days.
@@ -76,9 +78,31 @@ class PayrollAttendanceService:
         self.sandwich_policy = _get_org_sandwich_policy(organization)
         self.weekly_off_days = _get_weekly_off_days(organization)
 
-        self.holiday_dates = self._holiday_dates(self.period_start, self.period_end)
-        self.working_dates = self._working_dates(self.period_start, self.period_end)
+        total_calendar_days = (self.period_end - self.period_start).days + 1
+        all_period_dates = [self.period_start + timedelta(days=i) for i in range(total_calendar_days)]
+
+        self.weekly_off_dates = {d for d in all_period_dates if d.weekday() in self.weekly_off_days}
+        self.holiday_dates = set(self._holiday_dates(self.period_start, self.period_end))
+        self.combined_non_working_dates = self.weekly_off_dates | self.holiday_dates
+        self.working_dates = [d for d in all_period_dates if d not in self.combined_non_working_dates]
         self.working_day_count = Decimal(str(len(self.working_dates))).quantize(Decimal("0.01"))
+
+        # Explicit debug log for working days breakdown
+        logger.info(
+            "Payroll period %s to %s debug:\n"
+            "Total calendar days: %d\n"
+            "Weekly off dates: %d\n"
+            "Applicable paid holiday dates: %d\n"
+            "Combined non-working dates: %d\n"
+            "Final working days: %s",
+            self.period_start,
+            self.period_end,
+            total_calendar_days,
+            len(self.weekly_off_dates),
+            len(self.holiday_dates),
+            len(self.combined_non_working_dates),
+            self.working_day_count,
+        )
 
     def build(self):
         per_day_values = self._attendance_per_day_values()
@@ -93,27 +117,48 @@ class PayrollAttendanceService:
             | set(sandwich_extra.keys())
         )
 
+        from employees.models import Employee
+        employee_map = {
+            emp.id: emp
+            for emp in Employee.objects.filter(
+                organization=self.organization,
+                id__in=employee_ids,
+            ).only("id", "work_location")
+        }
+
         for employee_id in employee_ids:
             summaries[employee_id] = self._build_summary(
                 attendance_paid.get(employee_id, ZERO),
                 leave_impacts.get(employee_id, {}).get("paid", ZERO),
                 leave_impacts.get(employee_id, {}).get("lop", ZERO),
                 sandwich_lop_days=self._money_days(sandwich_extra.get(employee_id, 0)),
+                employee=employee_map.get(employee_id),
             )
 
         return summaries
 
-    def default_summary(self):
-        return self._build_summary(ZERO, ZERO, ZERO)
+    def default_summary(self, employee=None):
+        return self._build_summary(ZERO, ZERO, ZERO, employee=employee)
 
     def _build_summary(self, attendance_paid_days, paid_leave_days, lop_leave_days,
-                       sandwich_lop_days=ZERO):
-        attendance_paid_days = self._clamp_days(attendance_paid_days)
-        paid_leave_days = self._clamp_days(paid_leave_days)
-        lop_leave_days = self._clamp_days(lop_leave_days)
+                       sandwich_lop_days=ZERO, employee=None):
+        working_day_count = self.working_day_count
+        holiday_count = len(self.holiday_dates)
+
+        if employee and (getattr(employee, "work_location", "") or "").strip():
+            emp_holidays = set(self._holiday_dates(self.period_start, self.period_end, employee=employee))
+            if emp_holidays != self.holiday_dates:
+                emp_non_working = self.weekly_off_dates | emp_holidays
+                total_calendar_days = (self.period_end - self.period_start).days + 1
+                working_day_count = Decimal(str(total_calendar_days - len(emp_non_working))).quantize(Decimal("0.01"))
+                holiday_count = len(emp_holidays)
+
+        attendance_paid_days = self._clamp_days(attendance_paid_days, working_day_count)
+        paid_leave_days = self._clamp_days(paid_leave_days, working_day_count)
+        lop_leave_days = self._clamp_days(lop_leave_days, working_day_count)
         sandwich_lop_days = self._money_days(sandwich_lop_days)
 
-        if self.working_day_count <= ZERO:
+        if working_day_count <= ZERO:
             return PayrollDaySummary(
                 working_days=ZERO,
                 paid_days=ZERO,
@@ -123,25 +168,25 @@ class PayrollAttendanceService:
                 lop_leave_days=ZERO,
                 absence_lop_days=ZERO,
                 sandwich_lop_days=ZERO,
-                holidays=len(self.holiday_dates),
+                holidays=holiday_count,
             )
 
         accounted_days = attendance_paid_days + paid_leave_days + lop_leave_days
-        absence_lop_days = max(self.working_day_count - accounted_days, ZERO)
+        absence_lop_days = max(working_day_count - accounted_days, ZERO)
 
         # Sandwich LOP days are extra deductions beyond working_day_count.
         # They reduce paid_days directly without changing working_day_count itself,
         # so all salary formulas that reference lop_days automatically pick them up.
         total_lop_days = min(
             lop_leave_days + absence_lop_days + sandwich_lop_days,
-            self.working_day_count + sandwich_lop_days,
+            working_day_count + sandwich_lop_days,
         )
-        paid_days = max(self.working_day_count - lop_leave_days - absence_lop_days, ZERO)
+        paid_days = max(working_day_count - lop_leave_days - absence_lop_days, ZERO)
         # sandwich days reduce paid_days further (cannot go below zero)
         paid_days = max(paid_days - sandwich_lop_days, ZERO)
 
         return PayrollDaySummary(
-            working_days=self.working_day_count,
+            working_days=working_day_count,
             paid_days=self._money_days(paid_days),
             lop_days=self._money_days(total_lop_days),
             attendance_paid_days=self._money_days(attendance_paid_days),
@@ -149,7 +194,7 @@ class PayrollAttendanceService:
             lop_leave_days=self._money_days(lop_leave_days),
             absence_lop_days=self._money_days(absence_lop_days),
             sandwich_lop_days=self._money_days(sandwich_lop_days),
-            holidays=len(self.holiday_dates),
+            holidays=holiday_count,
         )
 
     # ── Attendance per-day values ────────────────────────────────────────────
@@ -409,17 +454,19 @@ class PayrollAttendanceService:
             return ZERO
         return Decimal(str(len(self._working_dates(start_date, end_date)))).quantize(Decimal("0.01"))
 
-    def _holiday_dates(self, start_date, end_date):
+    def _holiday_dates(self, start_date, end_date, employee=None):
         return HolidayCalendarService.holiday_dates_for_period(
             organization=self.organization,
             start_date=start_date,
             end_date=end_date,
+            employee=employee,
             include_optional=False,
             paid_only=True,
         )
 
-    def _clamp_days(self, value):
-        return min(max(self._money_days(value), ZERO), self.working_day_count)
+    def _clamp_days(self, value, max_days=None):
+        cap = max_days if max_days is not None else self.working_day_count
+        return min(max(self._money_days(value), ZERO), cap)
 
     @staticmethod
     def _money_days(value):
