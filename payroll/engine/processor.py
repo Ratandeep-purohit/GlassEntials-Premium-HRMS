@@ -187,7 +187,7 @@ class PayrollProcessor:
             organization=self.payroll_run.organization,
             payroll_run=self.payroll_run,
             employee=employee,
-            total_working_days=working_days,
+            total_working_days=int(day_summary.working_days),   # = calendar days
             paid_days=paid_days,
             lop_days=lop_days,
             status=EmployeePayslip.Status.DRAFT,
@@ -204,6 +204,7 @@ class PayrollProcessor:
             'gross': structure.gross_salary,
             'ctc': structure.ctc,
             'paid_days': paid_days,
+            # total_days = calendar days so paid_days/total_days gives correct monthly pro-rata
             'total_days': day_summary.working_days,
             'calendar_days': Decimal(str(self.total_days)),
             'lop_days': lop_days,

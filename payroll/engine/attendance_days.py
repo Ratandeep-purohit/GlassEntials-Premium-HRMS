@@ -84,11 +84,19 @@ class PayrollAttendanceService:
         total_calendar_days = (self.period_end - self.period_start).days + 1
         all_period_dates = [self.period_start + timedelta(days=i) for i in range(total_calendar_days)]
 
+        # total_calendar_days_decimal: the authoritative Working Days value shown in
+        # payslip / preview / salary formulas.  Sundays and holidays do NOT reduce it.
+        self.total_calendar_days = Decimal(str(total_calendar_days)).quantize(Decimal("0.01"))
+
         self.weekly_off_dates = {d for d in all_period_dates if d.weekday() in self.weekly_off_days}
         self.holiday_dates = set(self._holiday_dates(self.period_start, self.period_end))
         self.combined_non_working_dates = self.weekly_off_dates | self.holiday_dates
         self.working_dates = [d for d in all_period_dates if d not in self.combined_non_working_dates]
-        self.working_day_count = Decimal(str(len(self.working_dates))).quantize(Decimal("0.01"))
+        # schedulable_day_count: days on which attendance is expected (excl. weekly offs
+        # and holidays).  Used internally for LOP / absence detection only.
+        self.schedulable_day_count = Decimal(str(len(self.working_dates))).quantize(Decimal("0.01"))
+        # Keep working_day_count as an alias so any external callers are not broken.
+        self.working_day_count = self.schedulable_day_count
 
         # Diagnostic log for working days breakdown
         init_diag = (
@@ -96,16 +104,16 @@ class PayrollAttendanceService:
             f"  attendance_days.py file: {__file__}\n"
             f"  Payroll period: {self.period_start} to {self.period_end}\n"
             f"  Organization: {self.organization} (id={getattr(self.organization, 'id', None)})\n"
-            f"  Total calendar days: {total_calendar_days}\n"
+            f"  Total calendar days (Working Days): {total_calendar_days}\n"
+            f"  Schedulable days (excl. weekly-off + holidays): {self.schedulable_day_count}\n"
             f"  Weekly off dates count: {len(self.weekly_off_dates)}\n"
             f"  Weekly off dates: {sorted([d.isoformat() for d in self.weekly_off_dates])}\n"
             f"  Holiday dates returned by HolidayCalendarService count: {len(self.holiday_dates)}\n"
             f"  Holiday dates returned by HolidayCalendarService: {sorted([d.isoformat() for d in self.holiday_dates])}\n"
             f"  Combined non-working dates count: {len(self.combined_non_working_dates)}\n"
             f"  Combined non-working dates: {sorted([d.isoformat() for d in self.combined_non_working_dates])}\n"
-            f"  Working dates count: {len(self.working_dates)}\n"
-            f"  Working dates: {sorted([d.isoformat() for d in self.working_dates])}\n"
-            f"  working_day_count: {self.working_day_count}"
+            f"  Schedulable working dates count: {len(self.working_dates)}\n"
+            f"  Schedulable working dates: {sorted([d.isoformat() for d in self.working_dates])}"
         )
         print(init_diag, flush=True)
         logger.warning(init_diag)
@@ -148,26 +156,37 @@ class PayrollAttendanceService:
 
     def _build_summary(self, attendance_paid_days, paid_leave_days, lop_leave_days,
                        sandwich_lop_days=ZERO, employee=None):
-        working_day_count = self.working_day_count
+        # schedulable_days: working days on which attendance is expected
+        # (calendar days minus weekly offs and holidays).  Used for LOP / absence
+        # detection only — it is NOT the displayed "Working Days" value.
+        schedulable_days = self.schedulable_day_count
         holiday_count = len(self.holiday_dates)
 
         if employee:
             emp_holidays = set(self._holiday_dates(self.period_start, self.period_end, employee=employee))
             if emp_holidays != self.holiday_dates:
                 emp_non_working = self.weekly_off_dates | emp_holidays
-                total_calendar_days = (self.period_end - self.period_start).days + 1
-                working_day_count = Decimal(str(total_calendar_days - len(emp_non_working))).quantize(Decimal("0.01"))
+                cal_days = (self.period_end - self.period_start).days + 1
+                schedulable_days = Decimal(str(cal_days - len(emp_non_working))).quantize(Decimal("0.01"))
                 holiday_count = len(emp_holidays)
 
-        attendance_paid_days = self._clamp_days(attendance_paid_days, working_day_count)
-        paid_leave_days = self._clamp_days(paid_leave_days, working_day_count)
-        lop_leave_days = self._clamp_days(lop_leave_days, working_day_count)
+        # working_days = total calendar days in the payroll period.
+        # Sundays and holidays do NOT reduce this value.
+        working_days = self.total_calendar_days
+
+        # Cap attendance/leave inputs at schedulable_days (can't be present/absent more
+        # days than there are working days in the month).
+        attendance_paid_days = self._clamp_days(attendance_paid_days, schedulable_days)
+        paid_leave_days = self._clamp_days(paid_leave_days, schedulable_days)
+        lop_leave_days = self._clamp_days(lop_leave_days, schedulable_days)
         sandwich_lop_days = self._money_days(sandwich_lop_days)
 
-        if working_day_count <= ZERO:
+        if schedulable_days <= ZERO:
+            # Even when there are zero schedulable days (all holidays/offs) we still
+            # report working_days = calendar days so the UI value is always correct.
             return PayrollDaySummary(
-                working_days=ZERO,
-                paid_days=ZERO,
+                working_days=working_days,
+                paid_days=working_days,
                 lop_days=ZERO,
                 attendance_paid_days=ZERO,
                 paid_leave_days=ZERO,
@@ -177,22 +196,23 @@ class PayrollAttendanceService:
                 holidays=holiday_count,
             )
 
+        # absence_lop is computed against schedulable days so that a missed working day
+        # (Monday-Saturday, non-holiday) still creates an LOP deduction.
         accounted_days = attendance_paid_days + paid_leave_days + lop_leave_days
-        absence_lop_days = max(working_day_count - accounted_days, ZERO)
+        absence_lop_days = max(schedulable_days - accounted_days, ZERO)
 
-        # Sandwich LOP days are extra deductions beyond working_day_count.
-        # They reduce paid_days directly without changing working_day_count itself,
-        # so all salary formulas that reference lop_days automatically pick them up.
+        # Sandwich LOP days are extra deductions (weekly-off sandwiched between absences).
         total_lop_days = min(
             lop_leave_days + absence_lop_days + sandwich_lop_days,
-            working_day_count + sandwich_lop_days,
+            working_days,          # cannot exceed the full month
         )
-        paid_days = max(working_day_count - lop_leave_days - absence_lop_days, ZERO)
-        # sandwich days reduce paid_days further (cannot go below zero)
+
+        # paid_days base is now calendar days; LOP deductions reduce from that base.
+        paid_days = max(working_days - lop_leave_days - absence_lop_days, ZERO)
         paid_days = max(paid_days - sandwich_lop_days, ZERO)
 
         summary = PayrollDaySummary(
-            working_days=working_day_count,
+            working_days=working_days,
             paid_days=self._money_days(paid_days),
             lop_days=self._money_days(total_lop_days),
             attendance_paid_days=self._money_days(attendance_paid_days),
@@ -206,10 +226,11 @@ class PayrollAttendanceService:
             f"[PAYROLL DEBUG: AttendanceService._build_summary]\n"
             f"  Employee: {employee} (id={getattr(employee, 'id', None)})\n"
             f"  Employee work_location: {getattr(employee, 'work_location', None)}\n"
-            f"  base working_day_count: {self.working_day_count}\n"
-            f"  Payroll day_summary.working_days: {summary.working_days}\n"
+            f"  schedulable_days (LOP base): {schedulable_days}\n"
+            f"  working_days (calendar days, displayed): {summary.working_days}\n"
             f"  Payroll day_summary.paid_days: {summary.paid_days}\n"
             f"  Payroll day_summary.lop_days: {summary.lop_days}\n"
+            f"  Payroll day_summary.absence_lop_days: {summary.absence_lop_days}\n"
             f"  Payroll day_summary.attendance_paid_days: {summary.attendance_paid_days}\n"
             f"  Payroll day_summary.holidays: {summary.holidays}"
         )
