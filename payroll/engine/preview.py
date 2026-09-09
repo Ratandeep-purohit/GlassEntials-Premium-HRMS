@@ -198,6 +198,18 @@ class PayrollPreviewBuilder:
             day_summary=day_summary,
         )
 
+        preview_diag = (
+            f"[PAYROLL DEBUG: PayrollPreview._build_row]\n"
+            f"  Employee: {employee} (id={employee.id})\n"
+            f"  Employee work_location: {getattr(employee, 'work_location', None)}\n"
+            f"  source day_summary.working_days: {day_summary.working_days}\n"
+            f"  source day_summary.paid_days: {day_summary.paid_days}\n"
+            f"  Payroll preview working_days: {row.day_summary.working_days}"
+        )
+        print(preview_diag, flush=True)
+        import logging
+        logging.getLogger("payroll").warning(preview_diag)
+
         if not structure:
             row.can_process = False
             row.warnings.append("No active salary structure effective for this payroll period.")

@@ -90,22 +90,25 @@ class PayrollAttendanceService:
         self.working_dates = [d for d in all_period_dates if d not in self.combined_non_working_dates]
         self.working_day_count = Decimal(str(len(self.working_dates))).quantize(Decimal("0.01"))
 
-        # Explicit debug log for working days breakdown
-        logger.info(
-            "Payroll period %s to %s debug:\n"
-            "Total calendar days: %d\n"
-            "Weekly off dates: %d\n"
-            "Applicable paid holiday dates: %d\n"
-            "Combined non-working dates: %d\n"
-            "Final working days: %s",
-            self.period_start,
-            self.period_end,
-            total_calendar_days,
-            len(self.weekly_off_dates),
-            len(self.holiday_dates),
-            len(self.combined_non_working_dates),
-            self.working_day_count,
+        # Diagnostic log for working days breakdown
+        init_diag = (
+            f"[PAYROLL DEBUG: AttendanceService.__init__]\n"
+            f"  attendance_days.py file: {__file__}\n"
+            f"  Payroll period: {self.period_start} to {self.period_end}\n"
+            f"  Organization: {self.organization} (id={getattr(self.organization, 'id', None)})\n"
+            f"  Total calendar days: {total_calendar_days}\n"
+            f"  Weekly off dates count: {len(self.weekly_off_dates)}\n"
+            f"  Weekly off dates: {sorted([d.isoformat() for d in self.weekly_off_dates])}\n"
+            f"  Holiday dates returned by HolidayCalendarService count: {len(self.holiday_dates)}\n"
+            f"  Holiday dates returned by HolidayCalendarService: {sorted([d.isoformat() for d in self.holiday_dates])}\n"
+            f"  Combined non-working dates count: {len(self.combined_non_working_dates)}\n"
+            f"  Combined non-working dates: {sorted([d.isoformat() for d in self.combined_non_working_dates])}\n"
+            f"  Working dates count: {len(self.working_dates)}\n"
+            f"  Working dates: {sorted([d.isoformat() for d in self.working_dates])}\n"
+            f"  working_day_count: {self.working_day_count}"
         )
+        print(init_diag, flush=True)
+        logger.warning(init_diag)
 
     def build(self):
         per_day_values = self._attendance_per_day_values()
@@ -188,7 +191,7 @@ class PayrollAttendanceService:
         # sandwich days reduce paid_days further (cannot go below zero)
         paid_days = max(paid_days - sandwich_lop_days, ZERO)
 
-        return PayrollDaySummary(
+        summary = PayrollDaySummary(
             working_days=working_day_count,
             paid_days=self._money_days(paid_days),
             lop_days=self._money_days(total_lop_days),
@@ -199,6 +202,20 @@ class PayrollAttendanceService:
             sandwich_lop_days=self._money_days(sandwich_lop_days),
             holidays=holiday_count,
         )
+        summary_diag = (
+            f"[PAYROLL DEBUG: AttendanceService._build_summary]\n"
+            f"  Employee: {employee} (id={getattr(employee, 'id', None)})\n"
+            f"  Employee work_location: {getattr(employee, 'work_location', None)}\n"
+            f"  base working_day_count: {self.working_day_count}\n"
+            f"  Payroll day_summary.working_days: {summary.working_days}\n"
+            f"  Payroll day_summary.paid_days: {summary.paid_days}\n"
+            f"  Payroll day_summary.lop_days: {summary.lop_days}\n"
+            f"  Payroll day_summary.attendance_paid_days: {summary.attendance_paid_days}\n"
+            f"  Payroll day_summary.holidays: {summary.holidays}"
+        )
+        print(summary_diag, flush=True)
+        logger.warning(summary_diag)
+        return summary
 
     # ── Attendance per-day values ────────────────────────────────────────────
 

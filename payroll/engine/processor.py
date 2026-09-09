@@ -169,6 +169,19 @@ class PayrollProcessor:
         paid_days = day_summary.paid_days
         lop_days = day_summary.lop_days
 
+        proc_diag = (
+            f"[PAYROLL DEBUG: PayrollProcessor._process_employee]\n"
+            f"  Employee: {employee} (id={employee.id})\n"
+            f"  Employee work_location: {getattr(employee, 'work_location', None)}\n"
+            f"  day_summary.working_days: {day_summary.working_days}\n"
+            f"  transformed int(working_days): {working_days}\n"
+            f"  paid_days: {paid_days}, lop_days: {lop_days}\n"
+            f"  creating EmployeePayslip total_working_days={working_days}"
+        )
+        print(proc_diag, flush=True)
+        import logging
+        logging.getLogger("payroll").warning(proc_diag)
+
         # 3. Initialize Payslip
         payslip = EmployeePayslip.objects.create(
             organization=self.payroll_run.organization,
@@ -180,6 +193,10 @@ class PayrollProcessor:
             status=EmployeePayslip.Status.DRAFT,
             remarks=day_summary.remarks,
         )
+
+        post_diag = f"[PAYROLL DEBUG: PayrollProcessor._process_employee] Payslip created id={payslip.id}, Payslip total_working_days={payslip.total_working_days}"
+        print(post_diag, flush=True)
+        logging.getLogger("payroll").warning(post_diag)
 
         # 4. Process Earnings & Deductions from Structure
         context = {

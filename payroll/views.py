@@ -150,6 +150,16 @@ def payroll_preview(request, run_id):
         return redirect('payroll')
 
     preview = PayrollPreviewBuilder(run).build()
+    diag_preview = (
+        f"[PAYROLL DEBUG: View: payroll_preview]\n"
+        f"  Run ID: {run.id}, month={run.month}, year={run.year}, org={run.organization}\n"
+        f"  Total preview rows: {len(preview.rows)}\n"
+        f"  Rows working_days: {[(r.employee.id, getattr(r.employee, 'work_location', None), str(r.day_summary.working_days), str(r.day_summary.paid_days)) for r in preview.rows]}"
+    )
+    print(diag_preview, flush=True)
+    import logging
+    logging.getLogger("payroll").warning(diag_preview)
+
     context = {
         'payroll_run': run,
         'preview': preview,
@@ -280,6 +290,16 @@ def payslip_list(request, run_id):
         Q(organization=organization) | Q(organization__isnull=True),
         payroll_run=payroll_run
     )
+    diag_payslips = (
+        f"[PAYROLL DEBUG: View: payslip_list]\n"
+        f"  Run ID: {payroll_run.id} ({payroll_run.month}/{payroll_run.year})\n"
+        f"  Payslips count: {len(payslips)}\n"
+        f"  Payslips total_working_days: {[(p.id, p.employee.id, p.total_working_days, str(p.paid_days), str(p.lop_days)) for p in payslips]}"
+    )
+    print(diag_payslips, flush=True)
+    import logging
+    logging.getLogger("payroll").warning(diag_payslips)
+
     context = {
         'payroll_run': payroll_run,
         'payslips': payslips,
@@ -299,6 +319,16 @@ def payslip_detail(request, payslip_id):
         if not (request.user.is_staff or request.user.is_superuser):
             return redirect('my_payslips')
         return redirect('payroll')
+
+    diag_detail = (
+        f"[PAYROLL DEBUG: View: payslip_detail]\n"
+        f"  Payslip ID: {payslip.id}, Employee: {payslip.employee} (id={payslip.employee.id})\n"
+        f"  Payslip total_working_days: {payslip.total_working_days}\n"
+        f"  paid_days: {payslip.paid_days}, lop_days: {payslip.lop_days}"
+    )
+    print(diag_detail, flush=True)
+    import logging
+    logging.getLogger("payroll").warning(diag_detail)
         
     is_staff = request.user.is_staff or request.user.is_superuser
     if not is_staff and payslip.employee.email != request.user.email:

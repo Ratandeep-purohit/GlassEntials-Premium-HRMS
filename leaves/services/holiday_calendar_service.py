@@ -70,7 +70,24 @@ class HolidayCalendarService:
                 & Q(calendar__isnull=False)
             )
 
-        return set(holidays.values_list("date", flat=True))
+        returned_dates = set(holidays.values_list("date", flat=True))
+        raw_holidays = list(Holiday.objects.filter(date__range=(start_date, end_date)).values(
+            'id', 'name', 'date', 'is_paid', 'is_optional', 'calendar_id', 'calendar__name', 'calendar__branch', 'calendar__is_default', 'organization_id'
+        ))
+        diag_msg = (
+            f"[PAYROLL DEBUG: HolidayCalendarService.holiday_dates_for_period]\n"
+            f"  Payroll period: {start_date} to {end_date}\n"
+            f"  Organization: {organization} (id={getattr(organization, 'id', None)})\n"
+            f"  Employee: {employee} (id={getattr(employee, 'id', None)}, work_location={getattr(employee, 'work_location', None)})\n"
+            f"  include_optional: {include_optional}, paid_only: {paid_only}\n"
+            f"  Raw holidays in DB for period: {raw_holidays}\n"
+            f"  Holiday dates returned by HolidayCalendarService: {sorted([d.isoformat() for d in returned_dates])}"
+        )
+        print(diag_msg, flush=True)
+        import logging
+        logging.getLogger("payroll").warning(diag_msg)
+
+        return returned_dates
 
     @classmethod
     @transaction.atomic
