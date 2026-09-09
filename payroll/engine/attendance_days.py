@@ -72,13 +72,13 @@ class PayrollAttendanceService:
             self.month,
             calendar.monthrange(self.year, self.month)[1],
         )
+        # Sandwich Leave Policy — must be set BEFORE _working_dates() is called
+        self.sandwich_policy = _get_org_sandwich_policy(organization)
+        self.weekly_off_days = _get_weekly_off_days(organization)
+
         self.holiday_dates = self._holiday_dates(self.period_start, self.period_end)
         self.working_dates = self._working_dates(self.period_start, self.period_end)
         self.working_day_count = Decimal(str(len(self.working_dates))).quantize(Decimal("0.01"))
-
-        # Sandwich Leave Policy — org-level toggle
-        self.sandwich_policy = _get_org_sandwich_policy(organization)
-        self.weekly_off_days = _get_weekly_off_days(organization)
 
     def build(self):
         per_day_values = self._attendance_per_day_values()
