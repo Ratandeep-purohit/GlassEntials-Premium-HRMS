@@ -9,6 +9,10 @@ from django.db.models import Q
 from attendance.models import Attendance
 from leaves.models import LeavePayrollImpact, LeaveRequest
 from leaves.services.holiday_calendar_service import HolidayCalendarService
+from leaves.services.calendar_engine import (
+    _get_org_sandwich_policy,
+    _get_weekly_off_days,
+)
 
 
 ZERO = Decimal("0.00")
@@ -24,17 +28,21 @@ class PayrollDaySummary:
     paid_leave_days: Decimal
     lop_leave_days: Decimal
     absence_lop_days: Decimal
+    sandwich_lop_days: Decimal   # weekly offs counted as LOP due to Sandwich Leave Policy
     holidays: int
 
     @property
     def remarks(self):
-        return (
+        base = (
             f"Working days: {self.working_days}; "
             f"Attendance paid: {self.attendance_paid_days}; "
             f"Paid leave: {self.paid_leave_days}; "
             f"LOP leave: {self.lop_leave_days}; "
             f"Absent LOP: {self.absence_lop_days}"
         )
+        if self.sandwich_lop_days > ZERO:
+            base += f"; Sandwich LOP: {self.sandwich_lop_days}"
+        return base
 
 
 class PayrollAttendanceService:
@@ -46,6 +54,8 @@ class PayrollAttendanceService:
     - Paid, non-optional holidays reduce payable work days.
     - AttendanceStatus.payable_day_value supports present/half-day/paid statuses.
     - Approved leaves create payroll impact rows and participate in paid/LOP days.
+    - When the org's Sandwich Leave Policy is ON, weekly offs sandwiched between
+      absent working days are counted as additional LOP days for that employee.
 
     This service is deliberately isolated so future weekly-off, roster, shift,
     biometric lock, and location calendar rules can be added without touching
@@ -66,18 +76,29 @@ class PayrollAttendanceService:
         self.working_dates = self._working_dates(self.period_start, self.period_end)
         self.working_day_count = Decimal(str(len(self.working_dates))).quantize(Decimal("0.01"))
 
+        # Sandwich Leave Policy — org-level toggle
+        self.sandwich_policy = _get_org_sandwich_policy(organization)
+        self.weekly_off_days = _get_weekly_off_days(organization)
+
     def build(self):
-        attendance_paid = self._attendance_paid_by_employee()
+        per_day_values = self._attendance_per_day_values()
+        attendance_paid = self._aggregate_attendance_paid(per_day_values)
+        sandwich_extra = self._sandwich_absent_extra_by_employee(per_day_values)
         leave_impacts = self._leave_impacts_by_employee()
 
         summaries = {}
-        employee_ids = set(attendance_paid.keys()) | set(leave_impacts.keys())
+        employee_ids = (
+            set(attendance_paid.keys())
+            | set(leave_impacts.keys())
+            | set(sandwich_extra.keys())
+        )
 
         for employee_id in employee_ids:
             summaries[employee_id] = self._build_summary(
                 attendance_paid.get(employee_id, ZERO),
                 leave_impacts.get(employee_id, {}).get("paid", ZERO),
                 leave_impacts.get(employee_id, {}).get("lop", ZERO),
+                sandwich_lop_days=self._money_days(sandwich_extra.get(employee_id, 0)),
             )
 
         return summaries
@@ -85,10 +106,12 @@ class PayrollAttendanceService:
     def default_summary(self):
         return self._build_summary(ZERO, ZERO, ZERO)
 
-    def _build_summary(self, attendance_paid_days, paid_leave_days, lop_leave_days):
+    def _build_summary(self, attendance_paid_days, paid_leave_days, lop_leave_days,
+                       sandwich_lop_days=ZERO):
         attendance_paid_days = self._clamp_days(attendance_paid_days)
         paid_leave_days = self._clamp_days(paid_leave_days)
         lop_leave_days = self._clamp_days(lop_leave_days)
+        sandwich_lop_days = self._money_days(sandwich_lop_days)
 
         if self.working_day_count <= ZERO:
             return PayrollDaySummary(
@@ -99,13 +122,23 @@ class PayrollAttendanceService:
                 paid_leave_days=ZERO,
                 lop_leave_days=ZERO,
                 absence_lop_days=ZERO,
+                sandwich_lop_days=ZERO,
                 holidays=len(self.holiday_dates),
             )
 
         accounted_days = attendance_paid_days + paid_leave_days + lop_leave_days
         absence_lop_days = max(self.working_day_count - accounted_days, ZERO)
-        total_lop_days = min(lop_leave_days + absence_lop_days, self.working_day_count)
-        paid_days = max(self.working_day_count - total_lop_days, ZERO)
+
+        # Sandwich LOP days are extra deductions beyond working_day_count.
+        # They reduce paid_days directly without changing working_day_count itself,
+        # so all salary formulas that reference lop_days automatically pick them up.
+        total_lop_days = min(
+            lop_leave_days + absence_lop_days + sandwich_lop_days,
+            self.working_day_count + sandwich_lop_days,
+        )
+        paid_days = max(self.working_day_count - lop_leave_days - absence_lop_days, ZERO)
+        # sandwich days reduce paid_days further (cannot go below zero)
+        paid_days = max(paid_days - sandwich_lop_days, ZERO)
 
         return PayrollDaySummary(
             working_days=self.working_day_count,
@@ -115,10 +148,17 @@ class PayrollAttendanceService:
             paid_leave_days=self._money_days(paid_leave_days),
             lop_leave_days=self._money_days(lop_leave_days),
             absence_lop_days=self._money_days(absence_lop_days),
+            sandwich_lop_days=self._money_days(sandwich_lop_days),
             holidays=len(self.holiday_dates),
         )
 
-    def _attendance_paid_by_employee(self):
+    # ── Attendance per-day values ────────────────────────────────────────────
+
+    def _attendance_per_day_values(self):
+        """
+        Returns {(employee_id, date): payable_value} for all attendance rows
+        in this period that fall on a working date.
+        """
         rows = (
             Attendance.objects.filter(
                 employee__organization=self.organization,
@@ -130,14 +170,18 @@ class PayrollAttendanceService:
                 | Q(status__isnull=True, clock_in__isnull=False)
             )
             .select_related("status")
-            .values("employee_id", "date", "status_id", "status__payable_day_value", "net_work_hours", "clock_in", "clock_out")
+            .values(
+                "employee_id", "date", "status_id",
+                "status__payable_day_value", "net_work_hours",
+                "clock_in", "clock_out",
+            )
         )
 
         day_values = {}
         for row in rows:
             employee_id = row["employee_id"]
             attendance_date = row["date"]
-            
+
             if row["status_id"]:
                 payable = self._money_days(row["status__payable_day_value"] or ZERO)
             else:
@@ -157,16 +201,102 @@ class PayrollAttendanceService:
                         payable = ONE
                 else:
                     payable = ONE if row.get("clock_in") else ZERO
-                    
+
             payable = max(min(payable, ONE), ZERO)
             key = (employee_id, attendance_date)
             day_values[key] = max(day_values.get(key, ZERO), payable)
 
-        paid_by_employee = defaultdict(lambda: ZERO)
-        for (employee_id, _attendance_date), payable in day_values.items():
-            paid_by_employee[employee_id] += payable
+        return day_values
 
-        return {employee_id: self._clamp_days(value) for employee_id, value in paid_by_employee.items()}
+    def _aggregate_attendance_paid(self, per_day_values):
+        """Sum per-day payable values into per-employee totals."""
+        paid_by_employee = defaultdict(lambda: ZERO)
+        for (employee_id, _date), payable in per_day_values.items():
+            paid_by_employee[employee_id] += payable
+        return {
+            employee_id: self._clamp_days(value)
+            for employee_id, value in paid_by_employee.items()
+        }
+
+    # Keep original method name for backward compatibility
+    def _attendance_paid_by_employee(self):
+        return self._aggregate_attendance_paid(self._attendance_per_day_values())
+
+    # ── Sandwich absent detection ────────────────────────────────────────────
+
+    def _sandwich_absent_extra_by_employee(self, per_day_values):
+        """
+        Sandwich Leave Policy — absence scenario.
+
+        For each weekly off in the period, if an employee was absent (payable=0)
+        on the nearest working day BEFORE the weekly off AND on the nearest working
+        day AFTER the weekly off, that weekly off counts as an extra LOP day.
+
+        Only applies when the org-level sandwich_leave_policy is ON.
+        Only unauthorised absence (payable=0 on a working day) qualifies as a
+        boundary day here; approved paid leave does not (it's handled separately
+        by LeaveCalendarEngine so there's no double-counting).
+
+        Returns {employee_id: int} — number of extra sandwich LOP days.
+        """
+        if not self.sandwich_policy:
+            return {}
+
+        # Sorted working dates for prev/next lookups
+        sorted_working = sorted(self.working_dates)
+        working_dates_set = set(self.working_dates)
+
+        # Find all weekly off dates in the period (that are not paid holidays)
+        weekly_off_in_period = []
+        current = self.period_start
+        while current <= self.period_end:
+            if (
+                current.weekday() in self.weekly_off_days
+                and current not in self.holiday_dates
+                and current not in working_dates_set
+            ):
+                weekly_off_in_period.append(current)
+            current += timedelta(days=1)
+
+        if not weekly_off_in_period:
+            return {}
+
+        # Build a set of (employee_id, date) pairs with payable > 0
+        present_keys = {
+            key for key, payable in per_day_values.items() if payable > ZERO
+        }
+        all_employee_ids = {eid for (eid, _) in per_day_values.keys()}
+
+        # Also need employees that had leave impacts (they may have no attendance rows)
+        # — we only care about absence (payable=0), so employees with no row are absent.
+
+        sandwich_extra = defaultdict(int)
+
+        for wo_date in weekly_off_in_period:
+            # Find nearest working day before and after this weekly off
+            prev_wd = None
+            next_wd = None
+            for wd in sorted_working:
+                if wd < wo_date:
+                    prev_wd = wd
+                elif wd > wo_date and next_wd is None:
+                    next_wd = wd
+                    break
+
+            if prev_wd is None or next_wd is None:
+                # Weekly off at start/end of month with no working day on one side
+                continue
+
+            for employee_id in all_employee_ids:
+                prev_present = (employee_id, prev_wd) in present_keys
+                next_present = (employee_id, next_wd) in present_keys
+                # Sandwich: absent on BOTH boundary working days
+                if not prev_present and not next_present:
+                    sandwich_extra[employee_id] += 1
+
+        return dict(sandwich_extra)
+
+    # ── Leave payroll impacts ────────────────────────────────────────────────
 
     def _leave_impacts_by_employee(self):
         self._sync_leave_payroll_impacts()
@@ -263,11 +393,13 @@ class PayrollAttendanceService:
         ratio = overlap_working_days / request_working_days
         return self._clamp_days(paid_days * ratio), self._clamp_days(lop_days * ratio)
 
+    # ── Helpers ──────────────────────────────────────────────────────────────
+
     def _working_dates(self, start_date, end_date):
         days = []
         current = start_date
         while current <= end_date:
-            if current.weekday() != 6 and current not in self.holiday_dates:  # Mon–Sat, excluding holidays
+            if current.weekday() not in self.weekly_off_days and current not in self.holiday_dates:
                 days.append(current)
             current += timedelta(days=1)
         return days

@@ -2542,6 +2542,9 @@ def attendance_settings_view(request):
             except (ValueError, TypeError):
                 errors.append("Maximum GPS accuracy must be a whole number.")
 
+            # --- Sandwich Leave Policy ---
+            att_settings.sandwich_leave_policy = bool(body.get('sandwich_leave_policy', False))
+
             if errors:
                 return JsonResponse({'success': False, 'errors': errors}, status=400)
 
@@ -2588,119 +2591,3 @@ def attendance_settings_view(request):
         'org_employees': org_employees,
         'selected_employee_ids': selected_employee_ids,
     })
-
-
-
-
-
-
-
-    if request.method == 'POST':
-        try:
-            body = json.loads(request.body)
-            errors = []
-
-            # --- Network restriction ---
-            att_settings.network_restriction_enabled = bool(body.get('network_restriction_enabled', False))
-            raw_ips = body.get('allowed_ip_addresses', [])
-            import ipaddress
-            cleaned_ips = []
-            for ip in raw_ips:
-                ip = ip.strip()
-                if not ip:
-                    continue
-                try:
-                    ipaddress.ip_address(ip)
-                    cleaned_ips.append(ip)
-                except ValueError:
-                    errors.append(f"'{ip}' is not a valid IP address.")
-            att_settings.allowed_ip_addresses = cleaned_ips
-
-            # --- Location restriction ---
-            att_settings.location_restriction_enabled = bool(body.get('location_restriction_enabled', False))
-
-            raw_lat = body.get('office_latitude', '')
-            raw_lng = body.get('office_longitude', '')
-            raw_radius = body.get('allowed_radius_meters', 100)
-            raw_accuracy = body.get('max_gps_accuracy_meters', 50)
-
-            # Validate coordinates only if location restriction is being enabled
-            if att_settings.location_restriction_enabled:
-                if raw_lat == '' or raw_lat is None:
-                    errors.append("Office latitude is required when location restriction is enabled.")
-                if raw_lng == '' or raw_lng is None:
-                    errors.append("Office longitude is required when location restriction is enabled.")
-
-            if raw_lat not in ('', None):
-                try:
-                    lat = float(raw_lat)
-                    if not (-90 <= lat <= 90):
-                        errors.append("Latitude must be between -90 and 90.")
-                    else:
-                        att_settings.office_latitude = lat
-                except (ValueError, TypeError):
-                    errors.append("Latitude must be a valid decimal number.")
-            else:
-                att_settings.office_latitude = None
-
-            if raw_lng not in ('', None):
-                try:
-                    lng = float(raw_lng)
-                    if not (-180 <= lng <= 180):
-                        errors.append("Longitude must be between -180 and 180.")
-                    else:
-                        att_settings.office_longitude = lng
-                except (ValueError, TypeError):
-                    errors.append("Longitude must be a valid decimal number.")
-            else:
-                att_settings.office_longitude = None
-
-            try:
-                radius = int(raw_radius)
-                if not (1 <= radius <= 50000):
-                    errors.append("Allowed radius must be between 1 and 50,000 meters.")
-                else:
-                    att_settings.allowed_radius_meters = radius
-            except (ValueError, TypeError):
-                errors.append("Allowed radius must be a whole number.")
-
-            try:
-                accuracy = int(raw_accuracy)
-                if not (5 <= accuracy <= 500):
-                    errors.append("Maximum GPS accuracy must be between 5 and 500 meters.")
-                else:
-                    att_settings.max_gps_accuracy_meters = accuracy
-            except (ValueError, TypeError):
-                errors.append("Maximum GPS accuracy must be a whole number.")
-
-            if errors:
-                return JsonResponse({'success': False, 'errors': errors}, status=400)
-
-            print("\n--- ATTENDANCE SETTINGS DEBUG ---")
-            print("USER ORG ID:", getattr(request.user, 'organization_id', 'Unknown'))
-            print("SETTINGS ID:", att_settings.id)
-            print("INCOMING LAT/LNG:", raw_lat, raw_lng)
-            print("INCOMING RADIUS:", raw_radius)
-            print("INCOMING ACCURACY:", raw_accuracy)
-            print("BEFORE SAVE RADIUS:", att_settings.allowed_radius_meters)
-            print("BEFORE SAVE ACCURACY:", att_settings.max_gps_accuracy_meters)
-
-            att_settings.save()
-            att_settings.refresh_from_db()
-
-            print("AFTER SAVE RADIUS:", att_settings.allowed_radius_meters)
-            print("AFTER SAVE ACCURACY:", att_settings.max_gps_accuracy_meters)
-            print("---------------------------------\n")
-
-            return JsonResponse({'success': True, 'message': 'Settings saved successfully.'})
-        except Exception as e:
-            import logging
-            logging.getLogger(__name__).error("attendance_settings_view POST error: %s", e)
-            return JsonResponse({'success': False, 'errors': [str(e)]}, status=500)
-
-    return render(request, 'attendance_settings.html', {'att_settings': att_settings})
-
-
-
-
-

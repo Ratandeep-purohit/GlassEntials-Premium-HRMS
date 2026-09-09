@@ -753,6 +753,64 @@ def apply_leave_view(request):
     return redirect('leaves:dashboard')
 
 @login_required
+def calculate_days_preview(request):
+    """AJAX endpoint: returns total leave days (including sandwich) for a given date range."""
+    from django.http import JsonResponse
+    if request.method != 'GET':
+        return JsonResponse({'error': 'GET only'}, status=405)
+
+    try:
+        leave_type_id = request.GET.get('leave_type_id')
+        start_str = request.GET.get('start_date')
+        end_str = request.GET.get('end_date')
+        session = request.GET.get('session', 'FULL')
+
+        if not all([leave_type_id, start_str, end_str]):
+            return JsonResponse({'error': 'Missing parameters'}, status=400)
+
+        leave_type = LeaveType.objects.get(
+            id=leave_type_id,
+            organization=request.user.organization,
+            status='ACTIVE',
+        )
+        start_date = datetime.strptime(start_str, '%Y-%m-%d').date()
+        end_date = datetime.strptime(end_str, '%Y-%m-%d').date()
+
+        if start_date > end_date:
+            return JsonResponse({'total_days': 0, 'sandwich_days': 0})
+
+        employee = Employee.objects.filter(
+            email=request.user.email, organization=request.user.organization
+        ).first()
+
+        total_days, sandwich_days = LeaveCalendarEngine.sandwich_day_count(
+            organization=request.user.organization,
+            leave_type=leave_type,
+            start_date=start_date,
+            end_date=end_date,
+            employee=employee,
+        ) if session == 'FULL' else (
+            LeaveCalendarEngine.calculate_days(
+                organization=request.user.organization,
+                leave_type=leave_type,
+                start_date=start_date,
+                end_date=end_date,
+                session_type=session,
+                employee=employee,
+            ),
+            0,
+        )
+
+        return JsonResponse({
+            'total_days': str(total_days),
+            'sandwich_days': sandwich_days,
+        })
+    except LeaveType.DoesNotExist:
+        return JsonResponse({'error': 'Invalid leave type'}, status=400)
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
+
+@login_required
 def leave_history_view(request):
     employee = Employee.objects.filter(email=request.user.email, organization=request.user.organization).first()
     requests = LeaveRequest.objects.filter(employee=employee).order_by('-start_date')

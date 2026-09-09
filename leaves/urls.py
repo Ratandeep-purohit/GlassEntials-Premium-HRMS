@@ -7,6 +7,7 @@ urlpatterns = [
     # ESS - Employee Self Service
     path('', views.leave_dashboard_view, name='dashboard'),
     path('apply/', views.apply_leave_view, name='apply_leave'),
+    path('calculate-days/', views.calculate_days_preview, name='calculate_days_preview'),
     path('apply-compoff/', views.apply_compoff_view, name='apply_compoff'),
     path('history/', views.leave_history_view, name='history'),
     path('cancel/<int:leave_id>/', views.request_leave_cancellation_view, name='request_cancel'),

@@ -261,6 +261,9 @@ class AttendanceSettings(BaseModel):
         help_text='Employees subject to GPS location validation when Apply To = Selected Employees.',
     )
 
+    # Sandwich Leave Policy
+    sandwich_leave_policy = models.BooleanField(default=False)
+
     class Meta:
         verbose_name_plural = "Attendance Settings"
 

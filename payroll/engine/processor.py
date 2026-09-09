@@ -187,6 +187,7 @@ class PayrollProcessor:
             'attendance_paid_days': day_summary.attendance_paid_days,
             'paid_leave_days': day_summary.paid_leave_days,
             'lop_leave_days': day_summary.lop_leave_days,
+            'sandwich_lop_days': day_summary.sandwich_lop_days,
         }
 
         gross_earnings = Decimal("0.00")

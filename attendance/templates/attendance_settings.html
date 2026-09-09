@@ -536,6 +536,42 @@
                 </div>
             </div><!-- /.settings-card -->
 
+
+            <!-- ── CARD 3: Sandwich Leave Policy ── -->
+            <div class="settings-card" id="sandwichSection">
+                <div class="card-header">
+                    <h2 class="card-title">Sandwich Leave Policy</h2>
+                    <p class="card-sub">Control how weekly offs and holidays are counted when they fall between leave days.</p>
+                </div>
+
+                <div class="setting-section">
+                    <div class="setting-info">
+                        <h3 class="setting-title"><i class="fas fa-layer-group"></i> Enable Sandwich Leave Policy</h3>
+                        <p class="setting-desc">When enabled, weekly offs and applicable holidays falling between leave days will also be counted as leave.<br>
+                            <em style="font-size:12px;color:var(--s400);">Example: Friday Leave + Saturday Weekly Off + Monday Leave = 3 days deducted.</em>
+                        </p>
+                    </div>
+                    <div>
+                        <input type="checkbox" id="sandwichToggle" class="toggle-input"
+                            {% if att_settings.sandwich_leave_policy %}checked{% endif %}
+                            onchange="toggleSandwichLabel()">
+                        <label for="sandwichToggle" class="toggle-switch">
+                            <span class="toggle-track"><span class="toggle-thumb"></span></span>
+                            <span class="toggle-label" id="sandwichToggleLabelText">
+                                {% if att_settings.sandwich_leave_policy %}Enabled{% else %}Disabled{% endif %}
+                            </span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="form-actions">
+                    <span id="saveStatus3" style="font-size:13px;font-weight:600;"></span>
+                    <button type="button" class="btn btn-primary" id="saveBtn3" onclick="saveSettings()">
+                        <i class="fas fa-check"></i> Save Settings
+                    </button>
+                </div>
+            </div><!-- /.settings-card -->
+
         </div><!-- /.content-area -->
     </div><!-- /.settings-layout -->
 </div><!-- /.page-wrap -->
@@ -553,6 +589,11 @@
         const toggle = document.getElementById('locationToggle');
         document.getElementById('locationToggleLabelText').textContent = toggle.checked ? 'Enabled' : 'Disabled';
         document.getElementById('locationSectionWrap').classList.toggle('disabled-section', !toggle.checked);
+    }
+
+    function toggleSandwichLabel() {
+        const toggle = document.getElementById('sandwichToggle');
+        document.getElementById('sandwichToggleLabelText').textContent = toggle.checked ? 'Enabled' : 'Disabled';
     }
 
     // ── Employee selector ─────────────────────────────────────────────
@@ -754,11 +795,11 @@
 
     // ── Save settings ────────────────────────────────────────────────
     function saveSettings() {
-        ['saveBtn1', 'saveBtn2'].forEach(function(id) {
+        ['saveBtn1', 'saveBtn2', 'saveBtn3'].forEach(function(id) {
             const b = document.getElementById(id);
             if (b) { b._orig = b.innerHTML; b.disabled = true; b.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...'; }
         });
-        ['saveStatus1', 'saveStatus2'].forEach(function(id) {
+        ['saveStatus1', 'saveStatus2', 'saveStatus3'].forEach(function(id) {
             const s = document.getElementById(id);
             if (s) { s.textContent = ''; s.style.color = ''; }
         });
@@ -782,6 +823,9 @@
             if (!isNaN(id)) selectedEmpIds.push(id);
         });
 
+        const sandwichEl = document.getElementById('sandwichToggle');
+        const sandwichEnabled = sandwichEl ? sandwichEl.checked : false;
+
         const payload = {
             network_restriction_enabled: networkEnabled,
             allowed_ip_addresses: ips,
@@ -792,6 +836,7 @@
             office_longitude: lngVal === '' ? null : lngVal,
             allowed_radius_meters: radiusVal === '' ? 100 : parseInt(radiusVal),
             max_gps_accuracy_meters: accuracyVal === '' ? 50 : parseInt(accuracyVal),
+            sandwich_leave_policy: sandwichEnabled,
         };
 
         console.log("[Attendance Settings] Saving payload:", payload);
@@ -821,31 +866,31 @@
             });
 
             if (httpStatus >= 200 && httpStatus < 300 && data.success) {
-                ['saveBtn1', 'saveBtn2'].forEach(function(id) {
+                ['saveBtn1', 'saveBtn2', 'saveBtn3'].forEach(function(id) {
                     const b = document.getElementById(id);
                     if (b) { b.innerHTML = '<i class="fas fa-check-circle"></i> Saved'; b.style.background = 'var(--green)'; }
                 });
-                ['saveStatus1', 'saveStatus2'].forEach(function(id) {
+                ['saveStatus1', 'saveStatus2', 'saveStatus3'].forEach(function(id) {
                     const s = document.getElementById(id);
                     if (s) { s.textContent = 'Settings saved successfully.'; s.style.color = 'var(--green)'; }
                 });
                 setTimeout(function() {
-                    ['saveBtn1', 'saveBtn2'].forEach(function(id) {
+                    ['saveBtn1', 'saveBtn2', 'saveBtn3'].forEach(function(id) {
                         const b = document.getElementById(id);
                         if (b) { b.innerHTML = b._orig || '<i class="fas fa-check"></i> Save Settings'; b.style.background = ''; }
                     });
-                    ['saveStatus1', 'saveStatus2'].forEach(function(id) {
+                    ['saveStatus1', 'saveStatus2', 'saveStatus3'].forEach(function(id) {
                         const s = document.getElementById(id);
                         if (s) { s.textContent = ''; }
                     });
                 }, 3000);
             } else {
-                ['saveBtn1', 'saveBtn2'].forEach(function(id) {
+                ['saveBtn1', 'saveBtn2', 'saveBtn3'].forEach(function(id) {
                     const b = document.getElementById(id);
                     if (b) { b.innerHTML = b._orig || '<i class="fas fa-check"></i> Save Settings'; }
                 });
                 const msgs = data.errors ? data.errors.join(' ') : (data.message || 'Save failed.');
-                ['saveStatus1', 'saveStatus2'].forEach(function(id) {
+                ['saveStatus1', 'saveStatus2', 'saveStatus3'].forEach(function(id) {
                     const s = document.getElementById(id);
                     if (s) { s.textContent = '⚠ ' + msgs; s.style.color = 'var(--red)'; }
                 });
@@ -853,11 +898,11 @@
         })
         .catch(function(err) {
             console.error("[Attendance Settings] Fetch Error:", err);
-            ['saveBtn1', 'saveBtn2'].forEach(function(id) {
+            ['saveBtn1', 'saveBtn2', 'saveBtn3'].forEach(function(id) {
                 const b = document.getElementById(id);
                 if (b) { b.disabled = false; b.innerHTML = b._orig || '<i class="fas fa-check"></i> Save Settings'; }
             });
-            ['saveStatus1', 'saveStatus2'].forEach(function(id) {
+            ['saveStatus1', 'saveStatus2', 'saveStatus3'].forEach(function(id) {
                 const s = document.getElementById(id);
                 if (s) { s.textContent = '⚠ Network error. Please try again.'; s.style.color = 'var(--red)'; }
             });
