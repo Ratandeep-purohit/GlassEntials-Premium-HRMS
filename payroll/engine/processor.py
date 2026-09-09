@@ -42,6 +42,12 @@ class PayrollProcessor:
 
         # PREFETCH DATA #
         org = self.payroll_run.organization
+        if not org:
+            from accounts.models import Organization
+            org = Organization.objects.first()
+            if org and not self.payroll_run.organization:
+                self.payroll_run.organization = org
+                self.payroll_run.save(update_fields=["organization"])
         period_start = date(self.year, self.month, 1)
         period_end = date(self.year, self.month, self.total_days)
         

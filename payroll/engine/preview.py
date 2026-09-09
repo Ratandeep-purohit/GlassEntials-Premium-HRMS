@@ -70,6 +70,12 @@ class PayrollPreviewBuilder:
     def __init__(self, payroll_run):
         self.payroll_run = payroll_run
         self.organization = payroll_run.organization
+        if not self.organization:
+            from accounts.models import Organization
+            self.organization = Organization.objects.first()
+            if self.organization and not self.payroll_run.organization:
+                self.payroll_run.organization = self.organization
+                self.payroll_run.save(update_fields=["organization"])
         self.month = int(payroll_run.month)
         self.year = int(payroll_run.year)
         self.period_start = date(self.year, self.month, 1)

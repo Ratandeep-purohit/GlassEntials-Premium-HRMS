@@ -65,6 +65,9 @@ class PayrollAttendanceService:
     """
 
     def __init__(self, organization, month, year):
+        if not organization:
+            from accounts.models import Organization
+            organization = Organization.objects.first()
         self.organization = organization
         self.month = int(month)
         self.year = int(year)
@@ -145,7 +148,7 @@ class PayrollAttendanceService:
         working_day_count = self.working_day_count
         holiday_count = len(self.holiday_dates)
 
-        if employee and (getattr(employee, "work_location", "") or "").strip():
+        if employee:
             emp_holidays = set(self._holiday_dates(self.period_start, self.period_end, employee=employee))
             if emp_holidays != self.holiday_dates:
                 emp_non_working = self.weekly_off_dates | emp_holidays
@@ -461,7 +464,7 @@ class PayrollAttendanceService:
             end_date=end_date,
             employee=employee,
             include_optional=False,
-            paid_only=True,
+            paid_only=False,
         )
 
     def _clamp_days(self, value, max_days=None):

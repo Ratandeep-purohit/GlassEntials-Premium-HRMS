@@ -25,53 +25,50 @@ class HolidayCalendarService:
         paid_only=False,
     ):
         if not organization:
-            return set()
+            from accounts.models import Organization
+            organization = getattr(employee, "organization", None)
+            if not organization:
+                from payroll.models import PayrollRun
+                recent_run = (
+                    PayrollRun.objects.filter(month=start_date.month, year=start_date.year)
+                    .exclude(organization__isnull=True)
+                    .first()
+                )
+                if recent_run and recent_run.organization:
+                    organization = recent_run.organization
+                else:
+                    organization = Organization.objects.first()
 
         holidays = Holiday.objects.filter(
-            Q(organization=organization) | Q(calendar__organization=organization),
             date__range=(start_date, end_date),
         )
+        if organization:
+            holidays = holidays.filter(
+                Q(organization=organization)
+                | Q(calendar__organization=organization)
+                | Q(organization__isnull=True, calendar__organization__isnull=True)
+                | Q(organization__isnull=True, calendar__isnull=True)
+            )
+
         if not include_optional:
-            holidays = holidays.filter(is_optional=False)
+            holidays = holidays.filter(Q(is_optional=False) | Q(is_optional__isnull=True))
         if paid_only:
-            holidays = holidays.filter(is_paid=True)
-
-        # Base filter for org-wide / all-branch holidays:
-        # 1. Holidays without a calendar attached (direct org holidays)
-        # 2. Calendars flagged as default
-        # 3. Calendars with empty, null, or 'all'/'all branches'/'*' branch
-        org_wide_calendar_q = (
-            Q(calendar__isnull=True)
-            | Q(calendar__is_default=True)
-            | Q(calendar__branch="")
-            | Q(calendar__branch__isnull=True)
-            | Q(calendar__branch__iexact="all")
-            | Q(calendar__branch__iexact="all branches")
-            | Q(calendar__branch__iexact="*")
-        )
-
-        # If the organization has calendars for the period years but none is marked is_default=True,
-        # all organizational calendars for those years must be treated as applicable (not dropped).
-        years = {start_date.year, end_date.year}
-        has_default_cal = HolidayCalendar.objects.filter(
-            organization=organization,
-            year__in=years,
-            is_default=True,
-        ).exists()
-        if not has_default_cal:
-            org_wide_calendar_q = org_wide_calendar_q | Q(calendar__year__in=years, calendar__organization=organization)
+            holidays = holidays.filter(Q(is_paid=True) | Q(is_paid__isnull=True))
 
         work_location = (getattr(employee, "work_location", "") or "").strip()
         if work_location:
-            branch_match_q = (
-                org_wide_calendar_q
-                | Q(calendar__branch__iexact=work_location)
-                | Q(calendar__location_fk__name__iexact=work_location)
-                | Q(location_fk__name__iexact=work_location)
+            # Exclude ONLY holidays belonging to calendars explicitly designated for a DIFFERENT branch
+            holidays = holidays.exclude(
+                ~Q(calendar__branch="")
+                & ~Q(calendar__branch__isnull=True)
+                & ~Q(calendar__branch__iexact="all")
+                & ~Q(calendar__branch__iexact="all branches")
+                & ~Q(calendar__branch__iexact="*")
+                & ~Q(calendar__branch__iexact=work_location)
+                & ~Q(calendar__location_fk__name__iexact=work_location)
+                & ~Q(location_fk__name__iexact=work_location)
+                & Q(calendar__isnull=False)
             )
-            holidays = holidays.filter(branch_match_q)
-        else:
-            holidays = holidays.filter(org_wide_calendar_q)
 
         return set(holidays.values_list("date", flat=True))
 
