@@ -269,6 +269,15 @@ def home_view(request):
     on_leave_today_total = on_leave_today_query.count()
     on_leave_today = list(on_leave_today_query)
 
+    # Birthdays today
+    today_birthdays = list(Employee.objects.filter(
+        organization=organization,
+        is_active=True,
+        is_deleted=False,
+        date_of_birth__month=today.month,
+        date_of_birth__day=today.day,
+    ).order_by('first_name', 'last_name'))
+
     # Employee specific metrics
     my_present_days = 0
     my_pending_leaves = 0
@@ -364,6 +373,7 @@ def home_view(request):
         'last_5_attendance': last_5_attendance,
         'dashboard_announcements': dashboard_announcements,
         'location_restriction_enabled': location_restriction_enabled,
+        'today_birthdays': today_birthdays,
     }
 
 
