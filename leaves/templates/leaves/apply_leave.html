@@ -715,10 +715,8 @@
                                 data-backdate="{% if card.restriction and card.restriction.backdate_allowed %}{{ card.restriction.max_backdate_days }}{% else %}Not allowed{% endif %}"
                                 data-future="{% if card.restriction and card.restriction.future_date_allowed %}{{ card.restriction.max_future_days }}{% else %}Not allowed{% endif %}"
                                 data-workflow="{% if card.workflow %}{% for step in card.workflow_steps %}{{ step.get_approver_type_display }}{% if not forloop.last %} > {% endif %}{% endfor %}{% else %}Manager > HR{% endif %}"
-                                data-paid="{% if card.leave_type.is_paid %}Paid{% else %}LOP{% endif %}" {% if
-                                card.leave_type.id|stringformat:'s'==selected_leave_type_id %}selected{% endif %}>
-                                {{ card.leave_type.name }} ({{ card.leave_type.code }}) &mdash; {{ card.available }}
-                                available
+                                data-paid="{% if card.leave_type.is_paid %}Paid{% else %}LOP{% endif %}" {% if card.leave_type.id|stringformat:'s' == selected_leave_type_id %}selected{% endif %}>
+                                {{ card.leave_type.name }} ({{ card.leave_type.code }}) &mdash; {{ card.available }} available
                             </option>
                             {% endfor %}
                         </select>
