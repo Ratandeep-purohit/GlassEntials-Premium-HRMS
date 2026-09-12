@@ -651,6 +651,35 @@
             }
         </style>
         {% endif %}
+        <style>
+            .employee-attendance-card.dashboard-my-day {
+                padding: 16px 12px 12px !important;
+                grid-template-areas:
+                    "avatar"
+                    "identity"
+                    "status"
+                    "divider"
+                    "timer"
+                    "actions" !important;
+                overflow: hidden;
+            }
+
+            .dashboard-my-day .employee-attendance-avatar {
+                position: static;
+                transform: none;
+                width: 72px;
+                height: 72px;
+                margin: 0 auto;
+                border-radius: 50%;
+            }
+
+            .dashboard-my-day .employee-attendance-avatar img {
+                width: 100%;
+                height: 100%;
+                object-fit: cover;
+                border-radius: 50%;
+            }
+        </style>
         <!-- Profile Card -->
         <section class="dashboard-overview">
             <div class="dashboard-profile-row">
@@ -1227,8 +1256,7 @@
                         <h2 class="bento-title">Pending Approvals</h2>
                         {% if pending_approval_total %}
                         <span
-                            style="background: rgba(239,68,68,0.1); color: #ef4444; font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 99px;">{{
-                            pending_approval_total }}</span>
+                            style="background: rgba(239,68,68,0.1); color: #ef4444; font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 99px;">{{ pending_approval_total }}</span>
                         {% endif %}
                     </div>
                     {% for approval in pending_approval_items %}
