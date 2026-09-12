@@ -748,11 +748,7 @@
                     <div class="employee-attendance-divider"></div>
 
                     <!-- Attendance Timer -->
-                    <div class="employee-time-grid" id="dashboardAttendanceTimer" {% if today_attendance and
-                        today_attendance.clock_in %}data-date="{{ today_attendance.date|date:'Y-m-d' }}"
-                        data-clock-in="{{ today_attendance.clock_in|time:'H:i:s' }}" {% endif %} {% if today_attendance
-                        and today_attendance.clock_out %}data-clock-out="{{ today_attendance.clock_out|time:'H:i:s' }}"
-                        {% endif %}>
+                    <div class="employee-time-grid" id="dashboardAttendanceTimer" {% if today_attendance and today_attendance.clock_in %}data-date="{{ today_attendance.date|date:'Y-m-d' }}" data-clock-in="{{ today_attendance.clock_in|time:'H:i:s' }}" {% endif %} {% if today_attendance and today_attendance.clock_out %}data-clock-out="{{ today_attendance.clock_out|time:'H:i:s' }}" {% endif %}>
                         <span>00</span>
                         <span>00</span>
                         <span>00</span>
@@ -1240,8 +1236,7 @@
                                     {% endif %}
                                     {% if announcement.is_pinned %}<span
                                         style="display: inline-flex; align-items: center; gap: 4px; padding: 3px 10px; border-radius: 20px; font-size: 10px; font-weight: 800; background: #fef3c7; color: #b45309;"><i
-                                            class="fas fa-thumbtack" style="font-size: 8px;"></i> Pinned</span>{% endif
-                                    %}
+                                            class="fas fa-thumbtack" style="font-size: 8px;"></i> Pinned</span>{% endif %}
 
                                 </div>
 
