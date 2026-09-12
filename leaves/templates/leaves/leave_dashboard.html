@@ -679,8 +679,7 @@
             <form method="GET" class="visual-leave-controls">
                 <select name="month" class="glass-input" onchange="this.form.submit()">
                     {% for month in visual_month_options %}
-                    <option value="{{ month.value }}" {% if month.value==selected_visual_month %}selected{% endif %}>{{
-                        month.label }}</option>
+                    <option value="{{ month.value }}" {% if month.value == selected_visual_month %}selected{% endif %}>{{ month.label }}</option>
                     {% endfor %}
                 </select>
                 <input type="number" name="year" class="glass-input" value="{{ selected_visual_year }}" min="2000"
@@ -750,8 +749,7 @@
                         </td>
                         {% for cell in row.cells %}
                         <td>
-                            <span class="leave-day-chip {{ cell.status_class }}" title="{{ cell.tooltip }}">{{ cell.code
-                                }}</span>
+                            <span class="leave-day-chip {{ cell.status_class }}" title="{{ cell.tooltip }}">{{ cell.code }}</span>
                         </td>
                         {% endfor %}
                     </tr>
@@ -779,8 +777,7 @@
                         <div>
                             <h3 class="policy-title">{{ card.leave_type.name }}</h3>
                             <div class="policy-subtitle">
-                                {{ card.leave_type.category.name|default:"Leave Policy" }} | v{{
-                                card.leave_type.policy_version }}
+                                {{ card.leave_type.category.name|default:"Leave Policy" }} | v{{ card.leave_type.policy_version }}
                             </div>
                         </div>
                     </div>
@@ -936,8 +933,7 @@
                 {% for leave in upcoming_leaves %}
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
                     <span style="font-size: 13px; font-weight: 600;">{{ leave.start_date|date:"M d" }}</span>
-                    <span style="font-size: 12px; opacity: 0.8;">{{ leave.leave_type.code }} ({{ leave.total_days
-                        }}d)</span>
+                    <span style="font-size: 12px; opacity: 0.8;">{{ leave.leave_type.code }} ({{ leave.total_days }}d)</span>
                 </div>
                 {% endfor %}
             </div>
@@ -1108,8 +1104,7 @@
                 <input type="file" name="attachment" class="glass-input" style="padding: 8px;">
             </div>
 
-            <button type="submit" class="punch-btn" style="width: 100%; margin-top: 12px; padding: 14px;" {% if not
-                policy_cards %}disabled{% endif %}>
+            <button type="submit" class="punch-btn" style="width: 100%; margin-top: 12px; padding: 14px;" {% if not policy_cards %}disabled{% endif %}>
                 Submit Application
             </button>
         </form>
