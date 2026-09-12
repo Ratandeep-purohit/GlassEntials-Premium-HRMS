@@ -513,8 +513,8 @@
                 width: 100%;
                 height: 100%;
 
-                object-fit: contain;
-                transform: scale(0.85);
+                object-fit: cover;
+                object-position: top;
 
                 border-radius: 50%;
             }
@@ -677,9 +677,8 @@
             .dashboard-my-day .employee-attendance-avatar img {
                 width: 100%;
                 height: 100%;
-                object-fit: contain !important;
-                object-position: center !important;
-                transform: scale(0.85);
+                object-fit: cover !important;
+                object-position: top !important;
                 border-radius: 50%;
             }
         </style>
@@ -1392,7 +1391,7 @@
                             <div class="user-mini" style="background: rgba(37,99,235,0.1); color: var(--accent);">
                                 {% if leave.employee.profile_img %}
                                 <img src="{{ leave.employee.profile_img.url }}"
-                                    style="width: 100%; height: 100%; object-fit: contain; transform: scale(0.85); border-radius: 50%;">
+                                    style="width: 100%; height: 100%; object-fit: cover; object-position: top;">
                                 {% else %}
                                 {{ leave.employee.first_name|slice:":1"|upper }}
                                 {% endif %}
@@ -1441,7 +1440,7 @@
                             <div class="user-mini">
                                 {% if emp.profile_img %}
                                 <img src="{{ emp.profile_img.url }}"
-                                    style="width: 100%; height: 100%; object-fit: contain; transform: scale(0.85); border-radius: 50%;">
+                                    style="width: 100%; height: 100%; object-fit: cover; object-position: top;">
                                 {% else %}
                                 {{ emp.first_name|slice:":1"|upper }}
                                 {% endif %}
