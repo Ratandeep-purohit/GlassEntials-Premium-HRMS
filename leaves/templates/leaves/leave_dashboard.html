@@ -432,9 +432,9 @@
             <button class="punch-btn" style="background: rgba(37, 99, 235, 0.1); color: var(--accent); border: 1px solid var(--accent);" onclick="openCompOffModal()">
                 <i class="fas fa-history"></i> Request Comp-off Credit
             </button>
-            <button class="punch-btn" onclick="openApplyModal()">
+            <a href="{% url 'leaves:apply_leave' %}" class="punch-btn" style="text-decoration: none;">
                 <i class="fas fa-plus"></i> Apply for Leave
-            </button>
+            </a>
         </div>
 
     </div>
@@ -621,9 +621,9 @@
                     {% endif %}
                 </div>
 
-                <button class="punch-btn" type="button" onclick="openApplyModal('{{ card.leave_type.id }}')" {% if card.available <= 0 and not card.leave_type.allow_negative_balance %}disabled{% endif %}>
+                <a href="{% url 'leaves:apply_leave' %}?leave_type={{ card.leave_type.id }}" class="punch-btn" style="text-decoration: none; {% if card.available <= 0 and not card.leave_type.allow_negative_balance %}opacity:0.5; pointer-events:none;{% endif %}">
                     <i class="fas fa-plus"></i> Apply
-                </button>
+                </a>
             </div>
             {% endfor %}
         </div>

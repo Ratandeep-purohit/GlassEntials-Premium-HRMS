@@ -548,6 +548,34 @@ def assign_leave_balances_view(request):
 
 @login_required
 def apply_leave_view(request):
+    if request.method == 'GET':
+        employee = Employee.objects.filter(email=request.user.email, organization=request.user.organization).first()
+        if not employee:
+            messages.error(request, "Employee profile not found. Please contact HR.")
+            return redirect('leaves:dashboard')
+
+        current_year = timezone.localdate().year
+        balances = list(
+            LeaveBalance.objects.filter(
+                employee=employee,
+                year=current_year,
+                leave_type__organization=request.user.organization,
+                leave_type__is_active=True,
+                leave_type__category__isnull=False,
+                leave_type__status='ACTIVE',
+                leave_type__is_requestable=True,
+            ).select_related('leave_type', 'leave_type__category').prefetch_related(
+                'leave_type__enterprise_workflows__steps',
+            ).order_by('leave_type__name')
+        )
+        policy_cards = EmployeeLeavePolicyPresenter.build_cards(employee=employee, balances=balances)
+        selected_leave_type_id = request.GET.get('leave_type', '')
+        return render(request, 'leaves/apply_leave.html', {
+            'employee': employee,
+            'policy_cards': policy_cards,
+            'selected_leave_type_id': selected_leave_type_id,
+        })
+
     if request.method == 'POST':
         employee = Employee.objects.filter(email=request.user.email, organization=request.user.organization).first()
         leave_type_id = request.POST.get('leave_type')
