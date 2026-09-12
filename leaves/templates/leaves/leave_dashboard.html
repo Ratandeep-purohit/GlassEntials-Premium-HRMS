@@ -10,18 +10,11 @@
         overscroll-behavior: none;
     }
 
-    body.modal-open {
-        position: fixed;
-        width: 100%;
-        left: 0;
-        right: 0;
-    }
-
     #applyModal.glass-modal,
     #compOffModal.glass-modal {
         align-items: flex-start !important;
         justify-content: center !important;
-        overflow: hidden !important;
+        overflow-y: auto !important;
         padding: 24px !important;
     }
 
@@ -32,11 +25,9 @@
 
     #applyModal .modal-content,
     #compOffModal .modal-content {
-        max-height: calc(100dvh - 48px) !important;
-        overflow-y: auto !important;
-        overscroll-behavior: contain !important;
-        -webkit-overflow-scrolling: touch;
-        margin: 0 !important;
+        max-height: none !important;
+        overflow-y: visible !important;
+        margin: auto 0 !important;
     }
 
     .glass-scroll::-webkit-scrollbar {
@@ -899,13 +890,9 @@
         leaveModalScrollY = window.scrollY || document.documentElement.scrollTop || 0;
         document.documentElement.classList.add('modal-open');
         document.body.classList.add('modal-open');
-        document.body.style.top = `-${leaveModalScrollY}px`;
         modal.style.display = 'flex';
         modal.classList.add('active');
-        const modalContent = modal.querySelector('.modal-content');
-        if (modalContent) {
-            modalContent.scrollTop = 0;
-        }
+        modal.scrollTop = 0;
     }
 
     function hideLeaveModal(modalId) {
@@ -919,8 +906,6 @@
         if (!anyOpenModal) {
             document.documentElement.classList.remove('modal-open');
             document.body.classList.remove('modal-open');
-            document.body.style.top = '';
-            window.scrollTo(0, leaveModalScrollY);
         }
     }
 
