@@ -658,8 +658,7 @@
         <!-- ── Sidebar: Leave Balances ── -->
         <aside class="balance-sidebar">
             <div class="balance-sidebar-head">
-                <div class="balance-sidebar-label"><i class="fas fa-wallet" style="margin-right:5px;"></i> Your Leave
-                    Balances</div>
+                <div class="balance-sidebar-label"><i class="fas fa-wallet" style="margin-right:5px;"></i> Your Leave Balances</div>
             </div>
             <div class="balance-items">
                 {% for card in policy_cards %}
@@ -675,8 +674,7 @@
                     </div>
                     <div class="bal-num">
                         <div class="bal-avail"
-                            style="color: {% if card.available > 0 %}var(--accent){% else %}#ef4444{% endif %};">{{
-                            card.available }}</div>
+                            style="color: {% if card.available > 0 %}var(--accent){% else %}#ef4444{% endif %};">{{ card.available }}</div>
                         <div class="bal-avail-lbl">left</div>
                     </div>
                 </div>
