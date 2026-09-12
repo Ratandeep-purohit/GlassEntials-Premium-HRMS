@@ -693,11 +693,11 @@
                     <div class="employee-attendance-avatar">
                         {% if current_employee.profile_img %}
                         <img src="{{ current_employee.profile_img.url }}"
-                            alt="{{ current_employee.first_name }} {{ current_employee.last_name }}">
+                            alt="{{ current_employee.first_name }} {{ current_employee.last_name }}"
+                            style="width: 100%; height: 100%; object-fit: contain; border-radius: 50%;">
                         {% else %}
-                        <span>
-                            {{ current_employee.first_name|slice:":1"|upper }}{{
-                            current_employee.last_name|slice:":1"|upper }}
+                        <span style="display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; font-weight: bold; font-size: 20px; color: #0f172a;">
+                            {{ current_employee.first_name|slice:":1"|upper }}{{ current_employee.last_name|slice:":1"|upper }}
                         </span>
                         {% endif %}
                     </div>
